@@ -45,10 +45,19 @@ export const useSchemaStore = defineStore('schema', () => {
     }
   }
 
+  /** Loads in flight, by connection + schema, so the tree and the page share one request. */
+  const inflight = new Map<string, Promise<void>>()
+
   /** Loads only when the connection or schema differs from what is already in memory. */
   async function ensure(id: string, name: string | null): Promise<void> {
     if (connectionId.value === id && (name === null || schema.value === name) && snapshot.value) return
-    await load(id, name)
+    const key = `${id}|${name ?? ''}`
+    let pending = inflight.get(key)
+    if (!pending) {
+      pending = load(id, name).finally(() => inflight.delete(key))
+      inflight.set(key, pending)
+    }
+    await pending
   }
 
   /** Reloads the graph after a change to virtual relations or display columns. */

@@ -1,0 +1,14 @@
+<script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+const model = defineModel<string>()
+defineProps<{ invalid?: boolean; mono?: boolean }>()
+</script>
+
+<template>
+  <textarea
+    v-model="model"
+    v-bind="$attrs"
+    class="min-h-16 w-full rounded-md border bg-bg-subtle px-2 py-1.5 text-sm text-fg placeholder:text-fg-subtle focus:border-accent disabled:opacity-50"
+    :class="[invalid ? 'border-danger' : 'border-border', mono && 'font-data']"
+  />
+</template>

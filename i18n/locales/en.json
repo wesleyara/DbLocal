@@ -1,0 +1,69 @@
+{
+  "app": {
+    "name": "DbLocal"
+  },
+  "common": {
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System"
+  },
+  "env": {
+    "local": "local",
+    "staging": "staging",
+    "prod": "prod"
+  },
+  "shell": {
+    "toggleSidebar": "Toggle sidebar",
+    "search": "Search…",
+    "noConnection": "No connection",
+    "noConnectionHint": "Add a connection to browse your database.",
+    "noTable": "No table selected",
+    "noTableHint": "Pick a table from the sidebar to see its data.",
+    "status": {
+      "disconnected": "Not connected"
+    }
+  },
+  "access": {
+    "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
+  },
+  "login": {
+    "password": "Password",
+    "submit": "Sign in",
+    "invalid": "Invalid password",
+    "tooMany": "Too many attempts. Try again in a minute."
+  },
+  "design": {
+    "title": "Design system",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "ghost": "Ghost",
+    "danger": "Danger",
+    "loading": "Loading",
+    "settings": "Settings",
+    "input": "Input",
+    "empty": "No results",
+    "checkbox": "Checkbox",
+    "switch": "Switch",
+    "tooltip": "Tooltip text",
+    "hover": "Hover me",
+    "popover": "Popover",
+    "popoverBody": "Some descriptive content.",
+    "menu": "Menu",
+    "item": "Copy",
+    "delete": "Delete",
+    "rightClick": "Right-click here",
+    "dialog": "Dialog",
+    "drawer": "Drawer",
+    "toast": "Saved",
+    "toastBtn": "Show toast",
+    "tabOne": "First",
+    "tabTwo": "Second",
+    "emptyTitle": "Nothing here",
+    "emptyDesc": "This is an empty state."
+  }
+}

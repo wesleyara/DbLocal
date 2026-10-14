@@ -1,0 +1,69 @@
+{
+  "app": {
+    "name": "DbLocal"
+  },
+  "common": {
+    "close": "Fechar",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "theme": {
+    "dark": "Escuro",
+    "light": "Claro",
+    "system": "Sistema"
+  },
+  "env": {
+    "local": "local",
+    "staging": "staging",
+    "prod": "prod"
+  },
+  "shell": {
+    "toggleSidebar": "Alternar barra lateral",
+    "search": "Buscar…",
+    "noConnection": "Nenhuma conexão",
+    "noConnectionHint": "Adicione uma conexão para navegar pelo seu banco.",
+    "noTable": "Nenhuma tabela selecionada",
+    "noTableHint": "Escolha uma tabela na barra lateral para ver os dados.",
+    "status": {
+      "disconnected": "Desconectado"
+    }
+  },
+  "access": {
+    "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
+  },
+  "login": {
+    "password": "Senha",
+    "submit": "Entrar",
+    "invalid": "Senha inválida",
+    "tooMany": "Muitas tentativas. Tente novamente em um minuto."
+  },
+  "design": {
+    "title": "Design system",
+    "primary": "Primário",
+    "secondary": "Secundário",
+    "ghost": "Fantasma",
+    "danger": "Perigo",
+    "loading": "Carregando",
+    "settings": "Configurações",
+    "input": "Campo",
+    "empty": "Sem resultados",
+    "checkbox": "Caixa de seleção",
+    "switch": "Interruptor",
+    "tooltip": "Texto da dica",
+    "hover": "Passe o mouse",
+    "popover": "Popover",
+    "popoverBody": "Algum conteúdo descritivo.",
+    "menu": "Menu",
+    "item": "Copiar",
+    "delete": "Excluir",
+    "rightClick": "Clique com o botão direito",
+    "dialog": "Diálogo",
+    "drawer": "Gaveta",
+    "toast": "Salvo",
+    "toastBtn": "Mostrar toast",
+    "tabOne": "Primeira",
+    "tabTwo": "Segunda",
+    "emptyTitle": "Nada aqui",
+    "emptyDesc": "Este é um estado vazio."
+  }
+}

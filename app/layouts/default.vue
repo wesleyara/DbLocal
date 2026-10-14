@@ -6,6 +6,19 @@ const status = await useFetch('/api/auth/status')
 const connectionId = computed(() => route.params.connectionId as string | undefined)
 const schema = computed(() => route.params.schema as string | undefined)
 
+useHead({ htmlAttrs: { lang: () => locale.value } })
+
+const { data: activeConnection } = await useAsyncData(
+  'active-connection',
+  () =>
+    connectionId.value
+      ? $fetch<{ name: string; dialect: string; readonly: boolean }>(`/api/connections/${connectionId.value}`).catch(
+          () => null,
+        )
+      : Promise.resolve(null),
+  { watch: [connectionId] },
+)
+
 const themes = computed(() => [
   { value: 'dark', label: t('theme.dark') },
   { value: 'light', label: t('theme.light') },
@@ -103,7 +116,12 @@ function onResize(e: PointerEvent) {
       v-if="ui.statusBar"
       class="font-data flex h-6 shrink-0 items-center gap-3 border-t border-border bg-bg-subtle px-3 text-xs text-fg-subtle"
     >
-      <span>{{ t('shell.status.disconnected') }}</span>
+      <template v-if="activeConnection">
+        <span>{{ t('shell.status.connected', { name: activeConnection.name }) }}</span>
+        <span>{{ activeConnection.dialect }}</span>
+        <span v-if="activeConnection.readonly" class="text-warning">{{ t('shell.status.readonly') }}</span>
+      </template>
+      <span v-else>{{ t('shell.status.disconnected') }}</span>
     </footer>
     <UiToaster />
   </div>

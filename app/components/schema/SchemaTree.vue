@@ -19,11 +19,13 @@ const displayOpen = ref(false)
 const AUTO = '__auto__'
 const displayChoice = ref(AUTO)
 
-/** Loads the schema when the connection or schema in the URL changes. */
+// Awaited in setup so the server renders the tree with its data; the payload then matches the client.
+await store.ensure(props.connectionId, props.schema ?? null).catch(() => {})
+
+/** Loads the schema again when the connection or schema in the URL changes. */
 watch(
   () => [props.connectionId, props.schema] as const,
   ([id, name]) => store.ensure(id, name ?? null).catch(() => {}),
-  { immediate: true },
 )
 
 /** Subsequence match: `ord` finds `orders`, `usr` finds `users`. */

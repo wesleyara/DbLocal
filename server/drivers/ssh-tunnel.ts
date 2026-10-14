@@ -17,6 +17,9 @@ export function mapSshError(err: unknown): DriverError {
   const message = messageOf(err)
   const level = (err as { level?: string })?.level
   if (level === 'client-authentication') return new DriverError('auth', 'SSH authentication failed', err)
+  if (/cannot parse privatekey|passphrase|encrypted private|bad decrypt|unsupported key/i.test(message)) {
+    return new DriverError('auth', 'SSH private key could not be read: wrong passphrase or unsupported key', err)
+  }
   if (/timed out|timeout/i.test(message)) return new DriverError('timeout', `SSH: ${message}`, err)
   if (code && NETWORK_ERROR_CODES.has(code)) return new DriverError('network', `SSH: ${message}`, err)
   return new DriverError('network', `SSH: ${message}`, err)
@@ -47,8 +50,22 @@ export async function openSshTunnel(
   await new Promise<void>((resolve, reject) => {
     client.once('ready', resolve)
     client.once('error', (err) => reject(mapSshError(err)))
-    client.connect(connectConfig)
+    try {
+      client.connect(connectConfig)
+    } catch (err) {
+      // ssh2 throws synchronously for a key it cannot parse (bad passphrase, wrong format).
+      reject(mapSshError(err))
+    }
   })
+
+  // Open one channel up front so an unreachable target fails here with its real reason,
+  // instead of surfacing later as a generic "connection terminated" from the database driver.
+  try {
+    await probeTarget(client, target)
+  } catch (err) {
+    client.end()
+    throw err
+  }
 
   const server: Server = createServer((socket: Socket) => {
     client.forwardOut('127.0.0.1', localPort(server), target.host, target.port, (err, stream) => {
@@ -87,6 +104,24 @@ export async function openSshTunnel(
       client.end()
     },
   }
+}
+
+function probeTarget(client: Client, target: { host: string; port: number }): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new DriverError('timeout', `SSH tunnel timed out reaching ${target.host}:${target.port}`))
+    }, READY_TIMEOUT_MS)
+    client.forwardOut('127.0.0.1', 0, target.host, target.port, (err, stream) => {
+      clearTimeout(timer)
+      if (err) {
+        const reason = err.message.replace(/^\(SSH\) /, '')
+        reject(new DriverError('network', `SSH tunnel cannot reach ${target.host}:${target.port}: ${reason}`, err))
+        return
+      }
+      stream.destroy()
+      resolve()
+    })
+  })
 }
 
 function localPort(server: Server): number {

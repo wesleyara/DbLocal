@@ -32,7 +32,9 @@
     "noTable": "No table selected",
     "noTableHint": "Pick a table from the sidebar to see its data.",
     "status": {
-      "disconnected": "Not connected"
+      "disconnected": "Not connected",
+      "connected": "Connected to {name}",
+      "readonly": "read-only"
     }
   },
   "access": {

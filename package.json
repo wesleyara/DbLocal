@@ -28,6 +28,8 @@
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/nuxt": "^1.0.2",
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/vue-table": "^9.3.1",
+    "@tanstack/vue-virtual": "^3.13.44",
     "@vueuse/core": "^15.0.0",
     "better-sqlite3": "^13.0.3",
     "kysely": "^0.29.6",

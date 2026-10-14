@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
 import { useSchemaStore } from '~/stores/schema'
+import TableGrid from '~/components/grid/TableGrid.vue'
 
 const route = useRoute()
 const id = route.params.connectionId as string
@@ -25,8 +26,8 @@ const envText: Record<ConnectionView['environment'], string> = {
   prod: 'text-env-prod',
 }
 
-/** The table shown in the main area comes from `?table=`, so the view is reproducible by URL. */
-const tableName = computed(() => (typeof route.query.table === 'string' ? route.query.table : null))
+/** The table shown in the main area comes from the path (`/t/:table`), so the view is reproducible by URL. */
+const tableName = computed(() => route.params.table as string)
 const table = computed(() => store.tables.find((tb) => tb.name === tableName.value) ?? null)
 const node = computed(() => (tableName.value ? store.graph?.tables[tableName.value] : undefined))
 
@@ -59,7 +60,7 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
     />
     <UiEmptyState v-else-if="!table" icon="lucide:triangle-alert" :title="t('tableView.notFound')" />
 
-    <section v-else class="grid gap-4 p-4">
+    <section v-else class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4">
       <div class="flex flex-wrap items-baseline gap-3">
         <h2 class="font-data text-base font-semibold text-fg">{{ table.name }}</h2>
         <span class="text-xs text-fg-subtle">{{ table.kind === 'table' ? t('schemaTree.tables') : t('tableView.view') }}</span>
@@ -69,6 +70,10 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
         <span v-if="node?.displayColumn" class="text-xs text-fg-subtle">
           {{ t('schemaTree.displayColumn') }}: <span class="font-data text-fg-muted">{{ node.displayColumn }}</span>
         </span>
+      </div>
+
+      <div class="h-[60vh] min-h-72 min-w-0">
+        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" />
       </div>
 
       <div>

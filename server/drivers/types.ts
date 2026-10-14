@@ -1,5 +1,6 @@
 import type { SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { RowsPlan } from '#shared/types/rows'
 
 export type Dialect = 'postgres' | 'mysql' | 'sqlite'
 
@@ -52,6 +53,10 @@ export interface Driver {
   listSchemas(): Promise<string[]>
   /** Reads tables, views, columns, keys and indexes of one schema (Postgres schema, MySQL database, SQLite file). */
   introspect(schema: string): Promise<SchemaSnapshot>
+  /** Reads one page of rows. The plan is already validated against the snapshot. */
+  readRows(plan: RowsPlan): Promise<Record<string, unknown>[]>
+  /** Counts the rows matching the plan's filter. */
+  countRows(plan: RowsPlan): Promise<number>
   close(): Promise<void>
 }
 

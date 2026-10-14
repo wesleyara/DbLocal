@@ -1,0 +1,53 @@
+---
+title: Browsing data
+description: Read a table in the grid, filter, sort and page through rows, and share a view by its link.
+category: Data
+order: 2
+related: [schema-browser]
+---
+
+# Browsing data
+
+Open a table from the sidebar to see its rows in the grid. The grid reads a page at a time, so large tables stay fast.
+
+## Sort
+
+Click a column header to sort ascending, click again for descending, and click a third time to remove the sort. Hold **Shift** to add a column to the sort without dropping the others.
+
+## Columns
+
+Drag a header onto another to move the column. Hover a header and click the pin icon to keep it on the left while you scroll sideways. The **Columns** menu hides or shows columns, and **Reset columns and widths** puts everything back. Drag the right edge of a header to resize it. These choices are saved for each table.
+
+## Sort chips
+
+The sort bar above the grid lists each sort. Click a chip to flip its direction, drag it to change the order, or use its **×** to remove it.
+
+## Filter
+
+
+Click **Filter** to add a condition. **Advanced filters** opens a tree where you combine conditions with AND and OR, nested up to three levels: pick a column, an operator and a value. Each condition becomes a chip. Click a chip to edit it, or use its **×** to remove it. **Clear all** removes every condition.
+
+The operators offered depend on the column type:
+
+- **Numbers and dates**: is, is not, greater or less than, between, is one of.
+- **Text**: contains (case-insensitive), starts with, ends with, is, is not.
+- **Booleans**: is true, is false.
+- **Any column**: is NULL and is not NULL.
+
+Use the comma to type several values for "is one of". `NULL` and an empty text are different: a NULL shows a grey **NULL** badge.
+
+## Values
+
+Double-click a cell to see its full value. JSON opens as a tree you can collapse. Binary values can be downloaded as stored. The dialog also has **Filter by this value**.
+
+## Pages and counts
+
+Choose how many rows a page shows (50, 100, 250 or 500). The footer shows the range and the total. For very large tables the total is an estimate, marked with `~`. Click **Count exactly** to count the real number of rows.
+
+## Share a view
+
+Sort, filters and the page are part of the address in your browser. Copy the link to open the same view again.
+
+## Tables without a primary key
+
+A table without a primary key can be read, filtered and sorted, but its rows are read-only. The grid shows a notice when this happens.

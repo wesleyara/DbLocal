@@ -2,6 +2,8 @@ import pg from 'pg'
 import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectPostgres } from './introspect/postgres'
+import { compileCount, compileRows } from '../query/compile'
+import type { RowsPlan } from '#shared/types/rows'
 import { tlsOptions } from './ssl'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
@@ -64,6 +66,17 @@ class PostgresDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectPostgres(<R>(sql: string, params?: unknown[]) => this.rows<R>(sql, params), schema)
+  }
+
+  readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {
+    const q = compileRows(plan)
+    return this.rows(q.sql, q.parameters as unknown[])
+  }
+
+  async countRows(plan: RowsPlan): Promise<number> {
+    const q = compileCount(plan)
+    const [row] = await this.rows<{ count: string | number }>(q.sql, q.parameters as unknown[])
+    return Number(row?.count ?? 0)
   }
 
   async close(): Promise<void> {

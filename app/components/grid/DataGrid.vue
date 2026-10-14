@@ -1,0 +1,565 @@
+<script setup lang="ts">
+import { useVirtualizer } from '@tanstack/vue-virtual'
+import { tableFeatures, useTable } from '@tanstack/vue-table'
+import type { ColumnKind, SchemaColumn } from '#shared/types/db'
+import type { SortItem } from '#shared/types/rows'
+import CellValue from './cells/CellValue.vue'
+import JsonTree from './JsonTree.vue'
+
+const ROW_HEIGHT = 28
+const HEADER_HEIGHT = 40
+const GUTTER_WIDTH = 56
+const MIN_WIDTH = 60
+const MAX_WIDTH = 2000
+
+/** Default column widths by kind: numbers and dates are short, JSON and identifiers need room. */
+const WIDTH_BY_KIND: Partial<Record<ColumnKind, number>> = {
+  number: 120,
+  boolean: 90,
+  date: 120,
+  datetime: 180,
+  time: 100,
+  uuid: 280,
+  json: 280,
+}
+
+const props = defineProps<{
+  /** Columns in display order. The pinned ones must come first, as TableGrid arranges them. */
+  columns: SchemaColumn[]
+  /** Names of the pinned columns. They stay in view while the grid scrolls sideways. */
+  pinned?: string[]
+  rows: Record<string, unknown>[]
+  sort: SortItem[]
+  primaryKey: string[]
+  foreignKeys: string[]
+  /** Saved widths in px by column name. Columns without one use the default for their kind. */
+  widths?: Record<string, number>
+  loading?: boolean
+  /** Position of the first row in the whole result, so the row numbers continue across pages. */
+  startIndex?: number
+}>()
+const emit = defineEmits<{
+  'update:sort': [sort: SortItem[]]
+  'update:widths': [widths: Record<string, number>]
+  filterByValue: [column: string, value: unknown]
+  reorder: [from: string, to: string]
+  togglePin: [column: string]
+  download: [column: string, row: Record<string, unknown>]
+  hide: [column: string]
+}>()
+const { t } = useI18n()
+
+const kindByName = computed(() => new Map(props.columns.map((c) => [c.name, c.kind])))
+const pinnedSet = computed(() => new Set(props.pinned ?? []))
+/** How many leading columns are pinned. TableGrid puts them first, so they are always a prefix. */
+const pinnedCount = computed(() => props.columns.filter((c) => pinnedSet.value.has(c.name)).length)
+
+// While a resize is dragged the live width wins; on release the widths are saved.
+const liveWidths = ref<Record<string, number>>({})
+const widthOf = (name: string | undefined): number => {
+  if (!name) return 200
+  return liveWidths.value[name] ?? props.widths?.[name] ?? WIDTH_BY_KIND[kindByName.value.get(name) ?? 'other'] ?? 200
+}
+
+// TanStack Table owns the column and row models; the grid only decides what is drawn.
+// Column ids are the raw names and values come from accessorFn, so dots in names are not paths.
+const features = tableFeatures({})
+const table = useTable({
+  features,
+  columns: computed(() =>
+    props.columns.map((col) => ({
+      id: col.name,
+      header: col.name,
+      accessorFn: (row: Record<string, unknown>) => row[col.name],
+    })),
+  ),
+  data: computed(() => props.rows),
+})
+const leafColumns = computed(() => table.getAllLeafColumns())
+const modelRows = computed(() => table.getRowModel().rows)
+
+const scrollEl = ref<HTMLElement | null>(null)
+/** Horizontal scroll, so pinned columns can follow it without being virtualised. */
+const scrollX = ref(0)
+const onScroll = () => {
+  if (scrollEl.value) scrollX.value = scrollEl.value.scrollLeft
+}
+
+// Rows and columns are both virtualised: only what is on screen is in the DOM. Pinned columns are
+// still part of the geometry (they sit first) but are drawn separately, so the virtualiser skips them.
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: modelRows.value.length,
+    getScrollElement: () => scrollEl.value,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 12,
+  })),
+)
+const colVirtualizer = useVirtualizer(
+  computed(() => ({
+    horizontal: true,
+    count: leafColumns.value.length,
+    getScrollElement: () => scrollEl.value,
+    estimateSize: (index: number) => widthOf(leafColumns.value[index]?.id),
+    overscan: 3,
+  })),
+)
+
+// Sizes are read by the virtualizer through a plain function, so it has to be told when they change.
+watch([liveWidths, () => props.widths, leafColumns], () => colVirtualizer.value.measure(), { deep: true })
+
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
+const virtualCols = computed(() => colVirtualizer.value.getVirtualItems().filter((vc) => vc.index >= pinnedCount.value))
+const totalWidth = computed(() => GUTTER_WIDTH + colVirtualizer.value.getTotalSize())
+const totalHeight = computed(() => HEADER_HEIGHT + rowVirtualizer.value.getTotalSize())
+
+/** Pinned columns: left edge is the gutter plus the widths before them, moved by the horizontal scroll. */
+const pinnedCols = computed(() => {
+  let left = GUTTER_WIDTH
+  return leafColumns.value.slice(0, pinnedCount.value).map((col, index) => {
+    const item = { index, id: col.id, left, width: widthOf(col.id) }
+    left += item.width
+    return item
+  })
+})
+const pinnedLeft = (left: number) => `${left + scrollX.value}px`
+
+// Selection is a rectangle: `anchor` is where it started, `cursor` is the moving corner.
+const anchor = ref<{ row: number; col: number } | null>(null)
+const cursor = ref<{ row: number; col: number } | null>(null)
+watch(
+  () => props.rows,
+  () => {
+    anchor.value = null
+    cursor.value = null
+  },
+)
+
+const range = computed(() => {
+  if (!anchor.value || !cursor.value) return null
+  return {
+    r0: Math.min(anchor.value.row, cursor.value.row),
+    r1: Math.max(anchor.value.row, cursor.value.row),
+    c0: Math.min(anchor.value.col, cursor.value.col),
+    c1: Math.max(anchor.value.col, cursor.value.col),
+  }
+})
+const inRange = (row: number, col: number) => {
+  const r = range.value
+  return !!r && row >= r.r0 && row <= r.r1 && col >= r.c0 && col <= r.c1
+}
+
+// ---- resize ----------------------------------------------------------------------------------
+
+function startResize(event: PointerEvent, name: string): void {
+  event.stopPropagation()
+  event.preventDefault()
+  const startX = event.clientX
+  const startWidth = widthOf(name)
+  const onMove = (e: PointerEvent) => {
+    liveWidths.value = {
+      ...liveWidths.value,
+      [name]: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + e.clientX - startX)),
+    }
+  }
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    const final = liveWidths.value[name]
+    if (final !== undefined) emit('update:widths', { ...props.widths, [name]: final })
+    liveWidths.value = {}
+  }
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
+}
+
+// ---- reorder (drag a header onto another) ----------------------------------------------------
+
+const dragging = ref<string | null>(null)
+
+function dropOn(target: string): void {
+  if (dragging.value && dragging.value !== target) emit('reorder', dragging.value, target)
+  dragging.value = null
+}
+
+// ---- sort ------------------------------------------------------------------------------------
+
+function toggleSort(event: MouseEvent, column: string): void {
+  const index = props.sort.findIndex((s) => s.column === column)
+  const current = props.sort[index]
+  let next: SortItem[]
+  if (event.shiftKey) {
+    // Shift adds or flips this column without dropping the others: asc, then desc, then removed.
+    if (!current) next = [...props.sort, { column, direction: 'asc' }]
+    else if (current.direction === 'asc') next = props.sort.map((s, i) => (i === index ? { ...s, direction: 'desc' } : s))
+    else next = props.sort.filter((_, i) => i !== index)
+  } else {
+    next = !current ? [{ column, direction: 'asc' }] : current.direction === 'asc' ? [{ column, direction: 'desc' }] : []
+  }
+  emit('update:sort', next)
+}
+
+function sortIndicator(name: string): 'asc' | 'desc' | null {
+  return props.sort.find((s) => s.column === name)?.direction ?? null
+}
+
+// ---- selection, copy ------------------------------------------------------------------------
+
+function select(row: number, col: number, extend: boolean): void {
+  if (extend && anchor.value) cursor.value = { row, col }
+  else {
+    anchor.value = { row, col }
+    cursor.value = { row, col }
+  }
+}
+
+function moveTo(row: number, col: number, extend: boolean): void {
+  const r = Math.min(Math.max(row, 0), modelRows.value.length - 1)
+  const c = Math.min(Math.max(col, 0), leafColumns.value.length - 1)
+  select(r, c, extend)
+  rowVirtualizer.value.scrollToIndex(r)
+  colVirtualizer.value.scrollToIndex(c)
+}
+
+function valueAt(row: number, col: number): unknown {
+  return modelRows.value[row]?.getAllCells()[col]?.getValue()
+}
+
+function textOf(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  return typeof value === 'object' ? JSON.stringify(value) : String(value)
+}
+
+/** The selected rectangle as TSV: rows on lines, columns separated by tabs. */
+function selectionAsTsv(): string {
+  const r = range.value
+  if (!r) return ''
+  const lines: string[] = []
+  for (let row = r.r0; row <= r.r1; row++) {
+    const cells: string[] = []
+    for (let col = r.c0; col <= r.c1; col++) cells.push(textOf(valueAt(row, col)).replace(/[\t\n]/g, ' '))
+    lines.push(cells.join('\t'))
+  }
+  return lines.join('\n')
+}
+
+function copyText(text: string): void {
+  void navigator.clipboard?.writeText(text)
+}
+
+/** Arrow keys move the cursor (Shift extends the selection), ⌘C / Ctrl+C copies it as TSV. */
+function onKeydown(event: KeyboardEvent): void {
+  if (modelRows.value.length === 0 || leafColumns.value.length === 0) return
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c' && range.value) {
+    copyText(selectionAsTsv())
+    return
+  }
+  const { row, col } = cursor.value ?? { row: 0, col: 0 }
+  const moves: Record<string, [number, number]> = {
+    ArrowDown: [row + 1, col],
+    ArrowUp: [row - 1, col],
+    ArrowRight: [row, col + 1],
+    ArrowLeft: [row, col - 1],
+  }
+  const target = moves[event.key]
+  if (target) {
+    event.preventDefault()
+    moveTo(target[0], target[1], event.shiftKey)
+  }
+}
+
+// ---- context menu: one menu for the whole grid, the target is read from the event -----------------
+
+type MenuTarget = { type: 'cell'; row: number; col: number } | { type: 'header'; name: string }
+const menuTarget = ref<MenuTarget | null>(null)
+
+function onContextMenu(event: MouseEvent): void {
+  const el = event.target instanceof Element ? event.target : null
+  const cell = el?.closest<HTMLElement>('[data-r]')
+  const head = el?.closest<HTMLElement>('[data-h]')
+  if (cell) {
+    const row = Number(cell.dataset.r)
+    const col = Number(cell.dataset.c)
+    if (!inRange(row, col)) select(row, col, false)
+    menuTarget.value = { type: 'cell', row, col }
+  } else if (head?.dataset.h) {
+    menuTarget.value = { type: 'header', name: head.dataset.h }
+  } else {
+    menuTarget.value = null
+  }
+}
+
+/** Filtering by a value only makes sense for scalars; the same rule the dialog uses. */
+const filterable = (kind: ColumnKind | undefined) => !!kind && kind !== 'binary' && kind !== 'json' && kind !== 'array'
+
+const menuItems = computed(() => {
+  const target = menuTarget.value
+  if (!target) return []
+  if (target.type === 'cell') {
+    const name = leafColumns.value[target.col]?.id ?? ''
+    const kind = kindByName.value.get(name)
+    const value = valueAt(target.row, target.col)
+    const items = [{ label: t('grid.copyValue'), icon: 'lucide:copy', onSelect: () => copyText(textOf(value)) }]
+    if (kind === 'uuid' && value !== null && value !== undefined) {
+      items.push({ label: t('grid.copyUuid'), icon: 'lucide:fingerprint', onSelect: () => copyText(String(value)) })
+    }
+    if (filterable(kind)) {
+      items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
+    }
+    return items
+  }
+  const name = target.name
+  const items = [
+    { label: t('grid.copyName'), icon: 'lucide:copy', onSelect: () => copyText(name) },
+    { label: t('grid.sortAscendingAction'), icon: 'lucide:arrow-up', onSelect: () => emit('update:sort', [{ column: name, direction: 'asc' }]) },
+    { label: t('grid.sortDescendingAction'), icon: 'lucide:arrow-down', onSelect: () => emit('update:sort', [{ column: name, direction: 'desc' }]) },
+    { label: pinnedSet.value.has(name) ? t('grid.unpin') : t('grid.pin'), icon: 'lucide:pin', onSelect: () => emit('togglePin', name) },
+    { label: t('grid.hideColumn'), icon: 'lucide:eye-off', onSelect: () => emit('hide', name) },
+  ]
+  // Filter by the value of the selected cell, when that cell is in this column.
+  const col = leafColumns.value.findIndex((c) => c.id === name)
+  if (cursor.value && cursor.value.col === col && filterable(kindByName.value.get(name))) {
+    const value = valueAt(cursor.value.row, col)
+    items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
+  }
+  return items
+})
+
+// ---- value dialog ---------------------------------------------------------------------------
+
+const dialogOpen = ref(false)
+const dialogColumn = ref<SchemaColumn | null>(null)
+const dialogValue = ref<unknown>(null)
+const dialogRow = ref<Record<string, unknown> | null>(null)
+
+const isTree = computed(() => {
+  const k = dialogColumn.value?.kind
+  return (k === 'json' || k === 'array') && typeof dialogValue.value === 'object' && dialogValue.value !== null
+})
+/** Plain text for everything that is not a tree: NULL, scalars, and binaries as their size. */
+const dialogText = computed(() => {
+  const v = dialogValue.value
+  if (v === null || v === undefined) return ''
+  if (typeof v === 'object') return JSON.stringify(v, null, 2)
+  return String(v)
+})
+const dialogCanFilter = computed(() => {
+  const kind = dialogColumn.value?.kind
+  return !!kind && kind !== 'binary' && kind !== 'json' && kind !== 'array' && dialogValue.value !== null
+})
+const dialogCanDownload = computed(
+  () => dialogColumn.value?.kind === 'binary' && props.primaryKey.length > 0 && dialogValue.value !== null,
+)
+
+function openValue(row: number, col: number): void {
+  const name = leafColumns.value[col]?.id
+  dialogColumn.value = props.columns.find((c) => c.name === name) ?? null
+  dialogValue.value = valueAt(row, col)
+  dialogRow.value = (modelRows.value[row]?.original ?? null) as Record<string, unknown> | null
+  dialogOpen.value = true
+}
+
+function filterByDialogValue(): void {
+  if (dialogColumn.value) emit('filterByValue', dialogColumn.value.name, dialogValue.value)
+  dialogOpen.value = false
+}
+
+function downloadDialogValue(): void {
+  if (dialogColumn.value && dialogRow.value) emit('download', dialogColumn.value.name, dialogRow.value)
+}
+</script>
+
+<template>
+  <UiContextMenu :items="menuItems">
+  <div
+    ref="scrollEl"
+    role="grid"
+    tabindex="0"
+    :aria-rowcount="rows.length"
+    class="font-data relative h-full select-none min-h-0 overflow-auto rounded-md border border-border bg-bg text-xs text-fg outline-none focus-visible:ring-1 focus-visible:ring-accent"
+    @keydown="onKeydown"
+    @scroll="onScroll"
+    @contextmenu="onContextMenu"
+  >
+    <div :style="{ width: `${totalWidth}px`, height: `${totalHeight}px`, position: 'relative' }">
+      <!-- Header: sticky to the top; its gutter stays on the left while the columns scroll. -->
+      <div
+        role="row"
+        class="sticky top-0 z-20 border-b border-border bg-bg-subtle"
+        :style="{ height: `${HEADER_HEIGHT}px`, width: `${totalWidth}px` }"
+      >
+        <div
+          class="sticky left-0 z-30 flex h-full items-center justify-center bg-bg-subtle text-[10px] text-fg-subtle"
+          :style="{ width: `${GUTTER_WIDTH}px` }"
+        >#</div>
+
+        <!-- Pinned headers follow the scroll. They are drawn after the others so they sit on top. -->
+        <div
+          v-for="pc in pinnedCols"
+          :key="`pinned-${pc.id}`"
+          class="absolute top-0 z-20 h-full bg-bg-subtle"
+          :style="{ left: pinnedLeft(pc.left), width: `${pc.width}px` }"
+          :data-pinned="pc.id"
+          :data-h="pc.id"
+        >
+          <button
+            type="button"
+            class="absolute right-1 top-1 z-30 flex size-4 items-center justify-center rounded-sm text-accent hover:text-fg"
+            :aria-label="t('grid.unpin')"
+            :title="t('grid.unpin')"
+            @click.stop="emit('togglePin', pc.id)"
+          >
+            <Icon name="lucide:pin-off" class="size-3" />
+          </button>
+          <button
+            type="button"
+            role="columnheader"
+            draggable="true"
+            class="flex h-full w-full min-w-0 items-center gap-1 border-r border-border px-2 text-left hover:bg-surface-hover"
+            :aria-sort="sortIndicator(pc.id) === 'asc' ? 'ascending' : sortIndicator(pc.id) === 'desc' ? 'descending' : 'none'"
+            @dragstart="dragging = pc.id"
+            @dragover.prevent
+            @drop.prevent="dropOn(pc.id)"
+            @click="toggleSort($event, pc.id)"
+          >
+            <span class="flex min-w-0 flex-col leading-tight">
+              <span class="flex items-center gap-1 truncate text-fg">
+                <Icon name="lucide:pin" class="size-3 shrink-0 text-accent" />
+                <Icon v-if="primaryKey.includes(pc.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
+                <span class="truncate">{{ pc.id }}</span>
+              </span>
+              <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === pc.id)?.nativeType }}</span>
+            </span>
+          </button>
+        </div>
+
+        <div
+          v-for="vc in virtualCols"
+          :key="String(vc.key)"
+          class="group absolute top-0 h-full"
+          :data-h="leafColumns[vc.index]!.id"
+          :style="{ left: `${GUTTER_WIDTH + vc.start}px`, width: `${vc.size}px` }"
+        >
+          <button
+            type="button"
+            role="columnheader"
+            draggable="true"
+            class="flex h-full w-full min-w-0 items-center gap-1 border-r border-border px-2 text-left hover:bg-surface-hover"
+            :aria-sort="sortIndicator(leafColumns[vc.index]!.id) === 'asc' ? 'ascending' : sortIndicator(leafColumns[vc.index]!.id) === 'desc' ? 'descending' : 'none'"
+            @dragstart="dragging = leafColumns[vc.index]!.id"
+            @dragover.prevent
+            @drop.prevent="dropOn(leafColumns[vc.index]!.id)"
+            @click="toggleSort($event, leafColumns[vc.index]!.id)"
+          >
+            <span class="flex min-w-0 flex-col leading-tight">
+              <span class="flex items-center gap-1 truncate text-fg">
+                <Icon v-if="primaryKey.includes(leafColumns[vc.index]!.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
+                <Icon v-else-if="foreignKeys.includes(leafColumns[vc.index]!.id)" name="lucide:link" class="size-3 shrink-0 text-accent" :aria-label="t('grid.foreignKey')" />
+                <span class="truncate">{{ leafColumns[vc.index]!.id }}</span>
+              </span>
+              <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === leafColumns[vc.index]!.id)?.nativeType }}</span>
+            </span>
+            <Icon
+              v-if="sortIndicator(leafColumns[vc.index]!.id)"
+              :name="sortIndicator(leafColumns[vc.index]!.id) === 'asc' ? 'lucide:arrow-up' : 'lucide:arrow-down'"
+              class="ml-auto size-3 shrink-0 text-accent"
+              :aria-label="sortIndicator(leafColumns[vc.index]!.id) === 'asc' ? t('grid.sortAscending') : t('grid.sortDescending')"
+            />
+          </button>
+          <!-- Pin toggle and the drag handle on the right edge (resizes the column, saved on release). -->
+          <button
+            type="button"
+            class="absolute right-2 top-1 hidden size-4 items-center justify-center rounded-sm text-fg-subtle hover:text-accent group-hover:flex"
+            :aria-label="t('grid.pin')"
+            :title="t('grid.pin')"
+            @click.stop="emit('togglePin', leafColumns[vc.index]!.id)"
+          >
+            <Icon name="lucide:pin" class="size-3" />
+          </button>
+          <span
+            role="separator"
+            aria-orientation="vertical"
+            class="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-accent/40"
+            @pointerdown="startResize($event, leafColumns[vc.index]!.id)"
+            @click.stop
+          />
+        </div>
+      </div>
+
+      <!-- Skeleton rows while the first page is on its way. -->
+      <div
+        v-if="loading && rows.length === 0"
+        class="absolute left-0 right-0 space-y-2 p-2"
+        :style="{ top: `${HEADER_HEIGHT}px`, width: `${totalWidth}px` }"
+      >
+        <UiSkeleton v-for="i in 8" :key="i" class="h-4" />
+      </div>
+
+      <!-- Body: each row is placed at its virtual offset; cells at their column offsets. -->
+      <div
+        v-for="vr in virtualRows"
+        :key="String(vr.key)"
+        role="row"
+        class="absolute left-0 flex border-b border-border/60 hover:bg-surface/60"
+        :style="{ top: `${HEADER_HEIGHT + vr.start}px`, height: `${ROW_HEIGHT}px`, width: `${totalWidth}px` }"
+      >
+        <div
+          class="sticky left-0 z-10 flex h-full items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums"
+          :style="{ width: `${GUTTER_WIDTH}px` }"
+        >{{ (startIndex ?? 0) + vr.index + 1 }}</div>
+        <div
+          v-for="pc in pinnedCols"
+          :key="`pinned-${pc.id}`"
+          role="gridcell"
+          class="absolute top-0 z-10 flex h-full min-w-0 items-center overflow-hidden border-r border-border bg-bg px-2"
+          :class="inRange(vr.index, pc.index) && 'bg-accent-soft'"
+          :data-r="vr.index"
+          :data-c="pc.index"
+          :style="{ left: pinnedLeft(pc.left), width: `${pc.width}px` }"
+          @mousedown="select(vr.index, pc.index, $event.shiftKey)"
+          @dblclick="openValue(vr.index, pc.index)"
+        >
+          <CellValue
+            v-if="modelRows[vr.index]"
+            :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
+            :kind="kindByName.get(pc.id) ?? 'other'"
+          />
+        </div>
+        <div
+          v-for="vc in virtualCols"
+          :key="String(vc.key)"
+          role="gridcell"
+          class="absolute top-0 flex h-full min-w-0 items-center overflow-hidden border-r border-border/40 px-2"
+          :class="inRange(vr.index, vc.index) && 'bg-accent-soft'"
+          :data-r="vr.index"
+          :data-c="vc.index"
+          :style="{ left: `${GUTTER_WIDTH + vc.start}px`, width: `${vc.size}px` }"
+          @mousedown="select(vr.index, vc.index, $event.shiftKey)"
+          @dblclick="openValue(vr.index, vc.index)"
+        >
+          <CellValue
+            v-if="modelRows[vr.index]"
+            :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
+            :kind="kindByName.get(leafColumns[vc.index]!.id) ?? 'other'"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="loading" class="pointer-events-none absolute right-2 top-2 z-30 flex items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-fg-muted">
+      <Icon name="lucide:loader-circle" class="size-3 animate-spin" />
+      <span>{{ t('grid.loading') }}</span>
+    </div>
+
+    <UiDialog v-model:open="dialogOpen" :title="dialogColumn?.name ?? ''" :description="dialogColumn?.nativeType">
+      <JsonTree v-if="isTree" :value="dialogValue" class="max-h-96 overflow-auto rounded-md border border-border bg-bg-subtle p-2" />
+      <pre v-else class="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-md border border-border bg-bg-subtle p-2 text-xs text-fg">{{ dialogText || t('grid.null') }}</pre>
+      <template #footer>
+        <UiButton size="sm" variant="secondary" @click="copyText(dialogText || (isTree ? JSON.stringify(dialogValue) : ''))">{{ t('grid.copy') }}</UiButton>
+        <UiButton v-if="dialogCanDownload" size="sm" variant="secondary" @click="downloadDialogValue">{{ t('grid.download') }}</UiButton>
+        <UiButton v-if="dialogCanFilter" size="sm" variant="secondary" @click="filterByDialogValue">{{ t('grid.filterByValue') }}</UiButton>
+      </template>
+    </UiDialog>
+  </div>
+  </UiContextMenu>
+</template>

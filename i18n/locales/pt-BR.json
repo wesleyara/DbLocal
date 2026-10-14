@@ -5,7 +5,14 @@
   "common": {
     "close": "Fechar",
     "save": "Salvar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "duplicate": "Duplicar",
+    "expand": "Expandir",
+    "collapse": "Recolher",
+    "name": "Nome",
+    "yes": "Sim",
+    "no": "Não"
   },
   "theme": {
     "dark": "Escuro",
@@ -65,5 +72,185 @@
     "tabTwo": "Segunda",
     "emptyTitle": "Nada aqui",
     "emptyDesc": "Este é um estado vazio."
+  },
+  "connections": {
+    "title": "Conexões",
+    "new": "Nova conexão",
+    "edit": "Editar conexão",
+    "empty": "Nenhuma conexão ainda",
+    "emptyHint": "Adicione uma conexão com Postgres, MySQL ou SQLite para começar.",
+    "search": "Buscar conexões",
+    "noMatches": "Nenhuma conexão corresponde à busca.",
+    "lastUsed": "Último uso {when}",
+    "neverUsed": "Nunca usada",
+    "open": "Abrir",
+    "actions": "Ações",
+    "tabs": {
+      "general": "Geral",
+      "ssl": "SSL",
+      "ssh": "SSH",
+      "advanced": "Avançado"
+    },
+    "fields": {
+      "name": "Nome",
+      "dialect": "Dialeto",
+      "connectionString": "String de conexão",
+      "connectionStringHint": "Cole uma URL para preencher os campos abaixo.",
+      "connectionStringInvalid": "Essa string de conexão não é válida para o dialeto escolhido.",
+      "host": "Host",
+      "port": "Porta",
+      "user": "Usuário",
+      "password": "Senha",
+      "passwordStored": "Salva. Deixe em branco para manter.",
+      "database": "Banco",
+      "filePath": "Caminho do arquivo",
+      "environment": "Ambiente",
+      "color": "Cor",
+      "readonly": "Somente leitura",
+      "readonlyHint": "Bloqueia qualquer escrita do DbLocal nesta conexão.",
+      "defaultSchema": "Schema padrão"
+    },
+    "colors": {
+      "accent": "Azul",
+      "success": "Verde",
+      "warning": "Âmbar",
+      "danger": "Vermelho",
+      "neutral": "Cinza"
+    },
+    "ssl": {
+      "mode": "Modo SSL",
+      "disable": "Desativado",
+      "require": "Exigir (criptografa, sem checar certificado)",
+      "verifyCa": "Verificar CA",
+      "verifyFull": "Verificar CA e nome do host",
+      "ca": "Certificado da CA (PEM)",
+      "cert": "Certificado do cliente (PEM)",
+      "key": "Chave do cliente (PEM)",
+      "stored": "Salvo. Deixe em branco para manter."
+    },
+    "ssh": {
+      "enabled": "Conectar por túnel SSH",
+      "host": "Host do bastion",
+      "port": "Porta do bastion",
+      "user": "Usuário do bastion",
+      "authMethod": "Autenticação",
+      "password": "Senha do bastion",
+      "privateKey": "Chave privada (PEM)",
+      "passphrase": "Senha da chave",
+      "authPassword": "Senha",
+      "authKey": "Chave privada",
+      "stored": "Salvo. Deixe em branco para manter."
+    },
+    "test": {
+      "button": "Testar conexão",
+      "ok": "Conectado ao {version} em {latency} ms",
+      "failed": "Falha na conexão"
+    },
+    "delete": {
+      "title": "Excluir conexão?",
+      "description": "“{name}” e as configurações salvas serão removidas do DbLocal. O banco em si não é alterado.",
+      "confirm": "Excluir"
+    },
+    "toast": {
+      "saved": "Conexão salva",
+      "duplicated": "Conexão duplicada",
+      "deleted": "Conexão excluída"
+    },
+    "duplicate": "Duplicar",
+    "form": {
+      "createTitle": "Nova conexão",
+      "editTitle": "Editar conexão",
+      "createDescription": "Salva nesta máquina. As senhas são criptografadas.",
+      "editDescription": "Deixe a senha em branco para manter a salva."
+    },
+    "pickSchema": "Escolha um schema",
+    "connectionError": "Não foi possível conectar"
+  },
+  "schema": {
+    "label": "Schema",
+    "databaseLabel": "Banco",
+    "showSystem": "Mostrar schemas do sistema",
+    "empty": "Nenhum schema encontrado",
+    "pick": "Escolha um schema"
+  },
+  "errors": {
+    "auth": "Usuário ou senha incorretos.",
+    "network": "Não foi possível alcançar o servidor. Verifique host e porta.",
+    "timeout": "O servidor não respondeu a tempo.",
+    "syntax": "As configurações da conexão estão incompletas ou inválidas.",
+    "constraint": "A alteração viola uma restrição.",
+    "permission": "O usuário não tem permissão para isso.",
+    "unknown": "Algo deu errado.",
+    "notFound": "Esta conexão não existe mais.",
+    "invalid": "Verifique os campos destacados."
+  },
+  "schemaTree": {
+    "label": "Tabelas",
+    "filter": "Filtrar tabelas",
+    "tables": "Tabelas",
+    "views": "Views",
+    "refresh": "Atualizar schema",
+    "addVirtual": "Adicionar relação virtual",
+    "noTables": "Nenhuma tabela neste schema",
+    "noMatches": "Nenhuma tabela corresponde ao filtro",
+    "columns": "Colunas",
+    "relations": "Relações",
+    "noRelations": "Sem relações",
+    "primaryKey": "Chave primária",
+    "foreignKey": "Chave estrangeira",
+    "nullable": "NULL",
+    "notNull": "NOT NULL",
+    "rowsEstimate": "~{count} linhas",
+    "virtual": "virtual",
+    "openTable": "Abrir tabela",
+    "copyName": "Copiar nome",
+    "nameCopied": "Nome copiado",
+    "generateSelect": "Gerar SELECT",
+    "selectCopied": "SELECT copiado. O editor SQL ainda não está disponível.",
+    "setDisplay": "Definir coluna de exibição",
+    "displayTitle": "Coluna de exibição de {table}",
+    "displayColumn": "Coluna de exibição",
+    "displayHint": "Ela aparece quando um registro desta tabela é referenciado em outra tabela.",
+    "automatic": "Automática",
+    "saved": "Coluna de exibição salva",
+    "refreshed": "Schema atualizado"
+  },
+  "virtualRelations": {
+    "title": "Relações virtuais",
+    "description": "Relações sem chave estrangeira no banco. A navegação as trata como as demais.",
+    "empty": "Nenhuma relação virtual ainda.",
+    "add": "Adicionar relação",
+    "edit": "Editar relação",
+    "remove": "Excluir relação",
+    "name": "Nome (opcional)",
+    "fromTable": "Tabela de origem",
+    "fromColumn": "Coluna de origem",
+    "toTable": "Tabela de destino",
+    "toColumn": "Coluna de destino",
+    "cardinality": "Cardinalidade",
+    "cardinalityOptions": {
+      "manyToOne": "Muitos para um (N:1)",
+      "oneToMany": "Um para muitos (1:N)",
+      "oneToOne": "Um para um (1:1)",
+      "manyToMany": "Muitos para muitos (N:N)"
+    },
+    "save": "Salvar relação",
+    "saved": "Relação virtual salva",
+    "removed": "Relação virtual excluída",
+    "pickColumns": "Escolha tabela e coluna dos dois lados.",
+    "issue": {
+      "tableNotFound": "A tabela \"{table}\" não existe.",
+      "columnNotFound": "A coluna \"{column}\" não existe em \"{table}\".",
+      "incompatibleKinds": "\"{from}\" e \"{to}\" têm tipos incompatíveis.",
+      "duplicate": "Esta relação já existe."
+    }
+  },
+  "tableView": {
+    "notFound": "Esta tabela não está no schema atual.",
+    "columns": "Colunas",
+    "relations": "Relações",
+    "outgoing": "Aponta para",
+    "incoming": "Referenciada por",
+    "view": "View"
   }
 }

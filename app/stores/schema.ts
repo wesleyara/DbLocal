@@ -1,0 +1,101 @@
+import { defineStore } from 'pinia'
+import type { VirtualRelationInput } from '#shared/schemas/virtual-relation'
+import type { RelationGraph, SchemaResponse, SchemaSnapshot, VirtualRelationDef } from '#shared/types/db'
+
+/**
+ * The schema the workspace is browsing: snapshot, relation graph and the connection's virtual
+ * relations. Shared by the sidebar tree, the table view and the virtual relations dialog.
+ */
+export const useSchemaStore = defineStore('schema', () => {
+  const connectionId = ref<string | null>(null)
+  const schema = ref<string | null>(null)
+  const snapshot = shallowRef<SchemaSnapshot | null>(null)
+  const graph = shallowRef<RelationGraph | null>(null)
+  const virtual = ref<VirtualRelationDef[]>([])
+  const loading = ref(false)
+  const error = ref<unknown>(null)
+
+  const tables = computed(() => snapshot.value?.tables ?? [])
+  const dialect = computed(() => snapshot.value?.dialect ?? null)
+
+  function schemaQuery(name: string | null): string {
+    return name ? `?schema=${encodeURIComponent(name)}` : ''
+  }
+
+  /** Loads the schema for a connection. `refresh` drops the server cache and introspects again. */
+  async function load(id: string, name: string | null = schema.value, refresh = false): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = refresh
+        ? await $fetch<SchemaResponse>(`/api/c/${id}/schema/refresh${schemaQuery(name)}`, { method: 'POST' })
+        : await $fetch<SchemaResponse>(`/api/c/${id}/schema${schemaQuery(name)}`)
+      connectionId.value = id
+      schema.value = res.snapshot.schema
+      snapshot.value = res.snapshot
+      graph.value = res.graph
+      virtual.value = await $fetch<VirtualRelationDef[]>(
+        `/api/c/${id}/virtual-relations${schemaQuery(res.snapshot.schema)}`,
+      )
+    } catch (err) {
+      error.value = err
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** Loads only when the connection or schema differs from what is already in memory. */
+  async function ensure(id: string, name: string | null): Promise<void> {
+    if (connectionId.value === id && (name === null || schema.value === name) && snapshot.value) return
+    await load(id, name)
+  }
+
+  /** Reloads the graph after a change to virtual relations or display columns. */
+  async function reload(): Promise<void> {
+    if (connectionId.value) await load(connectionId.value, schema.value)
+  }
+
+  async function addVirtual(input: VirtualRelationInput): Promise<void> {
+    await $fetch(`/api/c/${connectionId.value}/virtual-relations`, { method: 'POST', body: input })
+    await reload()
+  }
+
+  async function updateVirtual(relationId: string, input: VirtualRelationInput): Promise<void> {
+    await $fetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'PATCH', body: input })
+    await reload()
+  }
+
+  async function removeVirtual(relationId: string): Promise<void> {
+    await $fetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'DELETE' })
+    await reload()
+  }
+
+  /** `column: null` clears the override and goes back to the inferred display column. */
+  async function setDisplayColumn(table: string, column: string | null): Promise<void> {
+    await $fetch(`/api/c/${connectionId.value}/display-column`, {
+      method: 'PUT',
+      body: { schema: schema.value, table, column },
+    })
+    await reload()
+  }
+
+  return {
+    connectionId,
+    schema,
+    snapshot,
+    graph,
+    virtual,
+    loading,
+    error,
+    tables,
+    dialect,
+    load,
+    ensure,
+    reload,
+    addVirtual,
+    updateVirtual,
+    removeVirtual,
+    setDisplayColumn,
+  }
+})

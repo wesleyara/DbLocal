@@ -5,7 +5,14 @@
   "common": {
     "close": "Close",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "name": "Name",
+    "yes": "Yes",
+    "no": "No"
   },
   "theme": {
     "dark": "Dark",
@@ -65,5 +72,185 @@
     "tabTwo": "Second",
     "emptyTitle": "Nothing here",
     "emptyDesc": "This is an empty state."
+  },
+  "connections": {
+    "title": "Connections",
+    "new": "New connection",
+    "edit": "Edit connection",
+    "empty": "No connections yet",
+    "emptyHint": "Add a connection to Postgres, MySQL or SQLite to start browsing.",
+    "search": "Search connections",
+    "noMatches": "No connection matches your search.",
+    "lastUsed": "Last used {when}",
+    "neverUsed": "Never used",
+    "open": "Open",
+    "actions": "Actions",
+    "tabs": {
+      "general": "General",
+      "ssl": "SSL",
+      "ssh": "SSH",
+      "advanced": "Advanced"
+    },
+    "fields": {
+      "name": "Name",
+      "dialect": "Dialect",
+      "connectionString": "Connection string",
+      "connectionStringHint": "Paste a URL to fill the fields below.",
+      "connectionStringInvalid": "This connection string is not valid for the selected dialect.",
+      "host": "Host",
+      "port": "Port",
+      "user": "User",
+      "password": "Password",
+      "passwordStored": "Stored. Leave blank to keep it.",
+      "database": "Database",
+      "filePath": "File path",
+      "environment": "Environment",
+      "color": "Colour",
+      "readonly": "Read-only",
+      "readonlyHint": "Blocks every write from DbLocal to this connection.",
+      "defaultSchema": "Default schema"
+    },
+    "colors": {
+      "accent": "Blue",
+      "success": "Green",
+      "warning": "Amber",
+      "danger": "Red",
+      "neutral": "Gray"
+    },
+    "ssl": {
+      "mode": "SSL mode",
+      "disable": "Disabled",
+      "require": "Require (encrypt, no certificate check)",
+      "verifyCa": "Verify CA",
+      "verifyFull": "Verify CA and host name",
+      "ca": "CA certificate (PEM)",
+      "cert": "Client certificate (PEM)",
+      "key": "Client key (PEM)",
+      "stored": "Stored. Leave blank to keep it."
+    },
+    "ssh": {
+      "enabled": "Connect through an SSH tunnel",
+      "host": "Bastion host",
+      "port": "Bastion port",
+      "user": "Bastion user",
+      "authMethod": "Authentication",
+      "password": "Bastion password",
+      "privateKey": "Private key (PEM)",
+      "passphrase": "Key passphrase",
+      "authPassword": "Password",
+      "authKey": "Private key",
+      "stored": "Stored. Leave blank to keep it."
+    },
+    "test": {
+      "button": "Test connection",
+      "ok": "Connected to {version} in {latency} ms",
+      "failed": "Connection failed"
+    },
+    "delete": {
+      "title": "Delete connection?",
+      "description": "“{name}” and its saved settings will be removed from DbLocal. The database itself is not touched.",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "saved": "Connection saved",
+      "duplicated": "Connection duplicated",
+      "deleted": "Connection deleted"
+    },
+    "duplicate": "Duplicate",
+    "form": {
+      "createTitle": "New connection",
+      "editTitle": "Edit connection",
+      "createDescription": "Saved on this machine. Passwords are encrypted.",
+      "editDescription": "Leave a password blank to keep the stored one."
+    },
+    "pickSchema": "Choose a schema",
+    "connectionError": "Could not connect"
+  },
+  "schema": {
+    "label": "Schema",
+    "databaseLabel": "Database",
+    "showSystem": "Show system schemas",
+    "empty": "No schemas found",
+    "pick": "Choose a schema"
+  },
+  "errors": {
+    "auth": "Wrong user or password.",
+    "network": "Could not reach the server. Check the host and port.",
+    "timeout": "The server did not answer in time.",
+    "syntax": "The connection settings are incomplete or invalid.",
+    "constraint": "The change violates a constraint.",
+    "permission": "The user is not allowed to do this.",
+    "unknown": "Something went wrong.",
+    "notFound": "This connection no longer exists.",
+    "invalid": "Check the highlighted fields."
+  },
+  "schemaTree": {
+    "label": "Tables",
+    "filter": "Filter tables",
+    "tables": "Tables",
+    "views": "Views",
+    "refresh": "Refresh schema",
+    "addVirtual": "Add virtual relation",
+    "noTables": "No tables in this schema",
+    "noMatches": "No table matches the filter",
+    "columns": "Columns",
+    "relations": "Relations",
+    "noRelations": "No relations",
+    "primaryKey": "Primary key",
+    "foreignKey": "Foreign key",
+    "nullable": "NULL",
+    "notNull": "NOT NULL",
+    "rowsEstimate": "~{count} rows",
+    "virtual": "virtual",
+    "openTable": "Open table",
+    "copyName": "Copy name",
+    "nameCopied": "Name copied",
+    "generateSelect": "Generate SELECT",
+    "selectCopied": "SELECT copied. The SQL editor is not available yet.",
+    "setDisplay": "Set display column",
+    "displayTitle": "Display column of {table}",
+    "displayColumn": "Display column",
+    "displayHint": "Shown when a row of this table is referenced from another table.",
+    "automatic": "Automatic",
+    "saved": "Display column saved",
+    "refreshed": "Schema refreshed"
+  },
+  "virtualRelations": {
+    "title": "Virtual relations",
+    "description": "Relations with no foreign key in the database. Navigation treats them like any other relation.",
+    "empty": "No virtual relations yet.",
+    "add": "Add relation",
+    "edit": "Edit relation",
+    "remove": "Delete relation",
+    "name": "Name (optional)",
+    "fromTable": "From table",
+    "fromColumn": "From column",
+    "toTable": "To table",
+    "toColumn": "To column",
+    "cardinality": "Cardinality",
+    "cardinalityOptions": {
+      "manyToOne": "Many to one (N:1)",
+      "oneToMany": "One to many (1:N)",
+      "oneToOne": "One to one (1:1)",
+      "manyToMany": "Many to many (N:N)"
+    },
+    "save": "Save relation",
+    "saved": "Virtual relation saved",
+    "removed": "Virtual relation deleted",
+    "pickColumns": "Pick the table and column on both sides.",
+    "issue": {
+      "tableNotFound": "Table \"{table}\" does not exist.",
+      "columnNotFound": "Column \"{column}\" does not exist in \"{table}\".",
+      "incompatibleKinds": "\"{from}\" and \"{to}\" have incompatible types.",
+      "duplicate": "This relation already exists."
+    }
+  },
+  "tableView": {
+    "notFound": "This table is not in the current schema.",
+    "columns": "Columns",
+    "relations": "Relations",
+    "outgoing": "Points to",
+    "incoming": "Referenced by",
+    "view": "View"
   }
 }

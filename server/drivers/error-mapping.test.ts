@@ -39,6 +39,7 @@ describe('driver error mapping', () => {
     })
     expect(mapSshError(auth).code).toBe('auth')
     expect(mapSshError(new Error('Timed out while waiting for handshake')).code).toBe('timeout')
+    expect(mapSshError(new Error('Cannot parse privateKey: Encrypted private OpenSSH key detected')).code).toBe('auth')
     expect(mapSshError(withCode('ECONNREFUSED')).code).toBe('network')
   })
 

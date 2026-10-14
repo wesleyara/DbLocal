@@ -1,7 +1,10 @@
 <script setup lang="ts">
 const { t, locale, locales, setLocale } = useI18n()
 const ui = useUiStore()
+const route = useRoute()
 const status = await useFetch('/api/auth/status')
+const connectionId = computed(() => route.params.connectionId as string | undefined)
+const schema = computed(() => route.params.schema as string | undefined)
 
 const themes = computed(() => [
   { value: 'dark', label: t('theme.dark') },
@@ -62,10 +65,23 @@ function onResize(e: PointerEvent) {
     <div class="flex min-h-0 flex-1" @pointermove="onResize" @pointerup="dragging = false">
       <aside
         v-if="!ui.sidebarCollapsed"
-        class="relative hidden shrink-0 border-r border-border bg-bg-subtle sm:block"
+        class="relative hidden shrink-0 flex-col border-r border-border bg-bg-subtle sm:flex"
         :style="{ width: `${ui.sidebarWidth}px` }"
       >
+        <ConnectionsSchemaSelector
+          v-if="connectionId"
+          :key="connectionId"
+          :connection-id="connectionId"
+          :current="schema"
+        />
+        <SchemaTree
+          v-if="connectionId"
+          :key="connectionId"
+          :connection-id="connectionId"
+          :schema="schema"
+        />
         <UiEmptyState
+          v-else
           icon="lucide:database"
           :title="t('shell.noConnection')"
           :description="t('shell.noConnectionHint')"

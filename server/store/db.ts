@@ -3,6 +3,7 @@ import { Kysely, SqliteDialect } from 'kysely'
 import { Migrator, type MigrationProvider } from 'kysely/migration'
 import { join } from 'node:path'
 import * as m001 from './migrations/001_initial'
+import * as m002 from './migrations/002_connection_meta'
 
 export interface StoreSchema {
   connections: {
@@ -13,6 +14,8 @@ export interface StoreSchema {
     environment: 'local' | 'staging' | 'prod'
     color: string | null
     readonly: number
+    default_schema: string | null
+    last_used_at: string | null
     created_at: string
     updated_at: string
   }
@@ -47,7 +50,7 @@ export interface StoreSchema {
 
 const provider: MigrationProvider = {
   async getMigrations() {
-    return { '001_initial': m001 }
+    return { '001_initial': m001, '002_connection_meta': m002 }
   },
 }
 

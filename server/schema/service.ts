@@ -2,7 +2,7 @@ import type { Kysely } from 'kysely'
 import type { RelationGraph, SchemaSnapshot } from '#shared/types/db'
 import { buildDriverConfig } from '../connections/config'
 import { getConnection, loadDraft } from '../connections/repository'
-import { createDriver, getPoolManager } from '../drivers'
+import { createDriver, getPoolManager, type Driver } from '../drivers'
 import type { StoreSchema } from '../store/db'
 import { buildRelationGraph } from './relation-graph'
 import type { VirtualRelationInput } from '#shared/schemas/virtual-relation'
@@ -49,9 +49,7 @@ export async function readSchema(
   let snapshot = options.refresh ? undefined : snapshots.get(key)
   const cached = snapshot !== undefined
   if (!snapshot) {
-    const config = buildDriverConfig(await loadDraft(db, connectionId), connectionId)
-    const driver = await getPoolManager().get(config, createDriver)
-    snapshot = await driver.introspect(schema)
+    snapshot = await (await connectionDriver(db, connectionId)).introspect(schema)
     snapshots.set(key, snapshot)
   }
 
@@ -59,6 +57,12 @@ export async function readSchema(
   const overrides = await getDisplayOverrides(db, connectionId, schema)
   const graph = buildRelationGraph(snapshot, virtual, { displayOverrides: overrides })
   return { snapshot, graph, cached }
+}
+
+/** The pooled driver of a saved connection (the pool is created on first use). */
+export async function connectionDriver(db: Db, connectionId: string): Promise<Driver> {
+  const config = buildDriverConfig(await loadDraft(db, connectionId), connectionId)
+  return getPoolManager().get(config, createDriver)
 }
 
 /** Loads the snapshot only (validation of virtual relations needs it, without the graph). */

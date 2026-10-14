@@ -66,7 +66,7 @@ function toggle(name: string) {
 
 function openTable(name: string) {
   active.value = name
-  void navigateTo({ path: `/c/${props.connectionId}/${encodeURIComponent(props.schema ?? store.schema ?? '')}`, query: { table: name } })
+  void navigateTo(`/c/${props.connectionId}/${encodeURIComponent(props.schema ?? store.schema ?? '')}/t/${encodeURIComponent(name)}`)
 }
 
 /** Quotes identifiers the way the dialect expects. */
@@ -150,8 +150,51 @@ function onKeydown(e: KeyboardEvent) {
   nextTick(() => document.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(active.value!)}"]`)?.focus())
 }
 
+/**
+ * Tables without a catalogue estimate (Postgres before ANALYZE, SQLite) get their count on demand,
+ * the same one the grid footer uses. Views are skipped: counting one can run an expensive query.
+ */
+const counted = ref(new Map<string, number>())
+const requested = new Set<string>()
+const MAX_PARALLEL = 3
+
+async function fetchMissingCounts(): Promise<void> {
+  const schemaName = props.schema ?? store.schema ?? ''
+  const pending = store.tables.filter(
+    (tb) => tb.kind === 'table' && tb.rowEstimate === null && !requested.has(`${props.connectionId}|${schemaName}|${tb.name}`),
+  )
+  const queue = [...pending]
+  const worker = async () => {
+    for (let tb = queue.shift(); tb; tb = queue.shift()) {
+      requested.add(`${props.connectionId}|${schemaName}|${tb.name}`)
+      try {
+        const res = await $fetch<{ count: number }>(`/api/c/${props.connectionId}/tables/${encodeURIComponent(tb.name)}/count`, {
+          method: 'POST',
+          body: { schema: schemaName, filter: null, exact: false },
+        })
+        counted.value = new Map(counted.value).set(tb.name, res.count)
+      } catch {
+        // No count is not an error for the sidebar: the row simply shows none.
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, worker))
+}
+
+watch(
+  () => store.tables,
+  () => {
+    counted.value = new Map()
+    void fetchMissingCounts()
+  },
+  { immediate: true },
+)
+
 function rowsLabel(tb: SchemaTable): string | null {
-  if (tb.rowEstimate === null) return null
+  if (tb.rowEstimate === null) {
+    const exact = counted.value.get(tb.name)
+    return exact === undefined ? null : t('schemaTree.rowsExact', { count: formatNumber(exact, { notation: 'compact', maximumFractionDigits: 1 }) })
+  }
   return t('schemaTree.rowsEstimate', { count: formatNumber(tb.rowEstimate, { notation: 'compact', maximumFractionDigits: 1 }) })
 }
 

@@ -1,5 +1,6 @@
 import type { ZodType } from 'zod'
 import { isDriverError } from '../drivers/errors'
+import { QueryInputError } from '../query/errors'
 import { ConnectionNotFoundError } from './repository'
 
 /** Validates a request body. Invalid input becomes a 400 carrying the zod issues. */
@@ -24,6 +25,10 @@ export async function run<T>(fn: () => Promise<T>): Promise<T> {
     }
     if (isDriverError(err)) {
       throw createError({ statusCode: err.httpStatus, statusMessage: err.message, data: { code: err.code } })
+    }
+    if (err instanceof QueryInputError) {
+      // The message goes in `data`: the status line must stay ASCII, column names may not be.
+      throw createError({ statusCode: err.status, statusMessage: 'Invalid request', data: { message: err.message } })
     }
     throw err
   }

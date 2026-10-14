@@ -3,6 +3,8 @@ import { accessSync, constants } from 'node:fs'
 import { DriverError, isDriverError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectSqlite } from './introspect/sqlite'
+import { compileCount, compileRows } from '../query/compile'
+import type { RowsPlan } from '#shared/types/rows'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
 /** Maps a better-sqlite3 error (`code` is the SQLite result code name) to a normalised DriverError. */
@@ -16,6 +18,11 @@ export function mapSqliteError(err: unknown): DriverError {
   if (code === 'SQLITE_BUSY' || code === 'SQLITE_LOCKED') return new DriverError('timeout', message, err)
   if (code.startsWith('SQLITE_CONSTRAINT')) return new DriverError('constraint', message, err)
   return new DriverError('unknown', message, err)
+}
+
+/** better-sqlite3 binds numbers, strings, bigints, buffers and null only: booleans become 0 / 1. */
+function bind(params: readonly unknown[]): unknown[] {
+  return params.map((p) => (typeof p === 'boolean' ? (p ? 1 : 0) : p))
 }
 
 export async function createSqliteDriver(config: DriverConfig): Promise<Driver> {
@@ -60,6 +67,17 @@ class SqliteDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectSqlite(<R>(sql: string) => Promise.resolve(this.run<R[]>(sql, (stmt) => stmt.all())), schema)
+  }
+
+  async readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {
+    const q = compileRows(plan)
+    return this.run<Record<string, unknown>[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))
+  }
+
+  async countRows(plan: RowsPlan): Promise<number> {
+    const q = compileCount(plan)
+    const [row] = this.run<{ count: number }[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))
+    return Number(row?.count ?? 0)
   }
 
   async close(): Promise<void> {

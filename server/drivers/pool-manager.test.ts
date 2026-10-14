@@ -10,6 +10,8 @@ function fakeDriver(): Driver & { closed: boolean } {
     testConnection: async () => ({ serverVersion: 'fake', latencyMs: 1 }),
     listDatabases: async () => [],
     listSchemas: async () => [],
+    readRows: async () => [],
+    countRows: async () => 0,
     introspect: async (schema: string) => ({ dialect: 'postgres' as const, schema, tables: [], readAt: '' }),
     close: async () => {
       driver.closed = true

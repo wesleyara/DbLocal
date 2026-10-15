@@ -582,7 +582,8 @@
     "dropOnColumn": "Solte sobre uma coluna de outra tabela",
     "linkFailed": "Não foi possível criar a relação",
     "loadFailed": "Não foi possível carregar o schema",
-    "empty": "Este schema não tem tabelas"
+    "empty": "Este schema não tem tabelas",
+    "nullable": "Aceita NULL"
   },
   "palette": {
     "title": "Paleta de comandos",

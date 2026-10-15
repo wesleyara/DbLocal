@@ -51,6 +51,7 @@ const nav = useRelationNav({ connectionId: props.connectionId, schema: props.sch
 
 const primaryKey = computed(() => (props.table.implicitRowid ? [] : props.table.primaryKey))
 const foreignKeys = computed(() => props.table.foreignKeys.flatMap((fk) => fk.columns))
+const uniques = computed(() => props.table.indexes.filter((i) => i.unique && !i.primary).map((i) => i.columns))
 
 // ---- editing: which tables and connections allow it ------------------------------------------
 
@@ -834,6 +835,7 @@ onMounted(() => state.start())
         :sort="state.sort.value"
         :primary-key="primaryKey"
         :foreign-keys="foreignKeys"
+        :uniques="uniques"
         :pickable="pickableColumns"
         :widths="state.prefs.value.widths"
         :loading="state.loading.value"

@@ -582,7 +582,8 @@
     "dropOnColumn": "Drop on a column of another table",
     "linkFailed": "Could not create the relation",
     "loadFailed": "Could not load the schema",
-    "empty": "This schema has no tables"
+    "empty": "This schema has no tables",
+    "nullable": "Nullable"
   },
   "palette": {
     "title": "Command palette",

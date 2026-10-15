@@ -37,6 +37,8 @@ const props = defineProps<{
   sort: SortItem[]
   primaryKey: string[]
   foreignKeys: string[]
+  /** Column lists of the table's unique indexes (primary key excluded), for the header markers. */
+  uniques?: string[][]
   /** Saved widths in px by column name. Columns without one use the default for their kind. */
   widths?: Record<string, number>
   loading?: boolean
@@ -697,6 +699,7 @@ function downloadDialogValue(): void {
                 <Icon name="lucide:pin" class="size-3 shrink-0 text-accent" />
                 <Icon v-if="primaryKey.includes(pc.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
                 <span class="truncate">{{ labelOf(pc.id) }}</span>
+                <GridColumnMarks :column="columns.find((c) => c.name === pc.id)" :primary-key="primaryKey.includes(pc.id)" :uniques="uniques ?? []" />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === pc.id)?.nativeType }}</span>
             </span>
@@ -727,6 +730,11 @@ function downloadDialogValue(): void {
                 <Icon v-else-if="foreignKeys.includes(leafColumns[vc.index]!.id)" name="lucide:link" class="size-3 shrink-0 text-accent" :aria-label="t('grid.foreignKey')" />
                 <Icon v-else-if="isRelationColumn(leafColumns[vc.index]!.id)" name="lucide:git-fork" class="size-3 shrink-0 text-accent" />
                 <span class="truncate">{{ labelOf(leafColumns[vc.index]!.id) }}</span>
+                <GridColumnMarks
+                  :column="columns.find((c) => c.name === leafColumns[vc.index]!.id)"
+                  :primary-key="primaryKey.includes(leafColumns[vc.index]!.id)"
+                  :uniques="uniques ?? []"
+                />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === leafColumns[vc.index]!.id)?.nativeType }}</span>
             </span>

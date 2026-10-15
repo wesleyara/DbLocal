@@ -6,6 +6,8 @@ import { editableKey, readOnlyReason } from '#shared/editable'
 import { isFunctionValue } from '#shared/edit-functions'
 import { generatedKeyValues } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
+import { resultColumn } from '#shared/result-columns'
+import type { QueryResponse, StatementResult } from '#shared/types/query'
 import { keyId, rowErrorId, insertErrorId } from '#shared/pending'
 import { rowKey, useRelationData } from '~/composables/useRelationData'
 import { useRelationNav } from '~/composables/useRelationNav'
@@ -25,6 +27,8 @@ import FkPicker from './editors/FkPicker.vue'
 import FilterBar from './FilterBar.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
+import SqlEditor from '~/components/query/SqlEditor.vue'
+import ResultGrid from '~/components/query/ResultGrid.vue'
 import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
 import SortBar from './SortBar.vue'
 
@@ -517,11 +521,23 @@ const exportItems = computed(() => [
   { label: t('query.exportJson'), icon: 'lucide:file-json', onSelect: () => void exportTable('json') },
 ])
 
-// ---- the SQL behind the view (a bar that starts hidden) ----------------------------------------
+// ---- the SQL behind the view: editable and runnable in place ---------------------------------
 const ui = useUiStore()
 const queries = useQueriesStore()
+/** What the grid runs for the current view. */
 const viewSql = ref('')
+/** The text in the editor: follows the view until the user types. */
+const sqlText = ref('')
+const edited = ref(false)
+const running = ref(false)
+const queryId = ref<string | null>(null)
+const adhoc = ref<{ statement: StatementResult; sql: string; queryId: string } | null>(null)
+const adhocError = ref<string | null>(null)
+const confirmSql = ref<{ sql: string; kinds: string[] } | null>(null)
+const sqlEditor = ref<InstanceType<typeof SqlEditor> | null>(null)
 let sqlTimer: ReturnType<typeof setTimeout> | undefined
+
+const dialect = computed(() => (schemaStore.dialect ?? 'postgres') as 'postgres' | 'mysql' | 'sqlite')
 
 async function loadViewSql(): Promise<void> {
   if (!ui.gridSql) return
@@ -544,6 +560,12 @@ async function loadViewSql(): Promise<void> {
   } catch {
     viewSql.value = ''
   }
+  // The view moved on: the editor follows it, and a previous ad hoc result no longer applies.
+  if (!edited.value) {
+    sqlText.value = viewSql.value
+    adhoc.value = null
+    adhocError.value = null
+  }
 }
 watch(
   () => [ui.gridSql, state.filter.value, state.sort.value, state.scope.value, state.page.value, state.pageSize.value, visibleColumns.value.map((c) => c.name).join('|')],
@@ -553,11 +575,74 @@ watch(
   },
   { deep: true, immediate: true },
 )
+watch(sqlText, (value) => {
+  if (value !== viewSql.value) edited.value = true
+})
+watch(
+  () => ui.gridSql,
+  (shown) => {
+    if (!shown) {
+      adhoc.value = null
+      adhocError.value = null
+    }
+  },
+)
 onBeforeUnmount(() => clearTimeout(sqlTimer))
+
+function resetSql(): void {
+  edited.value = false
+  sqlText.value = viewSql.value
+  adhoc.value = null
+  adhocError.value = null
+}
+
+async function runSql(sql?: string, confirmWrites = false): Promise<void> {
+  const text = (sql ?? sqlText.value).trim()
+  if (!text || running.value) return
+  running.value = true
+  adhocError.value = null
+  const id = `g${Math.random().toString(36).slice(2, 12)}${Date.now().toString(36)}`
+  queryId.value = id
+  try {
+    const res = await $fetch<QueryResponse>(`/api/c/${props.connectionId}/query`, {
+      method: 'POST',
+      body: {
+        sql: text,
+        schema: props.schema,
+        limit: queries.limit,
+        timeoutMs: queries.timeoutMs,
+        queryId: id,
+        confirmWrites: confirmWrites || undefined,
+      },
+    })
+    const bad = res.statements.find((s) => s.status === 'error' || s.status === 'timeout' || s.status === 'cancelled')
+    const shown = res.statements.find((s) => s.status === 'ok' && s.columns.length > 0)
+    if (bad?.error && !shown) adhocError.value = bad.error.message
+    else if (shown) adhoc.value = { statement: shown, sql: shown.sql, queryId: res.queryId }
+    else adhocError.value = t('grid.sqlNoRows')
+    if (res.schemaInvalidated) await schemaStore.reload().catch(() => {})
+    // A write changes what the table shows.
+    if (res.statements.some((s) => s.status === 'ok' && s.columns.length === 0)) {
+      state.reload()
+    }
+  } catch (err) {
+    const data = (err as { data?: { data?: { code?: string; kinds?: string[]; message?: string } } }).data?.data
+    if (data?.code === 'confirmation_required') confirmSql.value = { sql: text, kinds: data.kinds ?? [] }
+    else adhocError.value = data?.message || (err as { data?: { statusMessage?: string } }).data?.statusMessage || t('errors.unknown')
+  } finally {
+    running.value = false
+    queryId.value = null
+  }
+}
+
+async function cancelSql(): Promise<void> {
+  if (!queryId.value) return
+  await $fetch(`/api/c/${props.connectionId}/query/${queryId.value}/cancel`, { method: 'POST' }).catch(() => {})
+}
 
 async function copyViewSql(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(viewSql.value)
+    await navigator.clipboard.writeText(sqlText.value)
     toast.push({ kind: 'success', title: t('query.copied') })
   } catch {
     toast.push({ kind: 'error', title: t('grid.sqlCopyFailed') })
@@ -565,10 +650,12 @@ async function copyViewSql(): Promise<void> {
 }
 
 function openViewInEditor(): void {
-  if (!viewSql.value) return
-  const qid = queries.create({ sql: viewSql.value, name: props.table.name })
+  if (!sqlText.value.trim()) return
+  const qid = queries.create({ sql: sqlText.value, name: props.table.name })
   void navigateTo(`/c/${props.connectionId}/${encodeURIComponent(props.schema)}/q/${qid}`)
 }
+
+const adhocColumns = computed(() => (adhoc.value?.statement.columns ?? []).map(resultColumn))
 
 onMounted(() => state.start())
 </script>
@@ -668,18 +755,33 @@ onMounted(() => state.start())
     <SortBar :sort="state.sort.value" @change="state.setSort" />
 
     <div v-if="ui.gridSql" class="rounded-md border border-border bg-bg-subtle" data-view-sql>
-      <div class="flex items-center gap-1 border-b border-border px-2 py-1">
+      <div class="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1">
         <span class="text-xs font-medium text-fg-muted">{{ t('grid.sqlTitle') }}</span>
-        <span class="text-[11px] text-fg-subtle">{{ t('grid.sqlHint') }}</span>
+        <span class="text-[11px] text-fg-subtle">{{ edited ? t('grid.sqlEdited') : t('grid.sqlHint') }}</span>
         <div class="ml-auto flex items-center gap-1">
-          <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" :disabled="!viewSql" @click="copyViewSql" />
-          <UiButton size="sm" :disabled="!viewSql" data-open-in-editor @click="openViewInEditor">
-            <Icon name="lucide:terminal" class="size-3.5" />{{ t('grid.openInEditor') }}
+          <UiButton v-if="running" size="sm" variant="danger" @click="cancelSql">{{ t('query.cancel') }}</UiButton>
+          <UiButton v-else size="sm" variant="primary" :disabled="!sqlText.trim()" data-run-view-sql @click="runSql()">
+            <Icon name="lucide:play" class="size-3.5" />{{ t('query.run') }}
           </UiButton>
+          <UiButton v-if="edited" size="sm" variant="ghost" @click="resetSql">{{ t('grid.sqlReset') }}</UiButton>
+          <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" :disabled="!sqlText" @click="copyViewSql" />
+          <UiIconButton icon="lucide:terminal" :label="t('grid.openInEditor')" size="sm" :disabled="!sqlText.trim()" data-open-in-editor @click="openViewInEditor" />
           <UiIconButton icon="lucide:x" :label="t('grid.sqlHide')" size="sm" @click="ui.gridSql = false" />
         </div>
       </div>
-      <pre class="font-data max-h-32 overflow-auto whitespace-pre-wrap break-words px-2 py-1.5 text-xs text-fg">{{ viewSql || '…' }}</pre>
+      <div class="h-28">
+        <ClientOnly>
+          <SqlEditor
+            ref="sqlEditor"
+            v-model="sqlText"
+            :dialect="dialect"
+            :snapshot="schemaStore.snapshot"
+            :graph="schemaStore.graph"
+            @run="(sql) => runSql(sql)"
+            @run-all="runSql()"
+          />
+        </ClientOnly>
+      </div>
     </div>
 
     <p v-if="readOnlyNotice" class="flex items-center gap-1.5 text-xs text-warning" data-readonly-notice>
@@ -688,7 +790,29 @@ onMounted(() => state.start())
     </p>
 
     <div class="min-h-0 flex-1">
-      <UiEmptyState v-if="state.error.value" icon="lucide:triangle-alert" :title="t('grid.loadError')">
+      <div v-if="adhocError" class="m-1 rounded-md border border-danger/40 bg-danger-soft p-3 text-sm text-danger" role="alert" data-view-sql-error>
+        <p class="font-data whitespace-pre-wrap break-words">{{ adhocError }}</p>
+      </div>
+      <div v-else-if="adhoc" class="flex h-full min-h-0 flex-col" data-view-sql-result>
+        <div class="min-h-0 flex-1">
+          <ResultGrid
+            :key="adhoc.queryId"
+            :connection-id="connectionId"
+            :schema="schema"
+            :dialect="dialect"
+            :sql="adhoc.sql"
+            :columns="adhocColumns"
+            :rows="adhoc.statement.rows"
+          />
+        </div>
+        <p class="font-data flex items-center gap-3 px-1 pt-1 text-xs text-fg-muted">
+          <span>{{ adhoc.statement.durationMs }} ms</span>
+          <span>{{ t('query.rows', { count: adhoc.statement.rowCount }) }}</span>
+          <span v-if="adhoc.statement.truncated" class="text-warning">{{ t('query.truncated', { count: queries.limit }) }}</span>
+          <button type="button" class="ml-auto text-accent hover:underline" @click="resetSql">{{ t('grid.sqlBackToTable') }}</button>
+        </p>
+      </div>
+      <UiEmptyState v-else-if="state.error.value" icon="lucide:triangle-alert" :title="t('grid.loadError')">
         <UiButton size="sm" variant="secondary" @click="state.reload()">{{ t('grid.retry') }}</UiButton>
       </UiEmptyState>
       <DataGrid
@@ -779,6 +903,14 @@ onMounted(() => state.start())
       @confirm="confirmDelete"
     />
 
+    <UiDialog :open="!!confirmSql" :title="t('query.confirmTitle')" :description="t('query.confirmProd')" @update:open="(v) => !v && (confirmSql = null)">
+      <pre class="font-data max-h-48 overflow-auto rounded-md border border-border bg-bg-subtle p-2 text-xs">{{ confirmSql?.sql }}</pre>
+      <template #footer>
+        <UiButton @click="confirmSql = null">{{ t('common.cancel') }}</UiButton>
+        <UiButton variant="danger" @click="() => { const p = confirmSql; confirmSql = null; if (p) void runSql(p.sql, true) }">{{ t('query.runAnyway') }}</UiButton>
+      </template>
+    </UiDialog>
+
     <FkPicker
       v-if="pickerTarget"
       v-model:open="pickerOpen"
@@ -792,6 +924,7 @@ onMounted(() => state.start())
     />
 
     <GridFooter
+      v-if="!adhoc && !adhocError"
       :total="state.total.value"
       :exact="state.exact.value"
       :counting="state.counting.value"

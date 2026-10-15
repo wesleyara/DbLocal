@@ -275,8 +275,12 @@
   },
   "grid": {
     "sqlToggle": "Show SQL",
+    "sqlEdited": "Edited: Run executes your SQL here",
+    "sqlBackToTable": "Back to the table",
+    "sqlReset": "Reset to the view",
+    "sqlNoRows": "The statement returned no rows",
     "sqlTitle": "SQL of this view",
-    "sqlHint": "What the grid runs, with values filled in",
+    "sqlHint": "What the grid runs. Edit it and press Run (⌘Enter)",
     "openInEditor": "Open in the SQL editor",
     "sqlHide": "Hide SQL",
     "sqlCopyFailed": "Could not copy the SQL",

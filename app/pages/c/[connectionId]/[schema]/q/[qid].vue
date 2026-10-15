@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ColumnKind, SchemaColumn } from '#shared/types/db'
 import type { ConnectionView } from '#shared/types/connection'
 import type { ExplainResponse } from '#shared/types/explain'
-import type { QueryColumn, QueryResponse, StatementResult } from '#shared/types/query'
+import type { QueryResponse, StatementResult } from '#shared/types/query'
 import type { SavedQuery } from '#shared/types/saved-queries'
+import { resultColumn } from '#shared/result-columns'
 import { formatResult, type ExportFormat } from '#shared/export-format'
 import { useSchemaStore } from '~/stores/schema'
 import { useQueriesStore } from '~/stores/queries'
@@ -137,29 +137,7 @@ const planTotal = computed(() => {
 })
 
 // ---- results -----------------------------------------------------------------------------------
-function kindOf(type: string): ColumnKind {
-  const v = type.toLowerCase()
-  if (/bool/.test(v)) return 'boolean'
-  if (/json/.test(v)) return 'json'
-  if (/uuid/.test(v)) return 'uuid'
-  if (/timestamp|datetime/.test(v)) return 'datetime'
-  if (/^date$/.test(v)) return 'date'
-  if (/^time/.test(v)) return 'time'
-  if (/bytea|blob|binary/.test(v)) return 'binary'
-  if (/int|num|dec|float|double|real|serial|money|^oid$/.test(v)) return 'number'
-  return 'string'
-}
-const asColumn = (c: QueryColumn): SchemaColumn => ({
-  name: c.name,
-  nativeType: c.type,
-  kind: kindOf(c.type),
-  nullable: true,
-  default: null,
-  isGenerated: false,
-  isPrimaryKey: false,
-  comment: null,
-  enumValues: null,
-})
+const asColumn = resultColumn
 
 const current = computed<StatementResult | null>(() =>
   typeof activeTab.value === 'number' ? (result.value?.statements[activeTab.value] ?? null) : null,

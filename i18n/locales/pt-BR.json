@@ -275,8 +275,12 @@
   },
   "grid": {
     "sqlToggle": "Ver SQL",
+    "sqlEdited": "Editado: Run executa o seu SQL aqui",
+    "sqlBackToTable": "Voltar para a tabela",
+    "sqlReset": "Voltar ao SQL da visão",
+    "sqlNoRows": "O comando não retornou linhas",
     "sqlTitle": "SQL desta visão",
-    "sqlHint": "O que o grid executa, com os valores preenchidos",
+    "sqlHint": "O que o grid executa. Edite e pressione Run (⌘Enter)",
     "openInEditor": "Abrir no editor SQL",
     "sqlHide": "Esconder SQL",
     "sqlCopyFailed": "Não foi possível copiar o SQL",

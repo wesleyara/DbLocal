@@ -1,6 +1,8 @@
 import type { RelationGraph, SchemaSnapshot, SchemaTable } from './types/db'
 
-export const ERD_NODE_WIDTH = 248
+/** Narrowest and widest a table gets; wider content is cut with an ellipsis. */
+export const ERD_MIN_WIDTH = 248
+export const ERD_MAX_WIDTH = 760
 export const ERD_HEADER_HEIGHT = 32
 export const ERD_ROW_HEIGHT = 24
 /** Tables with more columns than this show the first ones and a "+N more" row. */
@@ -25,6 +27,8 @@ export interface ErdColumn {
 export interface ErdTable {
   id: string
   kind: 'table' | 'view' | 'materialized_view'
+  /** Width that fits the longest name and type, so nothing is truncated (within the limits). */
+  width: number
   columns: ErdColumn[]
   /** Columns that did not fit (see `ERD_MAX_COLUMNS`). */
   hiddenColumns: number
@@ -103,10 +107,20 @@ export function buildErd(snapshot: SchemaSnapshot, graph: RelationGraph | null):
     }))
     // Keys first, so the columns that matter stay visible when a table is truncated.
     const shown = cols.length > ERD_MAX_COLUMNS ? prioritise(cols, edges, t.name).slice(0, ERD_MAX_COLUMNS) : cols
-    return { id: t.name, kind: t.kind, columns: shown, hiddenColumns: cols.length - shown.length }
+    return { id: t.name, kind: t.kind, width: tableWidth(t.name, shown), columns: shown, hiddenColumns: cols.length - shown.length }
   })
 
   return { tables, edges: edges.filter((e) => names.has(e.source) && names.has(e.target)) }
+}
+
+/** Approximate widths of the monospace text (12px names, 10px types) plus icon, markers and padding. */
+export function tableWidth(name: string, columns: ErdColumn[]): number {
+  let widest = 40 + name.length * 7.8
+  for (const c of columns) {
+    const markers = (c.nullable && !c.pk ? 12 : 0) + (c.unique || c.uniqueWith.length ? 20 : 0) + (c.default !== null || c.generated ? 20 : 0)
+    widest = Math.max(widest, 36 + c.name.length * 7.3 + markers + 28 + c.type.length * 6.1 + 12)
+  }
+  return Math.min(ERD_MAX_WIDTH, Math.max(ERD_MIN_WIDTH, Math.ceil(widest / 8) * 8))
 }
 
 function referenceOf(table: SchemaTable, column: string): string | null {

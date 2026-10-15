@@ -35,6 +35,7 @@ const lit = (column: string) => ui.hoverColumns.has(`${props.id}.${column}`)
       table.kind !== 'table' && 'border-dashed',
     ]"
     :data-table="id"
+    :style="{ width: `${table.width}px` }"
   >
     <header
       class="font-data flex items-center gap-1.5 truncate rounded-t-md bg-bg-subtle px-2 font-semibold"
@@ -81,9 +82,6 @@ const lit = (column: string) => ui.hoverColumns.has(`${props.id}.${column}`)
 </template>
 
 <style scoped>
-.erd-node {
-  width: 248px;
-}
 .erd-handle {
   width: 8px;
   height: 8px;

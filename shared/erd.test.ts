@@ -52,6 +52,13 @@ describe('buildErd', () => {
     expect(cols[2]).toMatchObject({ unique: false, uniqueWith: [['org_id', 'role']], references: 'orgs.id' })
     expect(cols[3]).toMatchObject({ default: "'member'" })
   })
+  it('widens tables to fit long names and types', () => {
+    const t = table('accounts', ['id', 'a_rather_long_column_name_here'])
+    t.columns[1]!.nativeType = 'timestamp(3) without time zone'
+    const out = buildErd({ ...snapshot, tables: [table('t', ['id']), t] }, null).tables
+    expect(out[0]!.width).toBe(248)
+    expect(out[1]!.width).toBeGreaterThan(400)
+  })
   it('truncates huge tables keeping keys', () => {
     const wide = table('wide', ['id', ...Array.from({ length: 60 }, (_, i) => `c${i}`), 'ref'])
     const out = buildErd({ ...snapshot, tables: [wide] }, null)

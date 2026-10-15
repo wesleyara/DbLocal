@@ -1,6 +1,5 @@
 import {
   ERD_HEADER_HEIGHT,
-  ERD_NODE_WIDTH,
   ERD_ROW_HEIGHT,
   edgeSides,
   markerPath,
@@ -48,7 +47,7 @@ export function buildErdSvg(
     const p = positions[t.id]!
     minX = Math.min(minX, p.x)
     minY = Math.min(minY, p.y)
-    maxX = Math.max(maxX, p.x + ERD_NODE_WIDTH)
+    maxX = Math.max(maxX, p.x + t.width)
     maxY = Math.max(maxY, p.y + tableHeight(t))
   }
   if (!placed.length) return { svg: '', width: 0, height: 0 }
@@ -70,12 +69,12 @@ export function buildErdSvg(
     if (!s || !t) continue
     const sp = positions[s.id]!
     const tp = positions[t.id]!
-    const sides = edgeSides(sp.x, ERD_NODE_WIDTH, tp.x, ERD_NODE_WIDTH, s === t)
+    const sides = edgeSides(sp.x, s.width, tp.x, t.width, s === t)
     const sdir = sides.source === 'r' ? 1 : -1
     const tdir = sides.target === 'r' ? 1 : -1
-    const sx = sp.x + ox + (sdir === 1 ? ERD_NODE_WIDTH : 0)
+    const sx = sp.x + ox + (sdir === 1 ? s.width : 0)
     const sy = sp.y + oy + rowY(s, e.sourceColumn)
-    const tx = tp.x + ox + (tdir === 1 ? ERD_NODE_WIDTH : 0)
+    const tx = tp.x + ox + (tdir === 1 ? t.width : 0)
     const ty = tp.y + oy + rowY(t, e.targetColumn)
     const x1 = sx + sdir * 22
     const x2 = tx + tdir * 22
@@ -95,22 +94,23 @@ export function buildErdSvg(
     const x = p.x + ox
     const y = p.y + oy
     const h = tableHeight(t)
+    const w = t.width
     nodes.push(
       `<g transform="translate(${x},${y})">`,
-      `<rect width="${ERD_NODE_WIDTH}" height="${h}" rx="6" fill="${colors.surface}" stroke="${colors.border}"/>`,
-      `<path d="M0,${ERD_HEADER_HEIGHT} V6 a6,6 0 0 1 6,-6 H${ERD_NODE_WIDTH - 6} a6,6 0 0 1 6,6 V${ERD_HEADER_HEIGHT} Z" fill="${colors.header}"/>`,
+      `<rect width="${w}" height="${h}" rx="6" fill="${colors.surface}" stroke="${colors.border}"/>`,
+      `<path d="M0,${ERD_HEADER_HEIGHT} V6 a6,6 0 0 1 6,-6 H${w - 6} a6,6 0 0 1 6,6 V${ERD_HEADER_HEIGHT} Z" fill="${colors.header}"/>`,
       `<text x="10" y="${ERD_HEADER_HEIGHT / 2 + 4}" font-weight="600" font-size="12" fill="${colors.fg}">${esc(t.id)}</text>`,
     )
     t.columns.forEach((c, i) => {
       const top = ERD_HEADER_HEIGHT + i * ERD_ROW_HEIGHT
       const mid = top + ERD_ROW_HEIGHT / 2 + 4
       nodes.push(
-        `<line x1="0" x2="${ERD_NODE_WIDTH}" y1="${top}" y2="${top}" stroke="${colors.border}"/>`,
+        `<line x1="0" x2="${w}" y1="${top}" y2="${top}" stroke="${colors.border}"/>`,
         c.pk || c.fk
           ? `<text x="8" y="${mid}" font-size="9" font-weight="700" fill="${c.pk ? colors.warning : colors.accent}">${c.pk ? 'PK' : 'FK'}</text>`
           : '',
         `<text x="28" y="${mid}" font-size="11" fill="${c.nullable ? colors.muted : colors.fg}">${esc(c.name)}${c.nullable && !c.pk ? '?' : ''}${c.unique || c.uniqueWith.length ? '  U' : ''}${c.default !== null || c.generated ? '  D' : ''}</text>`,
-        `<text x="${ERD_NODE_WIDTH - 8}" y="${mid}" font-size="9" text-anchor="end" fill="${colors.subtle}">${esc(c.type.slice(0, 22))}</text>`,
+        `<text x="${w - 8}" y="${mid}" font-size="9" text-anchor="end" fill="${colors.subtle}">${esc(c.type)}</text>`,
       )
     })
     nodes.push('</g>')

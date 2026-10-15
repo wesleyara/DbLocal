@@ -5,7 +5,6 @@ import { ConnectionMode, VueFlow, useVueFlow, type Connection, type Edge, type N
 import type { ErdLayout } from '#shared/schemas/erd'
 import {
   ERD_COMPACT_ZOOM,
-  ERD_NODE_WIDTH,
   buildErd,
   directNeighbours,
   edgeSides,
@@ -87,7 +86,7 @@ const autoCache = new Map<string, Record<string, Point>>()
 const layouting = ref(false)
 const positions = shallowRef<Record<string, Point>>({})
 
-const sizeOf = (tb: ErdTable) => ({ width: ERD_NODE_WIDTH, height: tableHeight(tb) })
+const sizeOf = (tb: ErdTable) => ({ width: tb.width, height: tableHeight(tb) })
 
 async function computePositions(): Promise<void> {
   const tables = visible.value
@@ -131,7 +130,7 @@ function buildEdges(): Edge[] {
     const a = positions.value[e.source]
     const b = positions.value[e.target]
     if (!a || !b) continue
-    const sides = edgeSides(a.x, ERD_NODE_WIDTH, b.x, ERD_NODE_WIDTH, e.source === e.target)
+    const sides = edgeSides(a.x, tableById.value.get(e.source)?.width ?? 248, b.x, tableById.value.get(e.target)?.width ?? 248, e.source === e.target)
     const shown = (table: string, column: string) => (tableById.value.get(table)?.columns.some((c) => c.name === column) ? column : '')
     out.push({
       id: e.id,

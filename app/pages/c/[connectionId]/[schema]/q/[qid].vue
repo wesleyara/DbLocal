@@ -10,7 +10,7 @@ import { useQueriesStore } from '~/stores/queries'
 import SqlEditor from '~/components/query/SqlEditor.vue'
 import PlanTree from '~/components/query/PlanTree.vue'
 import QuerySidePanel from '~/components/query/QuerySidePanel.vue'
-import DataGrid from '~/components/grid/DataGrid.vue'
+import ResultGrid from '~/components/query/ResultGrid.vue'
 
 const route = useRoute()
 const id = route.params.connectionId as string
@@ -360,15 +360,14 @@ useHead({ title: () => draft.name || t('query.untitled') })
         <!-- One result set -->
         <template v-else-if="current">
           <div v-if="current.status === 'ok' && current.columns.length > 0" class="min-h-0 flex-1">
-            <DataGrid
+            <ResultGrid
               :key="`${result?.queryId}-${current.index}`"
+              :connection-id="id"
+              :schema="schemaName"
+              :dialect="dialect"
+              :sql="current.sql"
               :columns="currentColumns"
               :rows="current.rows"
-              :sort="[]"
-              :primary-key="[]"
-              :foreign-keys="[]"
-              :editable="false"
-              :dialect="dialect"
             />
           </div>
           <div v-else-if="current.status === 'ok'" class="p-4 text-sm text-fg-muted" data-write-result>

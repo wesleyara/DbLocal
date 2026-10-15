@@ -15,7 +15,7 @@ defineProps<{ items: MenuItem[] }>()
 <template>
   <ContextMenuRoot>
     <ContextMenuTrigger as-child><slot /></ContextMenuTrigger>
-    <ContextMenuPortal>
+    <ContextMenuPortal v-if="items.length">
       <ContextMenuContent class="z-50 min-w-40 rounded-md border border-border bg-surface p-1 shadow-pop">
         <template v-for="(item, i) in items" :key="i">
           <ContextMenuSeparator v-if="item.separator" class="my-1 h-px bg-border" />

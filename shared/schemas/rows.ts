@@ -117,3 +117,14 @@ export const blobRequestSchema = z.object({
 
 /** Body of `PUT /api/c/:id/tables/:table/prefs`. */
 export const gridPrefsRequestSchema = z.object({ schema: z.string().min(1), prefs: gridPrefsSchema })
+
+/** Body of `POST /api/c/:id/tables/:table/export`: the grid's view, streamed as a file. */
+export const tableExportRequestSchema = z.object({
+  schema: z.string().min(1),
+  format: z.enum(['csv', 'json']),
+  filter: filterNodeSchema.nullable().optional(),
+  sort: z.array(sortItem).max(8).optional(),
+  columns: z.array(z.string().min(1)).min(1).max(500).optional(),
+  scope: relationScopeSchema.nullable().optional(),
+  limit: z.number().int().min(1).optional(),
+})

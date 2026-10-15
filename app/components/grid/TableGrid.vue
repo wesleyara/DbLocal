@@ -3,6 +3,8 @@ import type { RelationRef, SchemaColumn, SchemaTable } from '#shared/types/db'
 import type { ConnectionView } from '#shared/types/connection'
 import type { FilterCondition, FilterNode, GridPrefs } from '#shared/types/rows'
 import { editableKey, readOnlyReason } from '#shared/editable'
+import { isFunctionValue } from '#shared/edit-functions'
+import { generatedKeyValues } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
 import { keyId, rowErrorId, insertErrorId } from '#shared/pending'
 import { rowKey, useRelationData } from '~/composables/useRelationData'
@@ -277,7 +279,7 @@ function applyEdit(row: Record<string, unknown>, column: string, value: unknown)
 }
 
 function addRecord(): void {
-  pendingStore.insert(tabId.value, props.table.name, {})
+  pendingStore.insert(tabId.value, props.table.name, generatedKeyValues(props.table.columns))
 }
 
 function duplicateRow(row: Record<string, unknown>): void {
@@ -288,7 +290,8 @@ function duplicateRow(row: Record<string, unknown>): void {
     const v = row[column.name]
     if (v !== undefined) values[column.name] = v
   }
-  pendingStore.insert(tabId.value, props.table.name, values)
+  // A copy must not repeat a key the client generates.
+  pendingStore.insert(tabId.value, props.table.name, { ...values, ...generatedKeyValues(props.table.columns) })
 }
 
 function undoRow(row: Record<string, unknown>): void {
@@ -488,6 +491,30 @@ async function download(column: string, row: Record<string, unknown>): Promise<v
   }
 }
 
+/** Exports the grid's view (filter, sort, relation scope, visible columns) as a streamed file. */
+async function exportTable(format: 'csv' | 'json'): Promise<void> {
+  try {
+    await downloadFrom(
+      `/api/c/${props.connectionId}/tables/${encodeURIComponent(props.table.name)}/export`,
+      {
+        schema: props.schema,
+        format,
+        filter: state.filter.value,
+        sort: state.sort.value,
+        columns: visibleColumns.value.map((c) => c.name).filter((n) => !n.startsWith('@rel:')),
+        scope: state.scope.value ?? null,
+      },
+      `${props.table.name}.${format}`,
+    )
+  } catch {
+    toast.push({ kind: 'error', title: t('query.exportFailed') })
+  }
+}
+const exportItems = computed(() => [
+  { label: t('query.exportCsv'), icon: 'lucide:file-spreadsheet', onSelect: () => void exportTable('csv') },
+  { label: t('query.exportJson'), icon: 'lucide:file-json', onSelect: () => void exportTable('json') },
+])
+
 onMounted(() => state.start())
 </script>
 
@@ -524,6 +551,16 @@ onMounted(() => state.start())
           <Icon name="lucide:plus" class="size-3" />
           {{ t('edit.addRecord') }}
         </button>
+        <UiDropdownMenu :items="exportItems">
+          <button
+            type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+            data-export
+          >
+            <Icon name="lucide:download" class="size-3" />
+            {{ t('query.export') }}
+          </button>
+        </UiDropdownMenu>
         <UiPopover>
           <template #trigger>
             <button
@@ -537,13 +574,14 @@ onMounted(() => state.start())
           </template>
           <div class="grid w-56 gap-2">
             <UiInput v-model="columnQuery" mono :placeholder="t('grid.searchColumns')" :aria-label="t('grid.searchColumns')" />
-            <div class="grid max-h-64 gap-1.5 overflow-auto">
+            <div class="grid max-h-64 gap-2 overflow-x-hidden overflow-y-auto">
             <p v-if="matchingColumns.length === 0" class="text-xs text-fg-subtle">{{ t('grid.noColumnMatch') }}</p>
             <UiCheckbox
               v-for="column in matchingColumns"
               :key="column.name"
               :model-value="!hidden.has(column.name)"
               :label="labelOf(column.name)"
+              class="font-data text-xs"
               @update:model-value="(v) => setColumnShown(column, v ?? false)"
             />
             <button
@@ -603,7 +641,12 @@ onMounted(() => state.start())
       >
         <template #cell="{ column, row, value }">
           <span
-            v-if="isDefaultValue(value) || (metaOf(row)?.state === 'new' && value === undefined && columnHasDefault(column))"
+            v-if="isFunctionValue(value)"
+            class="font-data rounded-sm border border-border px-1 text-[11px] text-fg-subtle italic"
+            data-function-badge
+          >{{ (value as { $fn: string }).$fn }}()</span>
+          <span
+            v-else-if="isDefaultValue(value) || (metaOf(row)?.state === 'new' && value === undefined && columnHasDefault(column))"
             class="rounded-sm border border-border px-1 text-[10px] uppercase tracking-wide text-fg-subtle italic"
             data-default-badge
           >{{ t('edit.default') }}</span>

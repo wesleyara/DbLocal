@@ -112,6 +112,8 @@ async function saveDisplay() {
 }
 
 async function refresh() {
+  // Counts are asked again for the refreshed schema (the old ones stay on screen until they arrive).
+  requested.clear()
   try {
     await store.load(props.connectionId, props.schema ?? null, true)
     toast.push({ kind: 'success', title: t('schemaTree.refreshed') })
@@ -190,10 +192,18 @@ async function fetchMissingCounts(): Promise<void> {
   await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, worker))
 }
 
+/** Counts belong to one connection + schema: they are dropped when either changes, not on every reload. */
+let countScope = ''
+
 watch(
   () => store.tables,
   () => {
-    counted.value = new Map()
+    const scope = `${props.connectionId}|${props.schema ?? store.schema ?? ''}`
+    if (scope !== countScope) {
+      countScope = scope
+      counted.value = new Map()
+      requested.clear()
+    }
     void fetchMissingCounts()
   },
   { immediate: true },

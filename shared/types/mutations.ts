@@ -1,3 +1,4 @@
+import type { FunctionValue } from '../edit-functions'
 import type { SchemaSnapshot } from './db'
 
 /** Marks a column to take its database default (insert) or be reset to it (update). */
@@ -14,7 +15,7 @@ export interface BinaryValue {
  * One value of a mutation: `null` is SQL NULL, `DefaultValue` is the column default, a
  * `BinaryValue` carries bytes. Everything else is the JSON value of the column.
  */
-export type MutationValue = string | number | boolean | null | DefaultValue | BinaryValue | unknown[] | Record<string, unknown>
+export type MutationValue = string | number | boolean | null | DefaultValue | BinaryValue | FunctionValue | unknown[] | Record<string, unknown>
 
 export type MutationKey = Record<string, string | number>
 

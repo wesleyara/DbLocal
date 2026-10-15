@@ -3,7 +3,8 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import { tableFeatures, useTable } from '@tanstack/vue-table'
 import type { ColumnKind, SchemaColumn } from '#shared/types/db'
 import type { SortItem } from '#shared/types/rows'
-import { nextBoolean } from '#shared/edit-values'
+import { functionsFor } from '#shared/edit-functions'
+import { parseInput } from '#shared/edit-values'
 import CellValue from './cells/CellValue.vue'
 import CellEditor from './editors/CellEditor.vue'
 import ValueDialog from './editors/ValueDialog.vue'
@@ -220,7 +221,7 @@ function focusGrid(): void {
   void nextTick(() => scrollEl.value?.focus({ preventScroll: true }))
 }
 
-/** Starts editing the cell with the editor that fits its column; booleans toggle, FKs open the picker. */
+/** Starts editing the cell with the editor that fits its column; FKs open the picker. */
 function startEdit(row: number, col: number): void {
   const column = columnAt(col)
   const data = rowAt(row)
@@ -228,10 +229,6 @@ function startEdit(row: number, col: number): void {
   const value = valueAt(row, col)
   if (props.pickable?.includes(column.name)) {
     emit('editForeignKey', data, column.name)
-    return
-  }
-  if (column.kind === 'boolean') {
-    emit('edit', data, column.name, nextBoolean(value, column.nullable))
     return
   }
   if (column.kind === 'binary') return
@@ -500,6 +497,15 @@ const menuItems = computed(() => {
         }
         if (column.nullable) {
           edits.push({ label: t('edit.setNull'), icon: 'lucide:circle-slash', onSelect: () => setCellValue(target.row, target.col, null) })
+        }
+        for (const fn of functionsFor(column)) {
+          const parsed = parseInput(column, `${fn}()`)
+          if (!parsed.ok) continue
+          edits.push({
+            label: t('edit.generate', { fn: `${fn}()` }),
+            icon: 'lucide:wand-sparkles',
+            onSelect: () => setCellValue(target.row, target.col, parsed.value),
+          })
         }
         const defaultable = column.default !== null || column.nullable
         if (defaultable && (props.dialect !== 'sqlite' || meta?.state === 'new')) {

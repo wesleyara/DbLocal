@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SchemaColumn } from './types/db'
-import { nextBoolean, parseInput, toInputText } from './edit-values'
+import { generatedKeyValues, nextBoolean, parseInput, toInputText } from './edit-values'
 
 const col = (kind: SchemaColumn['kind'], nativeType = kind as string): SchemaColumn => ({
   name: 'c',
@@ -61,5 +61,26 @@ describe('inputs and booleans', () => {
     expect(nextBoolean(false, false)).toBe(true)
     expect(nextBoolean(null, true)).toBe(true)
     expect(nextBoolean(1, false)).toBe(false)
+  })
+})
+
+describe('generated keys', () => {
+  const col = (over: Partial<import('./types/db').SchemaColumn>): import('./types/db').SchemaColumn => ({
+    name: 'id', nativeType: 'text', kind: 'string', nullable: false, default: null, isGenerated: false,
+    isPrimaryKey: true, comment: null, enumValues: null, ...over,
+  })
+
+  it('fills text and uuid keys without a default, and nothing else', () => {
+    let n = 0
+    const uuid = () => `u${++n}`
+    const columns = [
+      col({ name: 'id' }),
+      col({ name: 'uid', kind: 'uuid', nativeType: 'uuid' }),
+      col({ name: 'serial', kind: 'number', nativeType: 'integer' }),
+      col({ name: 'withDefault', default: 'gen_random_uuid()' }),
+      col({ name: 'identity', isGenerated: true }),
+      col({ name: 'name', isPrimaryKey: false }),
+    ]
+    expect(generatedKeyValues(columns, uuid)).toEqual({ id: 'u1', uid: 'u2' })
   })
 })

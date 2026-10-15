@@ -2,7 +2,7 @@ import { sql, type CompiledQuery, type Expression, type RawBuilder } from 'kysel
 import type { MutationPlan, MutationStatement, PlannedOp } from '#shared/types/mutations'
 import type { RowsPlan } from '#shared/types/rows'
 import { builderFor } from './compile'
-import { DEFAULT_MARK } from './mutation-plan'
+import { DEFAULT_MARK, INCREMENT_MARK } from './mutation-plan'
 
 type Dialect = MutationPlan['dialect']
 
@@ -16,6 +16,14 @@ const supportsReturning = (dialect: Dialect) => dialect !== 'mysql'
 function where(columns: string[], values: Record<string, unknown>): RawBuilder<unknown> {
   const parts = columns.map((c) => sql`${sql.id(c)} = ${values[c]}`)
   return sql.join(parts as Expression<unknown>[], sql` and `)
+}
+
+/**
+ * `increment()`: the maximum of the column plus one. The derived table keeps MySQL from refusing a
+ * subquery on the table being written (error 1093).
+ */
+function nextValue(table: RawBuilder<unknown>, column: string): RawBuilder<unknown> {
+  return sql`(select next_value from (select coalesce(max(${sql.id(column)}), 0) + 1 as next_value from ${table}) as dbl_increment)`
 }
 
 /**
@@ -36,14 +44,18 @@ export function compileMutation(op: PlannedOp, dialect: Dialect, schema: string)
         statement = dialect === 'mysql' ? sql`insert into ${table} () values ()` : sql`insert into ${table} default values`
       } else {
         const cols = sql.join(entries.map(([c]) => sql.id(c)))
-        const vals = sql.join(entries.map(([, v]) => v))
+        const vals = sql.join(entries.map(([c, v]) => (v === INCREMENT_MARK ? nextValue(table, c) : v)))
         statement = sql`insert into ${table} (${cols}) values (${vals})`
       }
       break
     }
     case 'update': {
       const sets = Object.entries(op.values).map(([c, v]) =>
-        v === DEFAULT_MARK ? sql`${sql.id(c)} = default` : sql`${sql.id(c)} = ${v}`,
+        v === DEFAULT_MARK
+          ? sql`${sql.id(c)} = default`
+          : v === INCREMENT_MARK
+            ? sql`${sql.id(c)} = ${nextValue(table, c)}`
+            : sql`${sql.id(c)} = ${v}`,
       )
       statement = sql`update ${table} set ${sql.join(sets as Expression<unknown>[])} where ${where(op.keyColumns, op.pk)}`
       break

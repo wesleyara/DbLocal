@@ -3,9 +3,9 @@ import type { SchemaColumn } from '#shared/types/db'
 import { parseInput, toInputText } from '#shared/edit-values'
 
 /**
- * Inline editor of one cell, chosen by the column kind: text, number, date/time picker or enum
- * select. Booleans, JSON and arrays are not edited here (the grid toggles booleans and opens a
- * dialog for JSON). Enter commits and moves down, Tab commits and moves right, Esc cancels.
+ * Inline editor of one cell, chosen by the column kind: text, number, date/time picker, or a
+ * select for enums and booleans (true / false / NULL). JSON and arrays are not edited here (a
+ * dialog opens for them). Enter commits and moves down, Tab commits and moves right, Esc cancels.
  */
 const props = defineProps<{ column: SchemaColumn; value: unknown }>()
 const emit = defineEmits<{
@@ -14,7 +14,16 @@ const emit = defineEmits<{
 }>()
 const { t } = useI18n()
 
-const text = ref(toInputText(props.column, props.value))
+const isSelect = computed(() => props.column.kind === 'enum' || props.column.kind === 'boolean')
+const truthy = (v: unknown) => v === true || v === 1 || v === '1' || v === 't' || v === 'true'
+
+const text = ref(
+  props.column.kind === 'boolean'
+    ? props.value === null || props.value === undefined
+      ? ''
+      : String(truthy(props.value))
+    : toInputText(props.column, props.value),
+)
 const error = ref<string | null>(null)
 const inputEl = ref<HTMLInputElement | HTMLSelectElement | null>(null)
 /** Set once a commit or cancel was emitted, so the blur that follows does not commit twice. */
@@ -40,6 +49,11 @@ onMounted(() => {
 
 function commit(move: 'down' | 'right' | 'none'): void {
   if (done) return
+  if (props.column.kind === 'boolean') {
+    done = true
+    emit('commit', text.value === '' ? (props.column.nullable ? null : false) : text.value === 'true', move)
+    return
+  }
   if (props.column.kind === 'enum') {
     done = true
     emit('commit', text.value === '' && props.column.nullable ? null : text.value, move)
@@ -82,17 +96,21 @@ function onKeydown(event: KeyboardEvent): void {
 <template>
   <div class="relative size-full" data-cell-editor @mousedown.stop @dblclick.stop @click.stop>
     <select
-      v-if="column.kind === 'enum'"
+      v-if="isSelect"
       ref="inputEl"
       v-model="text"
-      class="font-data h-full w-full rounded-sm border border-accent bg-bg px-1 text-xs text-fg outline-none"
+      class="font-data h-full w-full rounded-sm border border-accent bg-bg px-1 text-xs text-fg outline-none!"
       :aria-label="column.name"
       @keydown="onKeydown"
       @change="commit('none')"
       @blur="cancel"
     >
       <option v-if="column.nullable" value="">NULL</option>
-      <option v-for="v in column.enumValues ?? []" :key="v" :value="v">{{ v }}</option>
+      <template v-if="column.kind === 'boolean'">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </template>
+      <option v-for="v in column.enumValues ?? []" v-else :key="v" :value="v">{{ v }}</option>
     </select>
     <input
       v-else
@@ -104,7 +122,7 @@ function onKeydown(event: KeyboardEvent): void {
       :aria-invalid="error ? 'true' : undefined"
       :inputmode="column.kind === 'number' ? 'decimal' : undefined"
       spellcheck="false"
-      class="font-data h-full w-full rounded-sm border bg-bg px-1 text-xs text-fg outline-none"
+      class="font-data h-full w-full rounded-sm border bg-bg px-1 text-xs text-fg outline-none!"
       :class="[error ? 'border-danger' : 'border-accent', column.kind === 'number' && 'text-right']"
       @keydown="onKeydown"
       @input="error = null"

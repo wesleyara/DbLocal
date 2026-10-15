@@ -1,6 +1,10 @@
+import { existsSync } from 'node:fs'
 import { readdir, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+
+/** Where host files are mounted in the container image (see docker/compose.example.yml). */
+const MOUNT_DIR = '/sqlite'
 
 const DB_EXTENSIONS = /\.(db|db3|sqlite|sqlite3|s3db|sl3)$/i
 
@@ -21,7 +25,7 @@ export interface FsListing {
  */
 export default defineEventHandler(async (event): Promise<FsListing> => {
   const query = getQuery(event)
-  const raw = typeof query.path === 'string' && query.path.trim() ? query.path.trim() : homedir()
+  const raw = typeof query.path === 'string' && query.path.trim() ? query.path.trim() : existsSync(MOUNT_DIR) ? MOUNT_DIR : homedir()
   const path = resolve(raw.startsWith('~') ? join(homedir(), raw.slice(1)) : raw)
   const all = query.all === '1'
   const hidden = query.hidden === '1'

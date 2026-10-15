@@ -425,6 +425,14 @@ function openChildren(ref: RelationRef, row: Record<string, unknown>, count: num
   void nav.openRelated(props.table.name, ref.name, key, ref.target, { count, newTab })
 }
 
+/** Hover preview for the inverse side of a 1:1, so it behaves like the FK chip on the other table. */
+function previewOf(ref: RelationRef, row: unknown) {
+  if (ref.cardinality !== 'one-to-one') return undefined
+  const key = rowKey(primaryKey.value, asRow(row))
+  if (!key) return undefined
+  return { connectionId: props.connectionId, schema: props.schema, table: props.table.name, relation: ref.name, key, target: ref.target }
+}
+
 function openRow(row: Record<string, unknown>): void {
   const key = rowKey(primaryKey.value, row)
   if (!key) return
@@ -931,6 +939,7 @@ onMounted(() => state.start())
             :count="asCount(value)"
             :noun="childByColumn.get(column)!.target"
             :virtual="childByColumn.get(column)!.virtual"
+            :preview="previewOf(childByColumn.get(column)!, row)"
             @open="(newTab) => openChildren(childByColumn.get(column)!, asRow(row), asCount(value), newTab)"
           />
           <CellValue v-else :value="value" :kind="table.columns.find((c) => c.name === column)?.kind ?? 'other'" />

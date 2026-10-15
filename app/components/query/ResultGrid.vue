@@ -142,6 +142,12 @@ function openChildren(ref: RelationRef, row: Record<string, unknown>, newTab: bo
   const scope = encodeScope({ table: table.value.name, relation: ref.name, key })
   go(tablePath(props.connectionId, props.schema, ref.target, { rel: scope }), ref.target, newTab)
 }
+function previewOf(ref: RelationRef, row: unknown) {
+  if (ref.cardinality !== 'one-to-one' || !table.value) return undefined
+  const key = rowKey(primaryKey.value, asRow(row))
+  if (!key) return undefined
+  return { connectionId: props.connectionId, schema: props.schema, table: table.value.name, relation: ref.name, key, target: ref.target }
+}
 function fallbackKeyOf(ref: RelationRef, value: unknown): Record<string, string | number> | null {
   if (ref.columns.length !== 1 || (typeof value !== 'string' && typeof value !== 'number')) return null
   const target = store.tables.find((tb) => tb.name === ref.target)
@@ -182,6 +188,7 @@ const kindOf = (column: string) => gridColumns.value.find((c) => c.name === colu
         :count="asCount(value)"
         :noun="childByColumn.get(column)!.target"
         :virtual="childByColumn.get(column)!.virtual"
+        :preview="previewOf(childByColumn.get(column)!, row)"
         @open="(newTab) => openChildren(childByColumn.get(column)!, asRow(row), newTab)"
       />
       <CellValue v-else :value="value" :kind="kindOf(column)" />

@@ -11,15 +11,25 @@ import { connectionDriver, readSchema } from '../schema/service'
 import type { StoreSchema } from '../store/db'
 import { QueryInputError } from './errors'
 import { findTable, planRows } from './plan'
+import { resolveScope, withFilter } from './relations-service'
 import { serializeRow } from './serialize'
 
 type Db = Kysely<StoreSchema>
 
 /** One page of rows of a table, with the filter and sort applied on the server. */
 export async function readRowsPage(db: Db, connectionId: string, table: string, req: RowsRequest): Promise<RowsResponse> {
-  const { snapshot } = await readSchema(db, connectionId, req.schema)
-  const plan = planRows(snapshot, table, req)
-  const rows = await (await connectionDriver(db, connectionId)).readRows(plan)
+  const { snapshot, graph } = await readSchema(db, connectionId, req.schema)
+  const driver = await connectionDriver(db, connectionId)
+  let request: RowsRequest = req
+  let junction = null
+  if (req.scope) {
+    const scope = await resolveScope(driver, snapshot, graph, table, req.scope)
+    if (scope.empty) return { rows: [] }
+    request = { ...req, filter: withFilter(req.filter, scope.filter) }
+    junction = scope.junction
+  }
+  const plan = { ...planRows(snapshot, table, request), junction }
+  const rows = await driver.readRows(plan)
   return { rows: rows.map(serializeRow) }
 }
 
@@ -28,14 +38,23 @@ export async function readRowsPage(db: Db, connectionId: string, table: string, 
  * estimate unless `exact` is requested. Filtered counts are always exact.
  */
 export async function countRowsView(db: Db, connectionId: string, table: string, req: CountRequest): Promise<CountResponse> {
-  const { snapshot } = await readSchema(db, connectionId, req.schema)
+  const { snapshot, graph } = await readSchema(db, connectionId, req.schema)
   const info = findTable(snapshot, table)
+  const driver = await connectionDriver(db, connectionId)
+  let filter = req.filter
+  let junction = null
+  if (req.scope) {
+    const scope = await resolveScope(driver, snapshot, graph, table, req.scope)
+    if (scope.empty) return { count: 0, exact: true }
+    filter = withFilter(filter, scope.filter)
+    junction = scope.junction
+  }
   const estimate = info.rowEstimate
-  if (!req.exact && req.filter === null && estimate !== null && estimate > EXACT_COUNT_THRESHOLD) {
+  if (!req.exact && filter === null && !junction && estimate !== null && estimate > EXACT_COUNT_THRESHOLD) {
     return { count: estimate, exact: false }
   }
-  const plan = planRows(snapshot, table, { schema: req.schema, filter: req.filter, sort: [], limit: 1, offset: 0 })
-  const count = await (await connectionDriver(db, connectionId)).countRows(plan)
+  const plan = { ...planRows(snapshot, table, { schema: req.schema, filter, sort: [], limit: 1, offset: 0 }), junction }
+  const count = await driver.countRows(plan)
   return { count, exact: true }
 }
 

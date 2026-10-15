@@ -1,6 +1,6 @@
 import type { SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { SchemaSnapshot } from '#shared/types/db'
-import type { RowsPlan } from '#shared/types/rows'
+import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 
 export type Dialect = 'postgres' | 'mysql' | 'sqlite'
 
@@ -57,6 +57,8 @@ export interface Driver {
   readRows(plan: RowsPlan): Promise<Record<string, unknown>[]>
   /** Counts the rows matching the plan's filter. */
   countRows(plan: RowsPlan): Promise<number>
+  /** Row counts per distinct value of `plan.groupBy` (used to count related records in batch). */
+  countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]>
   close(): Promise<void>
 }
 

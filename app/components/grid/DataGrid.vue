@@ -37,6 +37,8 @@ const props = defineProps<{
   loading?: boolean
   /** Position of the first row in the whole result, so the row numbers continue across pages. */
   startIndex?: number
+  /** Labels of the virtual relation columns (those named `@rel:...`), which are not sortable or filterable. */
+  relationLabels?: Record<string, string>
 }>()
 const emit = defineEmits<{
   'update:sort': [sort: SortItem[]]
@@ -46,6 +48,10 @@ const emit = defineEmits<{
   togglePin: [column: string]
   download: [column: string, row: Record<string, unknown>]
   hide: [column: string]
+  /** Rows currently in view, as indexes into `rows`, so related data is loaded for them only. */
+  visible: [first: number, last: number]
+  /** The user asked for the full record of a row (gutter click or Space). */
+  openRow: [row: Record<string, unknown>]
 }>()
 const { t } = useI18n()
 
@@ -109,6 +115,18 @@ const colVirtualizer = useVirtualizer(
 watch([liveWidths, () => props.widths, leafColumns], () => colVirtualizer.value.measure(), { deep: true })
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
+
+const isRelationColumn = (name: string | undefined) => !!name && name.startsWith('@rel:')
+const labelOf = (name: string) => props.relationLabels?.[name] ?? name
+
+watch(
+  [virtualRows, () => props.rows],
+  () => {
+    const items = virtualRows.value
+    if (items.length > 0) emit('visible', items[0]!.index, items[items.length - 1]!.index)
+  },
+  { flush: 'post' },
+)
 const virtualCols = computed(() => colVirtualizer.value.getVirtualItems().filter((vc) => vc.index >= pinnedCount.value))
 const totalWidth = computed(() => GUTTER_WIDTH + colVirtualizer.value.getTotalSize())
 const totalHeight = computed(() => HEADER_HEIGHT + rowVirtualizer.value.getTotalSize())
@@ -185,6 +203,7 @@ function dropOn(target: string): void {
 // ---- sort ------------------------------------------------------------------------------------
 
 function toggleSort(event: MouseEvent, column: string): void {
+  if (isRelationColumn(column)) return
   const index = props.sort.findIndex((s) => s.column === column)
   const current = props.sort[index]
   let next: SortItem[]
@@ -261,6 +280,12 @@ function onKeydown(event: KeyboardEvent): void {
     ArrowRight: [row, col + 1],
     ArrowLeft: [row, col - 1],
   }
+  if (event.key === ' ' && cursor.value) {
+    event.preventDefault()
+    const original = modelRows.value[cursor.value.row]?.original as Record<string, unknown> | undefined
+    if (original) emit('openRow', original)
+    return
+  }
   const target = moves[event.key]
   if (target) {
     event.preventDefault()
@@ -291,6 +316,7 @@ function onContextMenu(event: MouseEvent): void {
 
 /** Filtering by a value only makes sense for scalars; the same rule the dialog uses. */
 const filterable = (kind: ColumnKind | undefined) => !!kind && kind !== 'binary' && kind !== 'json' && kind !== 'array'
+const filterableName = (name: string, kind: ColumnKind | undefined) => !isRelationColumn(name) && filterable(kind)
 
 const menuItems = computed(() => {
   const target = menuTarget.value
@@ -303,12 +329,20 @@ const menuItems = computed(() => {
     if (kind === 'uuid' && value !== null && value !== undefined) {
       items.push({ label: t('grid.copyUuid'), icon: 'lucide:fingerprint', onSelect: () => copyText(String(value)) })
     }
-    if (filterable(kind)) {
+    if (filterableName(name, kind)) {
       items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
     }
+    const original = modelRows.value[target.row]?.original as Record<string, unknown> | undefined
+    if (original) items.push({ label: t('record.open'), icon: 'lucide:panel-right-open', onSelect: () => emit('openRow', original) })
     return items
   }
   const name = target.name
+  if (isRelationColumn(name)) {
+    return [
+      { label: t('grid.copyName'), icon: 'lucide:copy', onSelect: () => copyText(labelOf(name)) },
+      { label: t('grid.hideColumn'), icon: 'lucide:eye-off', onSelect: () => emit('hide', name) },
+    ]
+  }
   const items = [
     { label: t('grid.copyName'), icon: 'lucide:copy', onSelect: () => copyText(name) },
     { label: t('grid.sortAscendingAction'), icon: 'lucide:arrow-up', onSelect: () => emit('update:sort', [{ column: name, direction: 'asc' }]) },
@@ -318,7 +352,7 @@ const menuItems = computed(() => {
   ]
   // Filter by the value of the selected cell, when that cell is in this column.
   const col = leafColumns.value.findIndex((c) => c.id === name)
-  if (cursor.value && cursor.value.col === col && filterable(kindByName.value.get(name))) {
+  if (cursor.value && cursor.value.col === col && filterableName(name, kindByName.value.get(name))) {
     const value = valueAt(cursor.value.row, col)
     items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
   }
@@ -426,7 +460,7 @@ function downloadDialogValue(): void {
               <span class="flex items-center gap-1 truncate text-fg">
                 <Icon name="lucide:pin" class="size-3 shrink-0 text-accent" />
                 <Icon v-if="primaryKey.includes(pc.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
-                <span class="truncate">{{ pc.id }}</span>
+                <span class="truncate">{{ labelOf(pc.id) }}</span>
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === pc.id)?.nativeType }}</span>
             </span>
@@ -455,7 +489,8 @@ function downloadDialogValue(): void {
               <span class="flex items-center gap-1 truncate text-fg">
                 <Icon v-if="primaryKey.includes(leafColumns[vc.index]!.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
                 <Icon v-else-if="foreignKeys.includes(leafColumns[vc.index]!.id)" name="lucide:link" class="size-3 shrink-0 text-accent" :aria-label="t('grid.foreignKey')" />
-                <span class="truncate">{{ leafColumns[vc.index]!.id }}</span>
+                <Icon v-else-if="isRelationColumn(leafColumns[vc.index]!.id)" name="lucide:git-fork" class="size-3 shrink-0 text-accent" />
+                <span class="truncate">{{ labelOf(leafColumns[vc.index]!.id) }}</span>
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === leafColumns[vc.index]!.id)?.nativeType }}</span>
             </span>
@@ -504,8 +539,11 @@ function downloadDialogValue(): void {
         :style="{ top: `${HEADER_HEIGHT + vr.start}px`, height: `${ROW_HEIGHT}px`, width: `${totalWidth}px` }"
       >
         <div
-          class="sticky left-0 z-10 flex h-full items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums"
+          class="sticky left-0 z-10 flex h-full cursor-pointer items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums hover:text-accent"
           :style="{ width: `${GUTTER_WIDTH}px` }"
+          :title="t('record.open')"
+          data-row-gutter
+          @click="modelRows[vr.index] && emit('openRow', modelRows[vr.index]!.original as Record<string, unknown>)"
         >{{ (startIndex ?? 0) + vr.index + 1 }}</div>
         <div
           v-for="pc in pinnedCols"
@@ -519,11 +557,18 @@ function downloadDialogValue(): void {
           @mousedown="select(vr.index, pc.index, $event.shiftKey)"
           @dblclick="openValue(vr.index, pc.index)"
         >
-          <CellValue
+          <slot
             v-if="modelRows[vr.index]"
+            name="cell"
+            :column="pc.id"
+            :row="modelRows[vr.index]!.original"
             :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
-            :kind="kindByName.get(pc.id) ?? 'other'"
-          />
+          >
+            <CellValue
+              :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
+              :kind="kindByName.get(pc.id) ?? 'other'"
+            />
+          </slot>
         </div>
         <div
           v-for="vc in virtualCols"
@@ -537,11 +582,18 @@ function downloadDialogValue(): void {
           @mousedown="select(vr.index, vc.index, $event.shiftKey)"
           @dblclick="openValue(vr.index, vc.index)"
         >
-          <CellValue
+          <slot
             v-if="modelRows[vr.index]"
+            name="cell"
+            :column="leafColumns[vc.index]!.id"
+            :row="modelRows[vr.index]!.original"
             :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
-            :kind="kindByName.get(leafColumns[vc.index]!.id) ?? 'other'"
-          />
+          >
+            <CellValue
+              :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
+              :kind="kindByName.get(leafColumns[vc.index]!.id) ?? 'other'"
+            />
+          </slot>
         </div>
       </div>
     </div>

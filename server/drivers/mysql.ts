@@ -2,8 +2,8 @@ import mysql from 'mysql2/promise'
 import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectMysql } from './introspect/mysql'
-import { compileCount, compileRows } from '../query/compile'
-import type { RowsPlan } from '#shared/types/rows'
+import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 import { tlsOptions } from './ssl'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
@@ -90,6 +90,11 @@ class MysqlDriver implements Driver {
     const q = compileCount(plan)
     const [row] = await this.query<{ count: string | number }>(q.sql, q.parameters as unknown[])
     return Number(row?.count ?? 0)
+  }
+
+  async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
+    const q = compileGroupCount(plan)
+    return this.query<Record<string, unknown>>(q.sql, q.parameters as unknown[])
   }
 
   async close(): Promise<void> {

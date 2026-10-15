@@ -35,7 +35,8 @@
       "disconnected": "Not connected",
       "connected": "Connected to {name}",
       "readonly": "read-only"
-    }
+    },
+    "home": "Back to home"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -343,5 +344,49 @@
     "noColumnMatch": "No matching columns",
     "goToPage": "Go to page",
     "selectValue": "Select a value"
+  },
+  "relations": {
+    "orphan": "No matching record in {target}",
+    "previewFailed": "Could not load the preview",
+    "chipHint": "Click to open. Ctrl/⌘+click opens in a new tab.",
+    "scopeChip": "{target} of {table} {key}",
+    "removeScope": "Remove relation filter"
+  },
+  "record": {
+    "open": "Open record",
+    "title": "Record",
+    "back": "Back",
+    "openInTab": "Open in a new tab",
+    "copyJson": "Copy as JSON",
+    "copyInsert": "Copy as INSERT",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "loadError": "Could not load the record",
+    "belongsTo": "Belongs to",
+    "hasMany": "Has many",
+    "fields": "Fields",
+    "virtual": "virtual",
+    "noParent": "none",
+    "viewAll": "View all {count} in {target}"
+  },
+  "tabs": {
+    "label": "Open tabs",
+    "close": "Close tab",
+    "closeOthers": "Close other tabs",
+    "duplicate": "Duplicate tab",
+    "unsaved": "Unsaved changes",
+    "unsavedTitle": "Close tab with unsaved changes?",
+    "unsavedBody": "{name} has changes that are not saved. They will be lost.",
+    "discardAndClose": "Discard and close",
+    "keepOpen": "Keep open",
+    "closeAll": "Close all tabs"
+  },
+  "breadcrumb": {
+    "label": "Navigation trail",
+    "back": "Back",
+    "forward": "Forward",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "linkFailed": "Could not copy the link"
   }
 }

@@ -35,7 +35,8 @@
       "disconnected": "Desconectado",
       "connected": "Conectado a {name}",
       "readonly": "somente leitura"
-    }
+    },
+    "home": "Voltar para o início"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -343,5 +344,49 @@
     "noColumnMatch": "Nenhuma coluna encontrada",
     "goToPage": "Ir para a página",
     "selectValue": "Selecione um valor"
+  },
+  "relations": {
+    "orphan": "Nenhum registro correspondente em {target}",
+    "previewFailed": "Não foi possível carregar a prévia",
+    "chipHint": "Clique para abrir. Ctrl/⌘+clique abre em nova aba.",
+    "scopeChip": "{target} de {table} {key}",
+    "removeScope": "Remover filtro de relação"
+  },
+  "record": {
+    "open": "Abrir registro",
+    "title": "Registro",
+    "back": "Voltar",
+    "openInTab": "Abrir em nova aba",
+    "copyJson": "Copiar como JSON",
+    "copyInsert": "Copiar como INSERT",
+    "copied": "Copiado",
+    "copyFailed": "Não foi possível copiar",
+    "loadError": "Não foi possível carregar o registro",
+    "belongsTo": "Pertence a",
+    "hasMany": "Possui vários",
+    "fields": "Campos",
+    "virtual": "virtual",
+    "noParent": "nenhum",
+    "viewAll": "Ver os {count} em {target}"
+  },
+  "tabs": {
+    "label": "Abas abertas",
+    "close": "Fechar aba",
+    "closeOthers": "Fechar as outras abas",
+    "duplicate": "Duplicar aba",
+    "unsaved": "Alterações não salvas",
+    "unsavedTitle": "Fechar aba com alterações não salvas?",
+    "unsavedBody": "{name} tem alterações não salvas. Elas serão perdidas.",
+    "discardAndClose": "Descartar e fechar",
+    "keepOpen": "Manter aberta",
+    "closeAll": "Fechar todas as abas"
+  },
+  "breadcrumb": {
+    "label": "Trilha de navegação",
+    "back": "Voltar",
+    "forward": "Avançar",
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado",
+    "linkFailed": "Não foi possível copiar o link"
   }
 }

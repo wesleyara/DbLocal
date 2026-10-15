@@ -10,7 +10,9 @@ related: [data-grid, editing]
 
 **Nova query** na barra superior abre uma aba de editor ligada à conexão e ao schema atuais. O texto é guardado enquanto você digita, então recarregar a página não perde nada.
 
-## Executando
+![O editor SQL com um resultado](/help/shots/sql-editor-{theme}.png)
+
+## Executando {#running}
 
 - **⌘/Ctrl+Enter** executa a seleção, ou o statement sob o cursor.
 - **⌘/Ctrl+Shift+Enter** executa o script inteiro. Cada statement ganha uma aba de resultado; se um falha, o script para e os demais aparecem como ignorados.
@@ -21,7 +23,7 @@ related: [data-grid, editing]
 
 Tabelas, colunas (depois de `alias.`), funções e palavras-chave são sugeridas para o seu dialeto. Depois de `JOIN`, o editor oferece os joins que suas relações descrevem, inclusive as virtuais. **Formatar** (⇧⌥F) organiza o script.
 
-## Segurança
+## Segurança {#safety}
 
 - Em conexão somente leitura só leituras rodam; o banco também garante isso.
 - Em conexão `prod`, um statement que escreve ou altera o schema pede confirmação antes.

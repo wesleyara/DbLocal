@@ -118,6 +118,7 @@ async function remove(rel: VirtualRelationDef) {
 <template>
   <UiDialog v-model:open="open" :title="t('virtualRelations.title')" :description="t('virtualRelations.description')">
     <div class="grid gap-3">
+      <div class="-mb-2 flex justify-end"><HelpHint id="relations.virtual" /></div>
       <p v-if="store.virtual.length === 0 && !formOpen" class="text-sm text-fg-muted">{{ t('virtualRelations.empty') }}</p>
 
       <ul v-if="!formOpen" class="grid gap-1">

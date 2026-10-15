@@ -1,7 +1,7 @@
 ---
 title: Editando dados
 description: Altere células, adicione e exclua linhas, revise o SQL e salve tudo em uma única transação.
-category: Data
+category: Dados
 order: 4
 related: [data-grid, relationships]
 ---
@@ -28,7 +28,7 @@ Uma célula alterada fica destacada, e passar o mouse mostra o valor que ela tin
 
 Apertar **Delete** (ou *Excluir linha*) nas linhas selecionadas mostra antes o que depende delas: as relações um-para-muitos que apontam para as linhas, quantos registros cada uma tem e o que a chave estrangeira faz (`CASCADE` remove também, `RESTRICT` bloqueia a exclusão). As linhas ficam riscadas até você salvar.
 
-## Salvando
+## Salvando {#saving}
 
 A barra no fim do grid mostra **N alterações pendentes**. **Ver SQL** mostra os comandos que vão rodar; os valores vão ao banco como parâmetros e aparecem inline só para leitura. **Salvar** (ou **Ctrl/⌘+S**) aplica o lote. Em uma conexão `prod`, você precisa digitar o nome da conexão antes.
 

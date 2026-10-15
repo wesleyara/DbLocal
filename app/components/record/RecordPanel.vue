@@ -293,6 +293,7 @@ function onKeydown(event: KeyboardEvent): void {
     :style="{ width: `min(${ui.recordPanelWidth}px, 90vw)` }"
     :aria-label="t('record.title')"
     data-record-panel
+    data-tour="record-panel"
     tabindex="-1"
     @keydown="onKeydown"
   >

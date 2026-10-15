@@ -127,7 +127,7 @@ defineExpose({ goBack, goForward, requestClose })
     <nav class="flex h-8 items-center gap-1 border-t border-border bg-bg px-2" :aria-label="t('breadcrumb.label')">
       <UiIconButton icon="lucide:arrow-left" :label="t('breadcrumb.back')" size="sm" :disabled="!workspace.canGoBack()" @click="goBack" />
       <UiIconButton icon="lucide:arrow-right" :label="t('breadcrumb.forward')" size="sm" :disabled="!workspace.canGoForward()" @click="goForward" />
-      <ol class="font-data ml-1 flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs" data-breadcrumb>
+      <ol class="font-data ml-1 flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs" data-breadcrumb data-tour="breadcrumb">
         <li v-for="(segment, index) in trail" :key="`${index}:${segment.path}`" class="flex min-w-0 items-center gap-1">
           <Icon v-if="index > 0" name="lucide:chevron-right" class="size-3 shrink-0 text-fg-subtle" />
           <span v-if="index === trail.length - 1" class="truncate text-fg" aria-current="page">{{ segment.label }}</span>

@@ -10,6 +10,8 @@ related: [data-grid, schema-browser]
 
 O DbLocal lê as relações do seu schema (chaves estrangeiras, tabelas de junção e as relações virtuais que você declara) e as transforma em algo clicável.
 
+![O painel de registro de um pedido](/help/shots/record-{theme}.png)
+
 ## Pais: chips de chave estrangeira
 
 Uma célula de chave estrangeira mostra o registro relacionado como um chip, por exemplo `#42 · Ana Souza`. O texto depois do ponto é a coluna de exibição da tabela. Passe o mouse no chip para ver uma prévia do registro, clique para abrir o registro no painel lateral e use **Ctrl/⌘+clique** para abrir em uma nova aba. Um chip em cor de aviso é órfão: o valor aponta para um registro que não existe, o que é comum em relações virtuais.

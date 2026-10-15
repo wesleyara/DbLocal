@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
+import { usePendingStore } from '~/stores/pending-changes'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -8,6 +9,40 @@ const { message } = useConnectionErrors()
 // Fetched on the server too, so the first render already has the list.
 const { data, pending, refresh } = await useFetch<ConnectionView[]>('/api/connections', { key: 'connections' })
 const items = computed(() => data.value ?? [])
+
+const hasDemo = computed(() => items.value.some((c) => c.demo))
+const demoBusy = ref(false)
+const resetDemoOpen = ref(false)
+
+/** Creates the demo database on first use and opens it; the user's own databases are never touched. */
+async function openDemo() {
+  demoBusy.value = true
+  try {
+    const view = await $fetch<ConnectionView>('/api/demo', { method: 'POST' })
+    await refresh()
+    await navigateTo(`/c/${view.id}`)
+  } catch (err) {
+    toast.push({ kind: 'error', title: message(err) })
+  } finally {
+    demoBusy.value = false
+  }
+}
+
+async function confirmResetDemo() {
+  demoBusy.value = true
+  try {
+    await $fetch('/api/demo/reset', { method: 'POST' })
+    await refresh()
+    // Edits that were pending on the demo no longer apply to the restored file.
+    usePendingStore().version++
+    toast.push({ kind: 'success', title: t('demo.resetDone') })
+  } catch (err) {
+    toast.push({ kind: 'error', title: message(err) })
+  } finally {
+    demoBusy.value = false
+    resetDemoOpen.value = false
+  }
+}
 
 const search = ref('')
 const formOpen = ref(false)
@@ -88,6 +123,9 @@ async function onSaved() {
           :placeholder="t('connections.search')"
           :aria-label="t('connections.search')"
         />
+        <UiButton v-if="!hasDemo && items.length > 0" :loading="demoBusy" data-try-demo @click="openDemo">
+          <Icon name="lucide:flask-conical" class="size-3.5" />{{ t('demo.try') }}
+        </UiButton>
         <UiButton variant="primary" @click="openCreate">
           <Icon name="lucide:plus" class="size-3.5" />
           {{ t('connections.new') }}
@@ -102,7 +140,15 @@ async function onSaved() {
       :title="t('connections.empty')"
       :description="t('connections.emptyHint')"
     >
-      <UiButton variant="primary" @click="openCreate">{{ t('connections.new') }}</UiButton>
+      <div class="flex flex-col items-center gap-3">
+        <div class="flex gap-2">
+          <UiButton variant="primary" @click="openCreate">{{ t('connections.new') }}</UiButton>
+          <UiButton :loading="demoBusy" data-try-demo @click="openDemo">
+            <Icon name="lucide:flask-conical" class="size-3.5" />{{ t('demo.try') }}
+          </UiButton>
+        </div>
+        <HelpEmptyLink topic="noConnection" />
+      </div>
     </UiEmptyState>
 
     <p v-else-if="items.length > 0 && visible.length === 0" class="py-8 text-center text-sm text-fg-muted">
@@ -118,8 +164,16 @@ async function onSaved() {
         @edit="openEdit(c)"
         @duplicate="duplicate(c)"
         @delete="pendingDelete = c"
+        @reset-demo="resetDemoOpen = true"
       />
     </div>
+
+    <UiDialog v-model:open="resetDemoOpen" :title="t('demo.resetTitle')" :description="t('demo.resetBody')">
+      <template #footer>
+        <UiButton variant="ghost" @click="resetDemoOpen = false">{{ t('common.cancel') }}</UiButton>
+        <UiButton variant="danger" :loading="demoBusy" data-confirm-reset-demo @click="confirmResetDemo">{{ t('demo.resetConfirm') }}</UiButton>
+      </template>
+    </UiDialog>
 
     <ConnectionsConnectionForm v-model:open="formOpen" :connection="editing" @saved="onSaved" />
 

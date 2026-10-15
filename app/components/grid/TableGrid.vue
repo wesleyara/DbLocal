@@ -663,10 +663,11 @@ onMounted(() => state.start())
 </script>
 
 <template>
-  <section class="relative flex h-full min-h-0 flex-col gap-2">
+  <section class="relative flex h-full min-h-0 flex-col gap-2" data-tour="grid">
     <div class="flex flex-wrap items-center gap-2">
       <span
         v-if="state.scope.value"
+        data-tour="scope"
         class="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-accent bg-accent-soft pl-2 pr-1 text-xs text-accent"
         data-relation-chip
       >
@@ -807,6 +808,7 @@ onMounted(() => state.start())
     <p v-if="readOnlyNotice" class="flex items-center gap-1.5 text-xs text-warning" data-readonly-notice>
       <Icon name="lucide:info" class="size-3.5" />
       {{ readOnlyNotice }}
+      <HelpEmptyLink v-if="readOnlyReason(table) === 'no-key'" topic="noPrimaryKey" />
     </p>
 
     <div class="min-h-0 flex-1">
@@ -904,6 +906,7 @@ onMounted(() => state.start())
 
     <p v-if="state.settled.value && !state.error.value && state.rows.value.length === 0" class="text-xs text-fg-subtle">
       {{ filtered ? t('grid.noRowsFiltered') : t('grid.noRows') }}
+      <HelpEmptyLink v-if="filtered" topic="noResults" class="ml-2" />
     </p>
 
     <PendingBar

@@ -134,6 +134,7 @@ function formatValue(v: unknown): string {
       {{ t('grid.advancedFilters') }}
     </button>
     <slot name="after-advanced" />
+    <HelpHint id="grid.filters" />
 
     <button v-if="nodes.length" type="button" class="text-xs text-fg-subtle hover:text-fg" @click="commit([])">
       {{ t('grid.clearFilters') }}

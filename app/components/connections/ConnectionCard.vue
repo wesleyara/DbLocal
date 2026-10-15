@@ -2,7 +2,7 @@
 import type { ConnectionView } from '#shared/types/connection'
 
 const props = defineProps<{ connection: ConnectionView }>()
-const emit = defineEmits<{ open: []; edit: []; duplicate: []; delete: [] }>()
+const emit = defineEmits<{ open: []; edit: []; duplicate: []; delete: []; resetDemo: [] }>()
 const { t } = useI18n()
 const { date } = useFormat()
 
@@ -43,6 +43,7 @@ const where = computed(() =>
         aria-hidden="true"
       />
       <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{{ connection.name }}</h3>
+      <UiBadge v-if="connection.demo" tone="accent" data-demo-badge>{{ t('demo.badge') }}</UiBadge>
       <UiBadge>{{ dialects[connection.dialect] }}</UiBadge>
     </header>
 
@@ -60,6 +61,7 @@ const where = computed(() =>
         }}
       </span>
       <UiIconButton icon="lucide:plug" :label="t('connections.open')" size="sm" @click="emit('open')" />
+      <UiIconButton v-if="connection.demo" icon="lucide:rotate-ccw" :label="t('demo.reset')" size="sm" data-reset-demo @click="emit('resetDemo')" />
       <UiIconButton icon="lucide:pencil" :label="t('connections.edit')" size="sm" @click="emit('edit')" />
       <UiIconButton icon="lucide:copy" :label="t('connections.duplicate')" size="sm" @click="emit('duplicate')" />
       <UiIconButton icon="lucide:trash-2" :label="t('common.delete')" size="sm" @click="emit('delete')" />

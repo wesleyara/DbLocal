@@ -76,6 +76,7 @@ const fields = computed(() =>
           virtual && !orphan && 'border-dashed',
         ]"
         :data-fk-chip="target"
+        data-tour="fk-chip"
         :title="orphan ? t('relations.orphan', { target }) : undefined"
         @click="onClick"
         @mousedown.stop

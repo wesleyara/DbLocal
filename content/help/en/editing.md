@@ -28,7 +28,7 @@ A changed cell is tinted, and hovering it shows the value it had before. Setting
 
 Pressing **Delete** (or *Delete row*) on selected rows first shows what depends on them: the one-to-many relations that point at the rows, how many records each has, and what the foreign key does (`CASCADE` removes them too, `RESTRICT` blocks the delete). The rows are then struck through until you save.
 
-## Saving
+## Saving {#saving}
 
 The bar at the bottom of the grid shows **N pending changes**. **Preview SQL** shows the statements that will run; values go to the database as parameters and are shown inline only so you can read them. **Save** (or **Ctrl/⌘+S**) applies the batch. On a `prod` connection you are asked to type the connection's name first.
 

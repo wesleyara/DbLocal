@@ -28,6 +28,7 @@ function onClick(event: MouseEvent): void {
       props.virtual && 'border-dashed',
     ]"
     :data-relation-count="noun"
+    data-tour="relation-count"
     @click="onClick"
     @mousedown.stop
     @dblclick.stop

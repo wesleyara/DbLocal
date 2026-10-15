@@ -315,6 +315,7 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
     </div>
 
     <UiDialog v-model:open="displayOpen" :title="t('schemaTree.displayTitle', { table: displayTable?.name ?? '' })" :description="t('schemaTree.displayHint')">
+      <div class="-mt-1 mb-2 flex justify-end"><HelpHint id="relations.display" /></div>
       <label class="grid gap-1 text-xs text-fg-muted">
         {{ t('schemaTree.displayColumn') }}
         <UiSelect

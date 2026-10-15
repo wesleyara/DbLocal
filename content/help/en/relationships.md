@@ -10,6 +10,8 @@ related: [data-grid, schema-browser]
 
 DbLocal reads the relations of your schema (foreign keys, junction tables and the virtual relations you declare) and turns them into things you can click.
 
+![The record panel of an order](/help/shots/record-{theme}.png)
+
 ## Parents: foreign key chips
 
 A foreign key cell shows the related record as a chip, for example `#42 · Ana Souza`. The text after the dot is the table's display column. Hover the chip for a preview of the record, click it to open the record in the side panel, and **Ctrl/⌘+click** to open it in a new tab. A chip in warning colour is an orphan: the value points at a record that does not exist, which is common with virtual relations.

@@ -1,10 +1,12 @@
 # Example: run DbLocal with Docker.
-#   DBLOCAL_PASSWORD=change-me docker compose -f docker/compose.example.yml up -d --build
+#   docker compose -f docker/compose.example.yml up -d --build
+#   DBLOCAL_PASSWORD=change-me docker compose -f docker/compose.example.yml up -d --build   (with a login)
 # then open http://127.0.0.1:5555
 #
-# Inside the container the server binds to 0.0.0.0 (so the published port works), which is why the port
-# below is published on 127.0.0.1 only and a password is required. Do not remove either without a reverse
-# proxy that authenticates users.
+# DBLOCAL_PASSWORD is optional. Inside the container the server binds to 0.0.0.0 (so the published port
+# works), which is why the port below is published on 127.0.0.1 only. Without a password anyone who can
+# reach that port can use your databases: set one before publishing it on another interface, or put a
+# reverse proxy that authenticates users in front.
 name: dblocal
 services:
   dblocal:
@@ -14,7 +16,7 @@ services:
     ports:
       - '127.0.0.1:5555:5555'
     environment:
-      DBLOCAL_PASSWORD: ${DBLOCAL_PASSWORD:?set DBLOCAL_PASSWORD}
+      DBLOCAL_PASSWORD: ${DBLOCAL_PASSWORD:-}
       # DBLOCAL_READONLY: '1'      # make every connection read-only
       # DBLOCAL_SECRET: ...        # encryption key for saved passwords (default: generated in /data/secret.key)
     volumes:

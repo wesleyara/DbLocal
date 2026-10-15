@@ -53,6 +53,7 @@ From a container, `localhost` is the container itself. Use the host `host.docker
 | Variable | Effect |
 | --- | --- |
 | `DBLOCAL_PASSWORD` | Turns on the login page. Unset means no authentication. |
+| `DBLOCAL_ALLOWED_HOSTS` | Extra host names (comma separated) accepted without a password. `localhost` and IP addresses are always accepted, so a web page cannot reach DbLocal through DNS rebinding. |
 | `DBLOCAL_READONLY` | `1` makes every connection read-only. |
 | `DBLOCAL_DATA_DIR` | Data directory (default `~/.dblocal`, `/data` in the container). |
 | `DBLOCAL_SECRET` | Encryption key for saved secrets, instead of `secret.key`. |

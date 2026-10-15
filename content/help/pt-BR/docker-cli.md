@@ -53,6 +53,7 @@ Dentro de um container, `localhost` é o próprio container. Use o host `host.do
 | Variável | Efeito |
 | --- | --- |
 | `DBLOCAL_PASSWORD` | Liga a página de login. Sem ela, não há autenticação. |
+| `DBLOCAL_ALLOWED_HOSTS` | Nomes de host extras (separados por vírgula) aceitos sem senha. `localhost` e endereços IP são sempre aceitos, assim uma página web não alcança o DbLocal por DNS rebinding. |
 | `DBLOCAL_READONLY` | `1` torna toda conexão somente leitura. |
 | `DBLOCAL_DATA_DIR` | Diretório de dados (padrão `~/.dblocal`, `/data` no container). |
 | `DBLOCAL_SECRET` | Chave de criptografia dos segredos salvos, no lugar de `secret.key`. |

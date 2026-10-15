@@ -12,7 +12,7 @@ Click **Diagram** in the top bar to open the schema as a diagram. It opens in it
 
 ## Reading the diagram
 
-- Each box is a table. Keys come first: a key icon marks primary keys and a link icon marks foreign keys. Types are shown on the right.
+- Each box is a table. Keys come first: a key icon marks primary keys and a link icon marks foreign keys. Types are shown on the right. A `?` after a name means the column accepts NULL, `U` marks a unique index and `D` a default value (hover a column for the details: default, referenced column, composite unique indexes).
 - A line links the column that holds a foreign key to the column it points at. The end of the line shows the cardinality: a crow's foot means "many", a bar means "one".
 - **Dashed blue lines** are virtual relations (declared in DbLocal, not in the database).
 - Views have a dashed outline.

@@ -109,7 +109,7 @@ export function buildErdSvg(
         c.pk || c.fk
           ? `<text x="8" y="${mid}" font-size="9" font-weight="700" fill="${c.pk ? colors.warning : colors.accent}">${c.pk ? 'PK' : 'FK'}</text>`
           : '',
-        `<text x="28" y="${mid}" font-size="11" fill="${c.nullable ? colors.muted : colors.fg}">${esc(c.name)}</text>`,
+        `<text x="28" y="${mid}" font-size="11" fill="${c.nullable ? colors.muted : colors.fg}">${esc(c.name)}${c.nullable && !c.pk ? '?' : ''}${c.unique || c.uniqueWith.length ? '  U' : ''}${c.default !== null || c.generated ? '  D' : ''}</text>`,
         `<text x="${ERD_NODE_WIDTH - 8}" y="${mid}" font-size="9" text-anchor="end" fill="${colors.subtle}">${esc(c.type.slice(0, 22))}</text>`,
       )
     })

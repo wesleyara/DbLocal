@@ -1,4 +1,4 @@
-import type { RelationGraph, SchemaSnapshot } from './types/db'
+import type { RelationGraph, SchemaSnapshot, SchemaTable } from './types/db'
 
 export const ERD_NODE_WIDTH = 248
 export const ERD_HEADER_HEIGHT = 32
@@ -12,6 +12,14 @@ export interface ErdColumn {
   pk: boolean
   fk: boolean
   nullable: boolean
+  /** Has a single-column unique index of its own (the PK is not counted). */
+  unique: boolean
+  /** Composite unique indexes the column takes part in, as column lists. */
+  uniqueWith: string[][]
+  default: string | null
+  generated: boolean
+  /** `table.column` a foreign key on this column points at. */
+  references: string | null
 }
 
 export interface ErdTable {
@@ -80,12 +88,18 @@ export function buildErd(snapshot: SchemaSnapshot, graph: RelationGraph | null):
   const tables: ErdTable[] = snapshot.tables.map((t) => {
     const fks = fkColumns.get(t.name)
     for (const fk of t.foreignKeys) for (const c of fk.columns) (fks ?? new Set<string>()).add(c)
+    const uniques = t.indexes.filter((i) => i.unique && !i.primary)
     const cols = t.columns.map<ErdColumn>((c) => ({
       name: c.name,
       type: c.nativeType,
       pk: c.isPrimaryKey,
       fk: !!fks?.has(c.name) || t.foreignKeys.some((fk) => fk.columns.includes(c.name)),
       nullable: c.nullable,
+      unique: uniques.some((i) => i.columns.length === 1 && i.columns[0] === c.name),
+      uniqueWith: uniques.filter((i) => i.columns.length > 1 && i.columns.includes(c.name)).map((i) => i.columns),
+      default: c.default,
+      generated: c.isGenerated,
+      references: referenceOf(t, c.name),
     }))
     // Keys first, so the columns that matter stay visible when a table is truncated.
     const shown = cols.length > ERD_MAX_COLUMNS ? prioritise(cols, edges, t.name).slice(0, ERD_MAX_COLUMNS) : cols
@@ -93,6 +107,13 @@ export function buildErd(snapshot: SchemaSnapshot, graph: RelationGraph | null):
   })
 
   return { tables, edges: edges.filter((e) => names.has(e.source) && names.has(e.target)) }
+}
+
+function referenceOf(table: SchemaTable, column: string): string | null {
+  const fk = table.foreignKeys.find((f) => f.columns.includes(column))
+  if (!fk) return null
+  const target = fk.refColumns[fk.columns.indexOf(column)]
+  return target ? `${fk.refTable}.${target}` : fk.refTable
 }
 
 function prioritise(columns: ErdColumn[], edges: ErdEdge[], table: string): ErdColumn[] {

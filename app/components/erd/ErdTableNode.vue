@@ -13,6 +13,16 @@ const isSelected = computed(() => ui.selected === props.id)
 
 const handleTop = (index: number) =>
   ui.compact ? ERD_HEADER_HEIGHT / 2 : ERD_HEADER_HEIGHT + index * ERD_ROW_HEIGHT + ERD_ROW_HEIGHT / 2
+function tooltip(c: ErdTable['columns'][number]): string {
+  const parts = [`${c.name}: ${c.type}${c.nullable ? '' : ' NOT NULL'}`]
+  if (c.pk) parts.push(t('erd.primaryKey'))
+  if (c.references) parts.push(`→ ${c.references}`)
+  if (c.unique) parts.push(t('erd.unique'))
+  for (const group of c.uniqueWith) parts.push(`${t('erd.unique')} (${group.join(', ')})`)
+  if (c.default !== null) parts.push(`${t('erd.default')}: ${c.default}`)
+  else if (c.generated) parts.push(t('erd.generated'))
+  return parts.join('\n')
+}
 const lit = (column: string) => ui.hoverColumns.has(`${props.id}.${column}`)
 </script>
 
@@ -42,12 +52,16 @@ const lit = (column: string) => ui.hoverColumns.has(`${props.id}.${column}`)
         class="font-data flex items-center gap-1.5 border-t border-border px-2 text-xs"
         :class="lit(c.name) && 'bg-accent-soft'"
         :style="{ height: `${ERD_ROW_HEIGHT}px` }"
+        :title="tooltip(c)"
       >
         <span class="inline-flex w-4 shrink-0 justify-center">
           <Icon v-if="c.pk" name="lucide:key-round" class="size-3 text-warning" :title="t('erd.primaryKey')" />
           <Icon v-else-if="c.fk" name="lucide:link-2" class="size-3 text-accent" :title="t('erd.foreignKey')" />
         </span>
         <span class="truncate" :class="c.nullable && 'text-fg-muted'">{{ c.name }}</span>
+        <span v-if="c.nullable && !c.pk" class="text-fg-subtle" aria-hidden="true">?</span>
+        <span v-if="c.unique || c.uniqueWith.length" class="shrink-0 rounded-[3px] border border-accent/40 px-0.5 text-[9px] font-semibold leading-3 text-accent">U</span>
+        <span v-if="c.default !== null || c.generated" class="shrink-0 rounded-[3px] border border-border-strong px-0.5 text-[9px] font-semibold leading-3 text-fg-subtle">D</span>
         <span class="ml-auto truncate pl-2 text-[10px] text-fg-subtle">{{ c.type }}</span>
       </li>
       <li

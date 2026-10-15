@@ -553,6 +553,9 @@
     }
   },
   "erd": {
+    "unique": "Unique",
+    "default": "Default",
+    "generated": "Generated",
     "open": "Diagram",
     "title": "Diagram",
     "search": "Find a table…",

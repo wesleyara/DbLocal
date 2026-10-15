@@ -12,7 +12,7 @@ Clique em **Diagrama** na barra superior para abrir o schema como diagrama. Ele 
 
 ## Lendo o diagrama
 
-- Cada caixa é uma tabela. As chaves vêm primeiro: o ícone de chave marca chaves primárias e o de elo marca chaves estrangeiras. Os tipos aparecem à direita.
+- Cada caixa é uma tabela. As chaves vêm primeiro: o ícone de chave marca chaves primárias e o de elo marca chaves estrangeiras. Os tipos aparecem à direita. Um `?` depois do nome indica que a coluna aceita NULL, `U` marca índice único e `D` um valor default (passe o mouse na coluna para ver o default, a coluna referenciada e os índices únicos compostos).
 - Uma linha liga a coluna que guarda a chave estrangeira à coluna para a qual ela aponta. A ponta mostra a cardinalidade: pé de galinha é "muitos", barra é "um".
 - **Linhas tracejadas azuis** são relações virtuais (declaradas no DbLocal, não no banco).
 - Views têm contorno tracejado.

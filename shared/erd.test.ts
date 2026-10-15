@@ -37,6 +37,21 @@ describe('buildErd', () => {
     const orders = erd.tables.find((t) => t.id === 'orders')!
     expect(orders.columns.map((c) => [c.name, c.pk, c.fk])).toEqual([['id', true, false], ['user_id', false, true]])
   })
+  it('carries unique, default and reference info', () => {
+    const t = table('accounts', ['id', 'email', 'org_id', 'role'], [{ name: 'fk', columns: ['org_id'], refSchema: null, refTable: 'orgs', refColumns: ['id'], onDelete: 'no action', onUpdate: 'no action' }])
+    t.columns[1]!.default = null
+    t.columns[3]!.default = "'member'"
+    t.indexes = [
+      { name: 'u_email', columns: ['email'], unique: true, primary: false },
+      { name: 'u_org_role', columns: ['org_id', 'role'], unique: true, primary: false },
+      { name: 'pk', columns: ['id'], unique: true, primary: true },
+    ]
+    const cols = buildErd({ ...snapshot, tables: [t] }, null).tables[0]!.columns
+    expect(cols[0]).toMatchObject({ unique: false, uniqueWith: [] })
+    expect(cols[1]).toMatchObject({ unique: true })
+    expect(cols[2]).toMatchObject({ unique: false, uniqueWith: [['org_id', 'role']], references: 'orgs.id' })
+    expect(cols[3]).toMatchObject({ default: "'member'" })
+  })
   it('truncates huge tables keeping keys', () => {
     const wide = table('wide', ['id', ...Array.from({ length: 60 }, (_, i) => `c${i}`), 'ref'])
     const out = buildErd({ ...snapshot, tables: [wide] }, null)

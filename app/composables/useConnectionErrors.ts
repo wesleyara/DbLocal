@@ -19,8 +19,28 @@ export function errorCode(err: unknown): string {
   return code && KNOWN.has(code) ? code : 'unknown'
 }
 
-/** Translates an API error into a message key under `errors.*`. */
+/**
+ * The server's own message for errors that carry no useful translation on their own
+ * (a missing SQLite file, a TLS certificate problem, an unreachable SSH target).
+ */
+export function errorDetail(err: unknown): string | null {
+  const body = (err as { data?: { statusMessage?: string; statusCode?: number } })?.data
+  if (!body || body.statusCode === 400 || body.statusCode === 404) return null
+  const detail = body.statusMessage?.trim()
+  return detail && detail !== 'Server Error' ? detail : null
+}
+
+/** Translates an API error into a message under `errors.*`, followed by the server detail when there is one. */
 export function useConnectionErrors() {
   const { t } = useI18n()
-  return { message: (err: unknown) => t(`errors.${errorCode(err)}`) }
+  return {
+    message: (err: unknown) => {
+      const code = errorCode(err)
+      const base = t(`errors.${code}`)
+      const detail = errorDetail(err)
+      if (!detail) return base
+      // "Something went wrong." adds nothing next to a specific server message.
+      return code === 'unknown' ? detail : `${base} ${detail}`
+    },
+  }
 }

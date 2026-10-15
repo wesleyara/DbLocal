@@ -144,3 +144,11 @@ body {
 * {
   border-color: var(--border);
 }
+
+/* Text fields draw focus inside their own border, so no container with overflow clips it. */
+.ui-field:focus,
+.ui-field:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}

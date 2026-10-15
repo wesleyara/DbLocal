@@ -26,7 +26,7 @@ const colorDot: Record<NonNullable<ConnectionView['color']>, string> = {
 
 const where = computed(() =>
   props.connection.dialect === 'sqlite'
-    ? props.connection.filePath
+    ? (props.connection.filePath ?? props.connection.host)
     : `${props.connection.host ?? ''}${props.connection.port ? `:${props.connection.port}` : ''}`,
 )
 </script>

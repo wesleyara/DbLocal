@@ -59,6 +59,16 @@ export const filterNodeSchema = node.superRefine((root, ctx) => {
 
 const sortItem = z.object({ column: z.string().min(1), direction: z.enum(['asc', 'desc']) })
 
+export const recordKeySchema = z
+  .record(z.string().min(1), z.union([z.string(), z.number()]))
+  .refine((k) => Object.keys(k).length > 0 && Object.keys(k).length <= 16, { message: 'invalid key' })
+
+export const relationScopeSchema = z.object({
+  table: z.string().min(1),
+  relation: z.string().min(1),
+  key: recordKeySchema,
+})
+
 /** Body of `POST /api/c/:id/tables/:table/rows`. */
 export const rowsRequestSchema = z.object({
   schema: z.string().min(1),
@@ -67,6 +77,7 @@ export const rowsRequestSchema = z.object({
   limit: z.number().int().min(1).max(MAX_PAGE_SIZE),
   offset: z.number().int().min(0),
   columns: z.array(z.string().min(1)).min(1).max(500).optional(),
+  scope: relationScopeSchema.nullable().optional(),
 })
 
 /** Body of `POST /api/c/:id/tables/:table/count`. */
@@ -74,6 +85,14 @@ export const countRequestSchema = z.object({
   schema: z.string().min(1),
   filter: filterNodeSchema.nullable(),
   exact: z.boolean(),
+  scope: relationScopeSchema.nullable().optional(),
+})
+
+/** Body of `POST /api/c/:id/tables/:table/relations/resolve`. */
+export const resolveRequestSchema = z.object({
+  schema: z.string().min(1),
+  rows: z.array(recordKeySchema).min(1).max(500),
+  relations: z.array(z.string().min(1)).max(200).optional(),
 })
 
 const MAX_WIDTH = 2000
@@ -98,3 +117,14 @@ export const blobRequestSchema = z.object({
 
 /** Body of `PUT /api/c/:id/tables/:table/prefs`. */
 export const gridPrefsRequestSchema = z.object({ schema: z.string().min(1), prefs: gridPrefsSchema })
+
+/** Body of `POST /api/c/:id/tables/:table/export`: the grid's view, streamed as a file. */
+export const tableExportRequestSchema = z.object({
+  schema: z.string().min(1),
+  format: z.enum(['csv', 'json']),
+  filter: filterNodeSchema.nullable().optional(),
+  sort: z.array(sortItem).max(8).optional(),
+  columns: z.array(z.string().min(1)).min(1).max(500).optional(),
+  scope: relationScopeSchema.nullable().optional(),
+  limit: z.number().int().min(1).optional(),
+})

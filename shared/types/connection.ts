@@ -18,6 +18,8 @@ export interface ConnectionView {
   environment: Environment
   color: ConnectionColor | null
   readonly: boolean
+  /** `DBLOCAL_READONLY` is set: every connection is read-only, whatever its own flag says. */
+  readonlyGlobal: boolean
   defaultSchema: string | null
   hasPassword: boolean
   ssl: { mode: SslMode; hasCa: boolean; hasCert: boolean; hasKey: boolean }

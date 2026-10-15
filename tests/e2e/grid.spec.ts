@@ -38,6 +38,18 @@ test('reads the first page and shows the row count', async ({ page }) => {
   await expect(page.getByText('1–60 de 60').or(page.getByText('1–60 of 60'))).toBeVisible()
 })
 
+test('the table page hydrates without mismatches', async ({ page }) => {
+  const problems: string[] = []
+  page.on('console', (msg) => {
+    if (/hydration|intlify/i.test(msg.text())) problems.push(msg.text())
+  })
+  await page.goto(gridUrl())
+  await expect(page.getByRole('columnheader', { name: /name/ })).toBeVisible()
+  // The sidebar tree is rendered on the server with the schema already loaded.
+  await expect(page.getByRole('treeitem').first()).toBeVisible()
+  expect(problems).toEqual([])
+})
+
 test('filters from a deep link and reports the match', async ({ page }) => {
   const f = encodeUrlState({ type: 'group', logic: 'and', children: [{ type: 'condition', column: 'price', op: 'gte', value: 550 }] })
   await page.goto(gridUrl(`&f=${f}`))

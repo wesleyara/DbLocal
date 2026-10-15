@@ -1,6 +1,7 @@
 import type { SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { SchemaSnapshot } from '#shared/types/db'
-import type { RowsPlan } from '#shared/types/rows'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
+import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 
 export type Dialect = 'postgres' | 'mysql' | 'sqlite'
 
@@ -37,6 +38,44 @@ export interface DriverConfig {
   ssh?: SshOptions
 }
 
+/** What a raw statement produced. `rows` holds at most `limit` rows, as arrays aligned with `columns`. */
+export interface RawStatementOutput {
+  columns: { name: string; type: string }[]
+  rows: unknown[][]
+  truncated: boolean
+  /** Rows changed by INSERT / UPDATE / DELETE, null for statements that do not report it. */
+  affectedRows: number | null
+  notices: string[]
+}
+
+export interface StreamHandlers {
+  onColumns(columns: { name: string; type: string }[]): void | Promise<void>
+  onRows(rows: unknown[][]): void | Promise<void>
+}
+
+export interface QuerySessionOptions {
+  /** Postgres schema / MySQL database the statements run against. */
+  schema?: string
+  /** Statements run in a read-only transaction (PG, MySQL) or on a read-only handle (SQLite). */
+  readonly: boolean
+}
+
+/**
+ * One dedicated connection for a batch of statements, so `SET` and `USE` carry over between them.
+ * `cancel` aborts the statement running now on the server.
+ */
+export interface QuerySession {
+  run(sql: string, limit: number): Promise<RawStatementOutput>
+  /**
+   * Runs one statement and hands its rows over in batches, never holding more than a batch in
+   * memory (exports). `onRows` is awaited, so a slow consumer applies back-pressure.
+   */
+  stream(sql: string, handlers: StreamHandlers): Promise<void>
+  cancel(): Promise<void>
+  /** `discard` drops the connection instead of returning it to the pool (session state was changed). */
+  close(options?: { discard?: boolean }): Promise<void>
+}
+
 export interface ConnectionTestResult {
   serverVersion: string
   latencyMs: number
@@ -57,6 +96,15 @@ export interface Driver {
   readRows(plan: RowsPlan): Promise<Record<string, unknown>[]>
   /** Counts the rows matching the plan's filter. */
   countRows(plan: RowsPlan): Promise<number>
+  /** Row counts per distinct value of `plan.groupBy` (used to count related records in batch). */
+  countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]>
+  /**
+   * Runs a validated batch of inserts, updates and deletes in one transaction. Any failure rolls
+   * everything back and throws a `MutationFailedError` with the index of the operation.
+   */
+  applyMutations(plan: MutationPlan): Promise<MutationResult[]>
+  /** Opens a dedicated session to run raw SQL (the SQL editor). */
+  openQuerySession(options: QuerySessionOptions): Promise<QuerySession>
   close(): Promise<void>
 }
 

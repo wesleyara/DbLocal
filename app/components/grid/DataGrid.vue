@@ -3,8 +3,13 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 import { tableFeatures, useTable } from '@tanstack/vue-table'
 import type { ColumnKind, SchemaColumn } from '#shared/types/db'
 import type { SortItem } from '#shared/types/rows'
+import { functionsFor } from '#shared/edit-functions'
+import { parseInput } from '#shared/edit-values'
 import CellValue from './cells/CellValue.vue'
+import CellEditor from './editors/CellEditor.vue'
+import ValueDialog from './editors/ValueDialog.vue'
 import JsonTree from './JsonTree.vue'
+import { metaOf } from './row-meta'
 
 const ROW_HEIGHT = 28
 const HEADER_HEIGHT = 40
@@ -32,11 +37,23 @@ const props = defineProps<{
   sort: SortItem[]
   primaryKey: string[]
   foreignKeys: string[]
+  /** Column lists of the table's unique indexes (primary key excluded), for the header markers. */
+  uniques?: string[][]
   /** Saved widths in px by column name. Columns without one use the default for their kind. */
   widths?: Record<string, number>
   loading?: boolean
   /** Position of the first row in the whole result, so the row numbers continue across pages. */
   startIndex?: number
+  /** Labels of the virtual relation columns (those named `@rel:...`), which are not sortable or filterable. */
+  relationLabels?: Record<string, string>
+  /** Cells can be edited (the table has a key and the connection is writable). */
+  editable?: boolean
+  /** FK columns edited through a picker instead of a text input. */
+  pickable?: string[]
+  /** Changes when a new page of data arrives: selection and any open editor are dropped then, not on every local edit. */
+  selectionKey?: unknown
+  /** Dialect of the connection: SQLite cannot reset an existing row's column to DEFAULT. */
+  dialect?: string | null
 }>()
 const emit = defineEmits<{
   'update:sort': [sort: SortItem[]]
@@ -46,6 +63,18 @@ const emit = defineEmits<{
   togglePin: [column: string]
   download: [column: string, row: Record<string, unknown>]
   hide: [column: string]
+  /** Rows currently in view, as indexes into `rows`, so related data is loaded for them only. */
+  visible: [first: number, last: number]
+  /** The user asked for the full record of a row (gutter click or Space). */
+  openRow: [row: Record<string, unknown>]
+  /** A cell was edited. `value` may be `{ $default: true }` (reset to the column default). */
+  edit: [row: Record<string, unknown>, column: string, value: unknown]
+  /** A foreign key cell is to be edited: the parent applies the picker. */
+  editForeignKey: [row: Record<string, unknown>, column: string]
+  deleteRows: [rows: Record<string, unknown>[]]
+  restoreRows: [rows: Record<string, unknown>[]]
+  duplicateRow: [row: Record<string, unknown>]
+  undoRow: [row: Record<string, unknown>]
 }>()
 const { t } = useI18n()
 
@@ -109,6 +138,18 @@ const colVirtualizer = useVirtualizer(
 watch([liveWidths, () => props.widths, leafColumns], () => colVirtualizer.value.measure(), { deep: true })
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
+
+const isRelationColumn = (name: string | undefined) => !!name && name.startsWith('@rel:')
+const labelOf = (name: string) => props.relationLabels?.[name] ?? name
+
+watch(
+  [virtualRows, () => props.rows],
+  () => {
+    const items = virtualRows.value
+    if (items.length > 0) emit('visible', items[0]!.index, items[items.length - 1]!.index)
+  },
+  { flush: 'post' },
+)
 const virtualCols = computed(() => colVirtualizer.value.getVirtualItems().filter((vc) => vc.index >= pinnedCount.value))
 const totalWidth = computed(() => GUTTER_WIDTH + colVirtualizer.value.getTotalSize())
 const totalHeight = computed(() => HEADER_HEIGHT + rowVirtualizer.value.getTotalSize())
@@ -128,7 +169,7 @@ const pinnedLeft = (left: number) => `${left + scrollX.value}px`
 const anchor = ref<{ row: number; col: number } | null>(null)
 const cursor = ref<{ row: number; col: number } | null>(null)
 watch(
-  () => props.rows,
+  () => props.selectionKey,
   () => {
     anchor.value = null
     cursor.value = null
@@ -148,6 +189,126 @@ const inRange = (row: number, col: number) => {
   const r = range.value
   return !!r && row >= r.r0 && row <= r.r1 && col >= r.c0 && col <= r.c1
 }
+
+// ---- editing ---------------------------------------------------------------------------------
+
+const editing = ref<{ row: number; col: number } | null>(null)
+const editorDialog = ref<{ open: boolean; column: SchemaColumn | null; value: unknown; row: Record<string, unknown> | null }>({
+  open: false,
+  column: null,
+  value: null,
+  row: null,
+})
+watch(
+  () => props.selectionKey,
+  () => (editing.value = null),
+)
+
+const columnAt = (col: number): SchemaColumn | null => props.columns[col] ?? null
+const rowAt = (row: number): Record<string, unknown> | null =>
+  (modelRows.value[row]?.original as Record<string, unknown> | undefined) ?? null
+
+/** A cell can be typed into when the grid is editable, the row is not deleted and the column is a real, non-generated one. */
+function canEditCell(row: number, col: number): boolean {
+  const column = columnAt(col)
+  const data = rowAt(row)
+  if (!props.editable || !column || !data || isRelationColumn(column.name)) return false
+  if (metaOf(data)?.state === 'deleted') return false
+  return !column.isGenerated
+}
+
+const isEditing = (row: number, col: number) => editing.value?.row === row && editing.value?.col === col
+
+function focusGrid(): void {
+  void nextTick(() => scrollEl.value?.focus({ preventScroll: true }))
+}
+
+/** Starts editing the cell with the editor that fits its column; FKs open the picker. */
+function startEdit(row: number, col: number): void {
+  const column = columnAt(col)
+  const data = rowAt(row)
+  if (!column || !data || !canEditCell(row, col)) return
+  const value = valueAt(row, col)
+  if (props.pickable?.includes(column.name)) {
+    emit('editForeignKey', data, column.name)
+    return
+  }
+  if (column.kind === 'binary') return
+  if (column.kind === 'json' || column.kind === 'array') {
+    editorDialog.value = { open: true, column, value, row: data }
+    return
+  }
+  editing.value = { row, col }
+}
+
+function onEditorCommit(value: unknown, move: 'down' | 'right' | 'none'): void {
+  const at = editing.value
+  editing.value = null
+  if (!at) return
+  const column = columnAt(at.col)
+  const data = rowAt(at.row)
+  if (column && data) emit('edit', data, column.name, value)
+  if (move === 'down') moveTo(at.row + 1, at.col, false)
+  else if (move === 'right') moveTo(at.row, at.col + 1, false)
+  focusGrid()
+}
+
+function onEditorCancel(): void {
+  editing.value = null
+  focusGrid()
+}
+
+function onEditorDialogCommit(value: unknown): void {
+  const { column, row } = editorDialog.value
+  if (column && row) emit('edit', row, column.name, value)
+}
+
+function setCellValue(row: number, col: number, value: unknown): void {
+  const column = columnAt(col)
+  const data = rowAt(row)
+  if (column && data && canEditCell(row, col)) emit('edit', data, column.name, value)
+}
+
+function selectedRows(): Record<string, unknown>[] {
+  const r = range.value
+  if (!r) return []
+  const out: Record<string, unknown>[] = []
+  for (let row = r.r0; row <= r.r1; row++) {
+    const data = rowAt(row)
+    if (data) out.push(data)
+  }
+  return out
+}
+
+function onCellDblClick(row: number, col: number): void {
+  if (canEditCell(row, col)) startEdit(row, col)
+  else openValue(row, col)
+}
+
+const cellTitle = (row: unknown, column: string): string | undefined => {
+  const changed = metaOf(row)?.changed[column]
+  if (!changed) return undefined
+  const was = changed.original === null || changed.original === undefined ? 'NULL' : String(changed.original)
+  return t('edit.was', { value: was.length > 200 ? `${was.slice(0, 200)}…` : was })
+}
+
+function rowClass(row: unknown): string {
+  const meta = metaOf(row)
+  if (!meta) return ''
+  if (meta.error) return 'bg-danger-soft ring-1 ring-inset ring-danger'
+  if (meta.state === 'new') return 'bg-success-soft'
+  if (meta.state === 'deleted') return 'bg-danger-soft text-fg-muted line-through'
+  return ''
+}
+
+/** New rows sit above the loaded ones: they show `+`, and the numbers of the loaded rows are unaffected. */
+const newRowCount = computed(() => props.rows.filter((r) => metaOf(r)?.state === 'new').length)
+function gutterLabel(index: number): string {
+  if (metaOf(modelRows.value[index]?.original)?.state === 'new') return '+'
+  return String((props.startIndex ?? 0) + index - newRowCount.value + 1)
+}
+
+const cellChanged = (row: unknown, column: string): boolean => !!metaOf(row)?.changed[column]
 
 // ---- resize ----------------------------------------------------------------------------------
 
@@ -185,6 +346,7 @@ function dropOn(target: string): void {
 // ---- sort ------------------------------------------------------------------------------------
 
 function toggleSort(event: MouseEvent, column: string): void {
+  if (isRelationColumn(column)) return
   const index = props.sort.findIndex((s) => s.column === column)
   const current = props.sort[index]
   let next: SortItem[]
@@ -261,6 +423,56 @@ function onKeydown(event: KeyboardEvent): void {
     ArrowRight: [row, col + 1],
     ArrowLeft: [row, col - 1],
   }
+  if (props.editable && cursor.value && (event.key === 'Enter' || event.key === 'F2')) {
+    event.preventDefault()
+    startEdit(cursor.value.row, cursor.value.col)
+    return
+  }
+  if (props.editable && (event.key === 'Delete' || event.key === 'Backspace') && range.value) {
+    event.preventDefault()
+    const rows = selectedRows()
+    if (rows.length) emit('deleteRows', rows)
+    return
+  }
+  if (event.key === ' ' && cursor.value) {
+    event.preventDefault()
+    const original = modelRows.value[cursor.value.row]?.original as Record<string, unknown> | undefined
+    if (original) emit('openRow', original)
+    return
+  }
+  // ⌘Z undoes the pending edits of the row under the cursor (one level: the whole row).
+  if (props.editable && (event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z' && cursor.value) {
+    const original = modelRows.value[cursor.value.row]?.original as Record<string, unknown> | undefined
+    const meta = original ? metaOf(original) : null
+    if (original && meta && (meta.state || Object.keys(meta.changed).length)) {
+      event.preventDefault()
+      emit('undoRow', original)
+    }
+    return
+  }
+  // F filters the table by the value of the cell under the cursor.
+  if (event.key.toLowerCase() === 'f' && !event.metaKey && !event.ctrlKey && !event.altKey && cursor.value) {
+    const name = leafColumns.value[cursor.value.col]?.id ?? ''
+    if (filterableName(name, kindByName.value.get(name))) {
+      event.preventDefault()
+      emit('filterByValue', name, valueAt(cursor.value.row, cursor.value.col))
+    }
+    return
+  }
+  // Home / End jump to the first / last column of the row, with ⌘ / Ctrl to the first / last row.
+  if (event.key === 'Home' || event.key === 'End') {
+    event.preventDefault()
+    const first = event.key === 'Home'
+    const mod = event.metaKey || event.ctrlKey
+    moveTo(mod ? (first ? 0 : Infinity) : row, first ? 0 : Infinity, event.shiftKey)
+    return
+  }
+  if (event.key === 'PageDown' || event.key === 'PageUp') {
+    event.preventDefault()
+    const page = Math.max(1, (virtualRows.value.length || 10) - 2)
+    moveTo(event.key === 'PageDown' ? row + page : row - page, col, event.shiftKey)
+    return
+  }
   const target = moves[event.key]
   if (target) {
     event.preventDefault()
@@ -291,6 +503,7 @@ function onContextMenu(event: MouseEvent): void {
 
 /** Filtering by a value only makes sense for scalars; the same rule the dialog uses. */
 const filterable = (kind: ColumnKind | undefined) => !!kind && kind !== 'binary' && kind !== 'json' && kind !== 'array'
+const filterableName = (name: string, kind: ColumnKind | undefined) => !isRelationColumn(name) && filterable(kind)
 
 const menuItems = computed(() => {
   const target = menuTarget.value
@@ -303,12 +516,71 @@ const menuItems = computed(() => {
     if (kind === 'uuid' && value !== null && value !== undefined) {
       items.push({ label: t('grid.copyUuid'), icon: 'lucide:fingerprint', onSelect: () => copyText(String(value)) })
     }
-    if (filterable(kind)) {
+    if (filterableName(name, kind)) {
       items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
+    }
+    const original = modelRows.value[target.row]?.original as Record<string, unknown> | undefined
+    if (original) items.push({ label: t('record.open'), icon: 'lucide:panel-right-open', onSelect: () => emit('openRow', original) })
+    const column = columnAt(target.col)
+    if (props.editable && original && column && !isRelationColumn(column.name)) {
+      const meta = metaOf(original)
+      const deleted = meta?.state === 'deleted'
+      const edits: typeof items = []
+      if (canEditCell(target.row, target.col)) {
+        if (column.kind !== 'binary') {
+          edits.push({ label: t('edit.editValue'), icon: 'lucide:pencil', onSelect: () => startEdit(target.row, target.col) })
+        }
+        if (column.nullable) {
+          edits.push({ label: t('edit.setNull'), icon: 'lucide:circle-slash', onSelect: () => setCellValue(target.row, target.col, null) })
+        }
+        for (const fn of functionsFor(column)) {
+          const parsed = parseInput(column, `${fn}()`)
+          if (!parsed.ok) continue
+          edits.push({
+            label: t('edit.generate', { fn: `${fn}()` }),
+            icon: 'lucide:wand-sparkles',
+            onSelect: () => setCellValue(target.row, target.col, parsed.value),
+          })
+        }
+        const defaultable = column.default !== null || column.nullable
+        if (defaultable && (props.dialect !== 'sqlite' || meta?.state === 'new')) {
+          edits.push({
+            label: t('edit.setDefault'),
+            icon: 'lucide:rotate-ccw',
+            onSelect: () => setCellValue(target.row, target.col, { $default: true }),
+          })
+        }
+      }
+      const wasChanged = meta?.changed[column.name]
+      if (wasChanged) {
+        edits.push({
+          label: t('edit.undoCell'),
+          icon: 'lucide:undo-2',
+          onSelect: () => emit('edit', original, column.name, wasChanged.original),
+        })
+      }
+      if (meta && (meta.state || Object.keys(meta.changed).length)) {
+        edits.push({ label: t('edit.undoRow'), icon: 'lucide:undo-2', onSelect: () => emit('undoRow', original) })
+      }
+      if (meta?.state !== 'new') {
+        edits.push({ label: t('edit.duplicateRow'), icon: 'lucide:copy-plus', onSelect: () => emit('duplicateRow', original) })
+      }
+      edits.push(
+        deleted
+          ? { label: t('edit.restoreRow'), icon: 'lucide:archive-restore', onSelect: () => emit('restoreRows', selectedRows()) }
+          : { label: t('edit.deleteRow'), icon: 'lucide:trash-2', onSelect: () => emit('deleteRows', selectedRows().length ? selectedRows() : [original]) },
+      )
+      items.push(...edits)
     }
     return items
   }
   const name = target.name
+  if (isRelationColumn(name)) {
+    return [
+      { label: t('grid.copyName'), icon: 'lucide:copy', onSelect: () => copyText(labelOf(name)) },
+      { label: t('grid.hideColumn'), icon: 'lucide:eye-off', onSelect: () => emit('hide', name) },
+    ]
+  }
   const items = [
     { label: t('grid.copyName'), icon: 'lucide:copy', onSelect: () => copyText(name) },
     { label: t('grid.sortAscendingAction'), icon: 'lucide:arrow-up', onSelect: () => emit('update:sort', [{ column: name, direction: 'asc' }]) },
@@ -318,7 +590,7 @@ const menuItems = computed(() => {
   ]
   // Filter by the value of the selected cell, when that cell is in this column.
   const col = leafColumns.value.findIndex((c) => c.id === name)
-  if (cursor.value && cursor.value.col === col && filterable(kindByName.value.get(name))) {
+  if (cursor.value && cursor.value.col === col && filterableName(name, kindByName.value.get(name))) {
     const value = valueAt(cursor.value.row, col)
     items.push({ label: t('grid.filterByThisValue'), icon: 'lucide:filter', onSelect: () => emit('filterByValue', name, value) })
   }
@@ -426,7 +698,8 @@ function downloadDialogValue(): void {
               <span class="flex items-center gap-1 truncate text-fg">
                 <Icon name="lucide:pin" class="size-3 shrink-0 text-accent" />
                 <Icon v-if="primaryKey.includes(pc.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
-                <span class="truncate">{{ pc.id }}</span>
+                <span class="truncate">{{ labelOf(pc.id) }}</span>
+                <GridColumnMarks :column="columns.find((c) => c.name === pc.id)" :primary-key="primaryKey.includes(pc.id)" :uniques="uniques ?? []" />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === pc.id)?.nativeType }}</span>
             </span>
@@ -455,7 +728,13 @@ function downloadDialogValue(): void {
               <span class="flex items-center gap-1 truncate text-fg">
                 <Icon v-if="primaryKey.includes(leafColumns[vc.index]!.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
                 <Icon v-else-if="foreignKeys.includes(leafColumns[vc.index]!.id)" name="lucide:link" class="size-3 shrink-0 text-accent" :aria-label="t('grid.foreignKey')" />
-                <span class="truncate">{{ leafColumns[vc.index]!.id }}</span>
+                <Icon v-else-if="isRelationColumn(leafColumns[vc.index]!.id)" name="lucide:git-fork" class="size-3 shrink-0 text-accent" />
+                <span class="truncate">{{ labelOf(leafColumns[vc.index]!.id) }}</span>
+                <GridColumnMarks
+                  :column="columns.find((c) => c.name === leafColumns[vc.index]!.id)"
+                  :primary-key="primaryKey.includes(leafColumns[vc.index]!.id)"
+                  :uniques="uniques ?? []"
+                />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === leafColumns[vc.index]!.id)?.nativeType }}</span>
             </span>
@@ -501,47 +780,84 @@ function downloadDialogValue(): void {
         :key="String(vr.key)"
         role="row"
         class="absolute left-0 flex border-b border-border/60 hover:bg-surface/60"
+        :class="rowClass(modelRows[vr.index]?.original)"
+        :data-row-state="metaOf(modelRows[vr.index]?.original)?.state ?? undefined"
+        :data-row-error="metaOf(modelRows[vr.index]?.original)?.error ? 'true' : undefined"
+        :title="metaOf(modelRows[vr.index]?.original)?.error"
         :style="{ top: `${HEADER_HEIGHT + vr.start}px`, height: `${ROW_HEIGHT}px`, width: `${totalWidth}px` }"
       >
         <div
-          class="sticky left-0 z-10 flex h-full items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums"
+          class="sticky left-0 z-10 flex h-full cursor-pointer items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums hover:text-accent"
           :style="{ width: `${GUTTER_WIDTH}px` }"
-        >{{ (startIndex ?? 0) + vr.index + 1 }}</div>
+          :title="t('record.open')"
+          data-row-gutter
+          @click="modelRows[vr.index] && emit('openRow', modelRows[vr.index]!.original as Record<string, unknown>)"
+        >{{ gutterLabel(vr.index) }}</div>
         <div
           v-for="pc in pinnedCols"
           :key="`pinned-${pc.id}`"
           role="gridcell"
           class="absolute top-0 z-10 flex h-full min-w-0 items-center overflow-hidden border-r border-border bg-bg px-2"
-          :class="inRange(vr.index, pc.index) && 'bg-accent-soft'"
+          :class="[inRange(vr.index, pc.index) && 'bg-accent-soft', cellChanged(modelRows[vr.index]?.original, pc.id) && 'border-l-2 border-l-warning bg-warning-soft']"
           :data-r="vr.index"
           :data-c="pc.index"
+          :title="cellTitle(modelRows[vr.index]?.original, pc.id)"
           :style="{ left: pinnedLeft(pc.left), width: `${pc.width}px` }"
           @mousedown="select(vr.index, pc.index, $event.shiftKey)"
-          @dblclick="openValue(vr.index, pc.index)"
+          @dblclick="onCellDblClick(vr.index, pc.index)"
         >
-          <CellValue
-            v-if="modelRows[vr.index]"
+          <CellEditor
+            v-if="isEditing(vr.index, pc.index)"
+            :column="columnAt(pc.index)!"
             :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
-            :kind="kindByName.get(pc.id) ?? 'other'"
+            @commit="onEditorCommit"
+            @cancel="onEditorCancel"
           />
+          <slot
+            v-else-if="modelRows[vr.index]"
+            name="cell"
+            :column="pc.id"
+            :row="modelRows[vr.index]!.original"
+            :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
+          >
+            <CellValue
+              :value="modelRows[vr.index]!.getAllCells()[pc.index]?.getValue()"
+              :kind="kindByName.get(pc.id) ?? 'other'"
+            />
+          </slot>
         </div>
         <div
           v-for="vc in virtualCols"
           :key="String(vc.key)"
           role="gridcell"
           class="absolute top-0 flex h-full min-w-0 items-center overflow-hidden border-r border-border/40 px-2"
-          :class="inRange(vr.index, vc.index) && 'bg-accent-soft'"
+          :class="[inRange(vr.index, vc.index) && 'bg-accent-soft', cellChanged(modelRows[vr.index]?.original, leafColumns[vc.index]!.id) && 'border-l-2 border-l-warning bg-warning-soft']"
           :data-r="vr.index"
           :data-c="vc.index"
+          :title="cellTitle(modelRows[vr.index]?.original, leafColumns[vc.index]!.id)"
           :style="{ left: `${GUTTER_WIDTH + vc.start}px`, width: `${vc.size}px` }"
           @mousedown="select(vr.index, vc.index, $event.shiftKey)"
-          @dblclick="openValue(vr.index, vc.index)"
+          @dblclick="onCellDblClick(vr.index, vc.index)"
         >
-          <CellValue
-            v-if="modelRows[vr.index]"
+          <CellEditor
+            v-if="isEditing(vr.index, vc.index)"
+            :column="columnAt(vc.index)!"
             :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
-            :kind="kindByName.get(leafColumns[vc.index]!.id) ?? 'other'"
+            @commit="onEditorCommit"
+            @cancel="onEditorCancel"
           />
+          <slot
+            v-else-if="modelRows[vr.index]"
+            name="cell"
+            :column="leafColumns[vc.index]!.id"
+            :row="modelRows[vr.index]!.original"
+            :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
+          >
+            <CellValue
+              :value="modelRows[vr.index]!.getAllCells()[vc.index]?.getValue()"
+              :kind="kindByName.get(leafColumns[vc.index]!.id) ?? 'other'"
+            />
+          </slot>
         </div>
       </div>
     </div>
@@ -560,6 +876,8 @@ function downloadDialogValue(): void {
         <UiButton v-if="dialogCanFilter" size="sm" variant="secondary" @click="filterByDialogValue">{{ t('grid.filterByValue') }}</UiButton>
       </template>
     </UiDialog>
+
+    <ValueDialog v-model:open="editorDialog.open" :column="editorDialog.column" :value="editorDialog.value" @commit="onEditorDialogCommit" />
   </div>
   </UiContextMenu>
 </template>

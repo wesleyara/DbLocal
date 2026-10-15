@@ -2,10 +2,21 @@ import mysql from 'mysql2/promise'
 import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectMysql } from './introspect/mysql'
-import { compileCount, compileRows } from '../query/compile'
-import type { RowsPlan } from '#shared/types/rows'
+import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
+import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
+import { MutationFailedError } from '../query/errors'
+import { runMutations } from '../query/run-mutations'
 import { tlsOptions } from './ssl'
-import type { ConnectionTestResult, Driver, DriverConfig } from './types'
+import type {
+  ConnectionTestResult,
+  Driver,
+  DriverConfig,
+  QuerySession,
+  QuerySessionOptions,
+  RawStatementOutput,
+  StreamHandlers,
+} from './types'
 
 const DEFAULT_PORT = 3306
 const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
@@ -49,7 +60,15 @@ export async function createMysqlDriver(config: DriverConfig, database?: string)
     database: database ?? config.database,
     connectTimeout: config.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
     connectionLimit: 5,
+    // Dates are read and written as UTC wall time, so a DATETIME written by an edit reads back
+    // as the same instant whatever the server's own time zone is.
+    timezone: 'Z',
     ssl: tlsOptions(config.ssl) as mysql.ConnectionOptions['ssl'],
+  })
+  // TIMESTAMP columns are converted by the session time zone: pin it to UTC as well.
+  pool.on('connection', (conn) => {
+    // The event hands out the callback-style connection: queue the statement and ignore its result.
+    ;(conn as unknown as { query: (sql: string, cb: () => void) => void }).query("SET time_zone = '+00:00'", () => {})
   })
   return new MysqlDriver(pool)
 }
@@ -92,6 +111,62 @@ class MysqlDriver implements Driver {
     return Number(row?.count ?? 0)
   }
 
+  async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
+    const q = compileGroupCount(plan)
+    return this.query<Record<string, unknown>>(q.sql, q.parameters as unknown[])
+  }
+
+  async applyMutations(plan: MutationPlan): Promise<MutationResult[]> {
+    let conn: mysql.PoolConnection
+    try {
+      conn = await this.pool.getConnection()
+    } catch (err) {
+      throw mapMysqlError(err)
+    }
+    try {
+      await conn.beginTransaction()
+      const results = await runMutations(plan, {
+        execute: async (sql, parameters) => {
+          try {
+            const [res] = await conn.query(sql, parameters as unknown[])
+            if (Array.isArray(res)) return { rows: res as Record<string, unknown>[], affected: res.length, insertId: null }
+            const header = res as mysql.ResultSetHeader
+            return { rows: [], affected: header.affectedRows, insertId: header.insertId > 0 ? header.insertId : null }
+          } catch (err) {
+            throw mapMysqlError(err)
+          }
+        },
+      })
+      await conn.commit()
+      return results
+    } catch (err) {
+      await conn.rollback().catch(() => {})
+      if (err instanceof MutationFailedError) throw err
+      throw mapMysqlError(err)
+    } finally {
+      conn.release()
+    }
+  }
+
+  async openQuerySession(options: QuerySessionOptions): Promise<QuerySession> {
+    let conn: mysql.PoolConnection
+    try {
+      conn = await this.pool.getConnection()
+    } catch (err) {
+      throw mapMysqlError(err)
+    }
+    try {
+      const [current] = await conn.query<mysql.RowDataPacket[]>('SELECT DATABASE() AS db')
+      if (options.schema) await conn.query(`USE \`${options.schema.replaceAll('`', '``')}\``)
+      // Session-wide, not `START TRANSACTION READ ONLY`: DDL commits the transaction implicitly and would then run.
+      if (options.readonly) await conn.query('SET SESSION TRANSACTION READ ONLY')
+      return new MysqlQuerySession(this.pool, conn, conn.threadId, options.readonly, (current[0]?.db as string | null | undefined) ?? null)
+    } catch (err) {
+      conn.destroy()
+      throw mapMysqlError(err)
+    }
+  }
+
   async close(): Promise<void> {
     await this.pool.end()
   }
@@ -106,6 +181,130 @@ class MysqlDriver implements Driver {
       return rows as R[]
     } catch (err) {
       throw mapMysqlError(err)
+    }
+  }
+}
+
+const MYSQL_TYPE_NAMES: Record<number, string> = {
+  0: 'DECIMAL', 1: 'TINYINT', 2: 'SMALLINT', 3: 'INT', 4: 'FLOAT', 5: 'DOUBLE', 6: 'NULL', 7: 'TIMESTAMP',
+  8: 'BIGINT', 9: 'MEDIUMINT', 10: 'DATE', 11: 'TIME', 12: 'DATETIME', 13: 'YEAR', 15: 'VARCHAR', 16: 'BIT',
+  245: 'JSON', 246: 'DECIMAL', 247: 'ENUM', 248: 'SET', 249: 'TINYBLOB', 250: 'MEDIUMBLOB', 251: 'LONGBLOB',
+  252: 'BLOB', 253: 'VARCHAR', 254: 'CHAR', 255: 'GEOMETRY',
+}
+
+interface MysqlField {
+  name: string
+  columnType?: number
+  type?: number
+}
+
+class MysqlQuerySession implements QuerySession {
+  private closed = false
+
+  constructor(
+    private readonly pool: mysql.Pool,
+    private readonly conn: mysql.PoolConnection,
+    private readonly threadId: number,
+    private readonly readonly: boolean,
+    private readonly previousDatabase: string | null,
+  ) {}
+
+  run(sql: string, limit: number): Promise<RawStatementOutput> {
+    return new Promise((resolve, reject) => {
+      const rows: unknown[][] = []
+      let fields: MysqlField[] = []
+      let affected: number | null = null
+      let truncated = false
+      const query = (this.conn as unknown as { connection: { query: (o: object) => import('node:events').EventEmitter } })
+        .connection.query({ sql, rowsAsArray: true })
+      // Statements without a result set emit `fields` with `undefined`.
+      query.on('fields', (f: MysqlField[] | undefined) => {
+        fields = f ?? []
+      })
+      query.on('result', (row: unknown) => {
+        if (Array.isArray(row)) {
+          if (rows.length < limit) rows.push(row)
+          else if (!truncated) {
+            // One row past the limit: stop the server from sending the rest.
+            truncated = true
+            void this.cancel()
+          }
+        } else if (row && typeof row === 'object' && 'affectedRows' in row) {
+          affected = Number((row as mysql.ResultSetHeader).affectedRows)
+        }
+      })
+      query.on('error', (err: unknown) => {
+        if (truncated) finish()
+        else reject(mapMysqlError(err))
+      })
+      query.on('end', () => finish())
+      let done = false
+      const finish = () => {
+        if (done) return
+        done = true
+        resolve({
+          columns: fields.map((f) => ({ name: f.name, type: MYSQL_TYPE_NAMES[f.columnType ?? f.type ?? -1] ?? 'UNKNOWN' })),
+          rows,
+          truncated,
+          affectedRows: affected,
+          notices: [],
+        })
+      }
+    })
+  }
+
+  async stream(sql: string, handlers: StreamHandlers): Promise<void> {
+    let fields: MysqlField[] = []
+    const query = (
+      this.conn as unknown as {
+        connection: { query: (o: object) => import('node:events').EventEmitter & { stream: (o?: object) => AsyncIterable<unknown> } }
+      }
+    ).connection.query({ sql, rowsAsArray: true })
+    query.on('fields', (f: MysqlField[] | undefined) => {
+      fields = f ?? []
+    })
+    let columnsSent = false
+    let batch: unknown[][] = []
+    try {
+      for await (const row of query.stream({ highWaterMark: 500 })) {
+        if (!columnsSent) {
+          columnsSent = true
+          await handlers.onColumns(fields.map((f) => ({ name: f.name, type: MYSQL_TYPE_NAMES[f.columnType ?? f.type ?? -1] ?? 'UNKNOWN' })))
+        }
+        if (!Array.isArray(row)) continue
+        batch.push(row)
+        if (batch.length >= 500) {
+          const out = batch
+          batch = []
+          await handlers.onRows(out)
+        }
+      }
+      if (!columnsSent) await handlers.onColumns(fields.map((f) => ({ name: f.name, type: MYSQL_TYPE_NAMES[f.columnType ?? f.type ?? -1] ?? 'UNKNOWN' })))
+      if (batch.length > 0) await handlers.onRows(batch)
+    } catch (err) {
+      throw mapMysqlError(err)
+    }
+  }
+
+  /** Cancels the running statement from another pool connection (`KILL QUERY`). */
+  async cancel(): Promise<void> {
+    if (this.closed) return
+    await this.pool.query(`KILL QUERY ${Number(this.threadId)}`).catch(() => {})
+  }
+
+  async close(options: { discard?: boolean } = {}): Promise<void> {
+    if (this.closed) return
+    this.closed = true
+    if (options.discard) {
+      this.conn.destroy()
+      return
+    }
+    try {
+      if (this.readonly) await this.conn.query('SET SESSION TRANSACTION READ WRITE')
+      if (this.previousDatabase) await this.conn.query(`USE \`${this.previousDatabase.replaceAll('`', '``')}\``)
+      this.conn.release()
+    } catch {
+      this.conn.destroy()
     }
   }
 }

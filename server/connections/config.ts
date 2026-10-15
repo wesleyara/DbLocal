@@ -1,6 +1,7 @@
 import { parseConnectionString, ConnectionStringError, type ParsedConnection } from '#shared/connection-string'
 import type { ConnectionTestInput } from '#shared/schemas/connection'
 import { DriverError } from '../drivers/errors'
+import { normalizeTursoUrl } from '../drivers/turso'
 import type { DriverConfig, SshOptions, SslOptions } from '../drivers/types'
 
 const DEFAULT_SSH_PORT = 22
@@ -33,7 +34,12 @@ export function buildDriverConfig(input: ConnectionTestInput, id = 'test'): Driv
   }
 
   if (config.dialect === 'sqlite') {
-    if (!config.filePath) throw new DriverError('syntax', 'SQLite needs a file path')
+    // A URL instead of a file: Turso / libSQL, reached over the network with an auth token (`password`).
+    if (config.host && !config.filePath) {
+      config.host = normalizeTursoUrl(config.host)
+      return config
+    }
+    if (!config.filePath) throw new DriverError('syntax', 'SQLite needs a file path or a Turso URL')
     return config
   }
 

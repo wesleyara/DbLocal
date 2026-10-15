@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DbLocal">
+  <rect width="64" height="64" rx="14" fill="#14161c"/>
+  <g fill="none" stroke="#6d8bff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="32" cy="17" rx="16" ry="6.5"/>
+    <path d="M16 17v14c0 3.6 7.2 6.5 16 6.5s16-2.9 16-6.5V17"/>
+    <path d="M16 31v14c0 3.6 7.2 6.5 16 6.5s16-2.9 16-6.5V31"/>
+  </g>
+  <circle cx="48" cy="46" r="6" fill="#6d8bff" stroke="#14161c" stroke-width="3"/>
+</svg>

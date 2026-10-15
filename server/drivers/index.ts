@@ -2,6 +2,7 @@ import { getPoolManager } from './pool-manager'
 import { createMysqlDriver } from './mysql'
 import { createPostgresDriver } from './postgres'
 import { createSqliteDriver } from './sqlite'
+import { createTursoDriver } from './turso'
 import { openSshTunnel, type SshTunnel } from './ssh-tunnel'
 import type { ConnectionTestResult, Driver, DriverConfig, DriverFactory } from './types'
 
@@ -12,7 +13,8 @@ async function createPlainDriver(config: DriverConfig, database?: string): Promi
     case 'mysql':
       return createMysqlDriver(config, database)
     case 'sqlite':
-      return createSqliteDriver(config)
+      // A SQLite connection with a URL (no file) is a remote libSQL / Turso database.
+      return config.host && !config.filePath ? createTursoDriver(config) : createSqliteDriver(config)
   }
 }
 
@@ -54,6 +56,9 @@ function withTunnel(driver: Driver, tunnel: SshTunnel): Driver {
     introspect: (schema) => driver.introspect(schema),
     readRows: (plan) => driver.readRows(plan),
     countRows: (plan) => driver.countRows(plan),
+    countGroups: (plan) => driver.countGroups(plan),
+    applyMutations: (plan) => driver.applyMutations(plan),
+    openQuerySession: (options) => driver.openQuerySession(options),
     async close() {
       try {
         await driver.close()

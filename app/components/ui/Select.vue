@@ -16,7 +16,11 @@ export interface Option {
   label: string
 }
 const model = defineModel<string>()
-defineProps<{ options: Option[]; placeholder?: string; disabled?: boolean }>()
+const props = defineProps<{ options: Option[]; placeholder?: string; disabled?: boolean }>()
+
+// The trigger text is derived from the options instead of read back from the (portalled) items,
+// so it follows label changes such as a locale switch while the menu is closed.
+const selectedLabel = computed(() => props.options.find((o) => o.value === model.value)?.label)
 </script>
 
 <template>
@@ -24,7 +28,7 @@ defineProps<{ options: Option[]; placeholder?: string; disabled?: boolean }>()
     <SelectTrigger
       class="inline-flex h-7 min-w-28 items-center justify-between gap-2 rounded-md border border-border bg-bg-subtle px-2 text-sm text-fg hover:bg-surface disabled:opacity-50"
     >
-      <SelectValue :placeholder="placeholder" />
+      <SelectValue :placeholder="placeholder">{{ selectedLabel }}</SelectValue>
       <Icon name="lucide:chevrons-up-down" class="size-3.5 text-fg-subtle" />
     </SelectTrigger>
     <SelectPortal>

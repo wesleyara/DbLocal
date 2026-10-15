@@ -133,6 +133,7 @@ function formatValue(v: unknown): string {
       <Icon name="lucide:list-tree" class="size-3" />
       {{ t('grid.advancedFilters') }}
     </button>
+    <slot name="after-advanced" />
 
     <button v-if="nodes.length" type="button" class="text-xs text-fg-subtle hover:text-fg" @click="commit([])">
       {{ t('grid.clearFilters') }}

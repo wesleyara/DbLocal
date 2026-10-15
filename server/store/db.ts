@@ -1,9 +1,10 @@
 import Database from 'better-sqlite3'
-import { Kysely, SqliteDialect } from 'kysely'
+import { Kysely, SqliteDialect, type Generated } from 'kysely'
 import { Migrator, type MigrationProvider } from 'kysely/migration'
 import { join } from 'node:path'
 import * as m001 from './migrations/001_initial'
 import * as m002 from './migrations/002_connection_meta'
+import * as m003 from './migrations/003_saved_query_folder'
 
 export interface StoreSchema {
   connections: {
@@ -24,11 +25,12 @@ export interface StoreSchema {
     connection_id: string | null
     name: string
     sql: string
+    folder: string | null
     created_at: string
     updated_at: string
   }
   query_history: {
-    id: number
+    id: Generated<number>
     connection_id: string | null
     sql: string
     duration_ms: number | null
@@ -50,7 +52,7 @@ export interface StoreSchema {
 
 const provider: MigrationProvider = {
   async getMigrations() {
-    return { '001_initial': m001, '002_connection_meta': m002 }
+    return { '001_initial': m001, '002_connection_meta': m002, '003_saved_query_folder': m003 }
   },
 }
 

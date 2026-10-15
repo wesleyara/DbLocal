@@ -85,6 +85,16 @@ export interface BinaryPreview {
   truncated: boolean
 }
 
+/**
+ * "Records related to this record": the rows of the requested table that `relation` (a ref name on
+ * `table`) reaches from the row of `table` identified by `key`. Applied on top of the filter.
+ */
+export interface RelationScope {
+  table: string
+  relation: string
+  key: Record<string, string | number>
+}
+
 export interface RowsRequest {
   schema: string
   filter: FilterNode | null
@@ -93,11 +103,14 @@ export interface RowsRequest {
   offset: number
   /** Subset of columns to read. Omitted means all of them. */
   columns?: string[]
+  /** Restricts the rows to those related to one record (see `RelationScope`). */
+  scope?: RelationScope | null
 }
 
 export interface CountRequest {
   schema: string
   filter: FilterNode | null
+  scope?: RelationScope | null
   /** `false` allows an estimate for large tables; `true` always counts. */
   exact: boolean
 }
@@ -124,6 +137,26 @@ export interface RowsPlan {
   sort: SortItem[]
   limit: number
   offset: number
+  /** Many-to-many scope: rows whose `columns` appear in a subquery over the junction table. */
+  junction?: JunctionScope | null
+}
+
+/** `(columns) in (select selectColumns from table where whereColumns = values)`. */
+export interface JunctionScope {
+  columns: string[]
+  table: string
+  selectColumns: string[]
+  whereColumns: string[]
+  values: unknown[]
+}
+
+/** `SELECT groupBy, count(*) FROM table WHERE filter GROUP BY groupBy`. Validated like a rows plan. */
+export interface GroupCountPlan {
+  dialect: SchemaSnapshot['dialect']
+  schema: string
+  table: string
+  groupBy: string[]
+  filter: FilterNode | null
 }
 
 /** Per-table grid preferences: column widths in px and the columns the user hid. Stored in `preferences`. */

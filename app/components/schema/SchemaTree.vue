@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SchemaTable } from '#shared/types/db'
 import { useSchemaStore } from '~/stores/schema'
+import { useWorkspaceStore } from '~/stores/workspace'
 import type { MenuItem } from '../ui/DropdownMenu.vue'
 
 const props = defineProps<{ connectionId: string; schema?: string }>()
@@ -19,11 +20,13 @@ const displayOpen = ref(false)
 const AUTO = '__auto__'
 const displayChoice = ref(AUTO)
 
-/** Loads the schema when the connection or schema in the URL changes. */
+// Awaited in setup so the server renders the tree with its data; the payload then matches the client.
+await store.ensure(props.connectionId, props.schema ?? null).catch(() => {})
+
+/** Loads the schema again when the connection or schema in the URL changes. */
 watch(
   () => [props.connectionId, props.schema] as const,
   ([id, name]) => store.ensure(id, name ?? null).catch(() => {}),
-  { immediate: true },
 )
 
 /** Subsequence match: `ord` finds `orders`, `usr` finds `users`. */
@@ -64,9 +67,15 @@ function toggle(name: string) {
   expanded.value = next
 }
 
-function openTable(name: string) {
+const workspace = useWorkspaceStore()
+
+/** Single click opens the table in the preview tab; double click (`pin`) keeps it as its own tab. */
+function openTable(name: string, pin = false) {
   active.value = name
-  void navigateTo(`/c/${props.connectionId}/${encodeURIComponent(props.schema ?? store.schema ?? '')}/t/${encodeURIComponent(name)}`)
+  const schema = props.schema ?? store.schema ?? ''
+  const path = `/c/${props.connectionId}/${encodeURIComponent(schema)}/t/${encodeURIComponent(name)}`
+  const target = workspace.openTable(props.connectionId, path, { schema, type: 'table', title: name, icon: 'lucide:table-2' }, pin)
+  void navigateTo(target)
 }
 
 /** Quotes identifiers the way the dialect expects. */
@@ -103,6 +112,8 @@ async function saveDisplay() {
 }
 
 async function refresh() {
+  // Counts are asked again for the refreshed schema (the old ones stay on screen until they arrive).
+  requested.clear()
   try {
     await store.load(props.connectionId, props.schema ?? null, true)
     toast.push({ kind: 'success', title: t('schemaTree.refreshed') })
@@ -181,10 +192,18 @@ async function fetchMissingCounts(): Promise<void> {
   await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, worker))
 }
 
+/** Counts belong to one connection + schema: they are dropped when either changes, not on every reload. */
+let countScope = ''
+
 watch(
   () => store.tables,
   () => {
-    counted.value = new Map()
+    const scope = `${props.connectionId}|${props.schema ?? store.schema ?? ''}`
+    if (scope !== countScope) {
+      countScope = scope
+      counted.value = new Map()
+      requested.clear()
+    }
     void fetchMissingCounts()
   },
   { immediate: true },
@@ -241,6 +260,7 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
               class="group flex h-7 cursor-default items-center gap-1.5 rounded-sm px-1 text-sm text-fg hover:bg-surface focus-visible:outline focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent"
               :class="active === tb.name && 'bg-surface'"
               @click="openTable(tb.name)"
+              @dblclick="openTable(tb.name, true)"
               @focus="active = tb.name"
             >
               <button

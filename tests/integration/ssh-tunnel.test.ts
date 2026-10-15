@@ -22,15 +22,17 @@ beforeAll(async () => {
       else ctx.reject()
     })
     client.on('ready', () => {
-      client.on('tcpip', (accept, _reject, info) => {
+      client.on('tcpip', (accept, reject, info) => {
         forwards++
-        const channel = accept()
+        // Like sshd: the channel is only opened once the target accepted the connection.
         const target: Socket = connect(info.destPort, info.destIP)
-        target.on('connect', () => {
+        target.once('connect', () => {
+          const channel = accept()
           channel.pipe(target).pipe(channel)
+          target.on('error', () => channel.destroy())
+          channel.on('error', () => target.destroy())
         })
-        target.on('error', () => channel.destroy())
-        channel.on('error', () => target.destroy())
+        target.once('error', () => reject())
       })
     })
   })
@@ -98,6 +100,19 @@ describe('ssh tunnel', () => {
       ssh: { ...ssh(), password: 'nope' },
     }
     await expect(createDriver(config)).rejects.toMatchObject({ code: 'auth' })
+  })
+
+  it('an unreachable target fails at open with a network error that names the target', async () => {
+    await expect(openSshTunnel(ssh(), { host: '127.0.0.1', port: 1 })).rejects.toMatchObject({
+      code: 'network',
+      message: expect.stringContaining('127.0.0.1:1'),
+    })
+  })
+
+  it('an unreadable private key is an auth error, not a server error', async () => {
+    const { private: key } = utils.generateKeyPairSync('ed25519', { passphrase: 'right', cipher: 'aes256-ctr' })
+    const bad = { ...ssh(), authMethod: 'key' as const, privateKey: key, passphrase: 'wrong' }
+    await expect(openSshTunnel(bad, { host: '127.0.0.1', port: PG_PORT })).rejects.toMatchObject({ code: 'auth' })
   })
 
   it('reports when the SSH session drops', async () => {

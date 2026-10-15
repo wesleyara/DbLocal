@@ -4,6 +4,12 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-15
+
+### Fixed
+- **auth:** forward the session cookie on server-side fetches so a reload does not 401
+- **help:** keep looking for the tour target until it appears
+
 ## [0.1.3] - 2026-10-15
 
 ### Added

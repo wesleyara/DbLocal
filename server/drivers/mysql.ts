@@ -3,7 +3,10 @@ import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messag
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectMysql } from './introspect/mysql'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
+import { MutationFailedError } from '../query/errors'
+import { runMutations } from '../query/run-mutations'
 import { tlsOptions } from './ssl'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
@@ -49,7 +52,15 @@ export async function createMysqlDriver(config: DriverConfig, database?: string)
     database: database ?? config.database,
     connectTimeout: config.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
     connectionLimit: 5,
+    // Dates are read and written as UTC wall time, so a DATETIME written by an edit reads back
+    // as the same instant whatever the server's own time zone is.
+    timezone: 'Z',
     ssl: tlsOptions(config.ssl) as mysql.ConnectionOptions['ssl'],
+  })
+  // TIMESTAMP columns are converted by the session time zone: pin it to UTC as well.
+  pool.on('connection', (conn) => {
+    // The event hands out the callback-style connection: queue the statement and ignore its result.
+    ;(conn as unknown as { query: (sql: string, cb: () => void) => void }).query("SET time_zone = '+00:00'", () => {})
   })
   return new MysqlDriver(pool)
 }
@@ -95,6 +106,38 @@ class MysqlDriver implements Driver {
   async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
     const q = compileGroupCount(plan)
     return this.query<Record<string, unknown>>(q.sql, q.parameters as unknown[])
+  }
+
+  async applyMutations(plan: MutationPlan): Promise<MutationResult[]> {
+    let conn: mysql.PoolConnection
+    try {
+      conn = await this.pool.getConnection()
+    } catch (err) {
+      throw mapMysqlError(err)
+    }
+    try {
+      await conn.beginTransaction()
+      const results = await runMutations(plan, {
+        execute: async (sql, parameters) => {
+          try {
+            const [res] = await conn.query(sql, parameters as unknown[])
+            if (Array.isArray(res)) return { rows: res as Record<string, unknown>[], affected: res.length, insertId: null }
+            const header = res as mysql.ResultSetHeader
+            return { rows: [], affected: header.affectedRows, insertId: header.insertId > 0 ? header.insertId : null }
+          } catch (err) {
+            throw mapMysqlError(err)
+          }
+        },
+      })
+      await conn.commit()
+      return results
+    } catch (err) {
+      await conn.rollback().catch(() => {})
+      if (err instanceof MutationFailedError) throw err
+      throw mapMysqlError(err)
+    } finally {
+      conn.release()
+    }
   }
 
   async close(): Promise<void> {

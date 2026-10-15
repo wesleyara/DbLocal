@@ -3,7 +3,10 @@ import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messag
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectPostgres } from './introspect/postgres'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
+import { MutationFailedError } from '../query/errors'
+import { runMutations } from '../query/run-mutations'
 import { tlsOptions } from './ssl'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
@@ -25,6 +28,22 @@ export function mapPostgresError(err: unknown): DriverError {
   return new DriverError('unknown', message, err)
 }
 
+/** OID of `timestamp without time zone`. */
+const TIMESTAMP_OID = 1114
+
+/**
+ * `timestamp` has no zone, and node-pg would read its wall time as the server's local time. It is
+ * read as UTC instead, which is how edits write it (an ISO instant), so a value round-trips.
+ */
+const typeParsers: pg.CustomTypesConfig = {
+  getTypeParser: ((oid: number, format?: 'text' | 'binary') => {
+    if (oid === TIMESTAMP_OID && format !== 'binary') {
+      return (value: string) => new Date(`${value.replace(' ', 'T')}Z`)
+    }
+    return pg.types.getTypeParser(oid, format as 'text')
+  }) as pg.CustomTypesConfig['getTypeParser'],
+}
+
 export async function createPostgresDriver(config: DriverConfig, database?: string): Promise<Driver> {
   const pool = new pg.Pool({
     host: config.host,
@@ -34,6 +53,7 @@ export async function createPostgresDriver(config: DriverConfig, database?: stri
     database: database ?? config.database ?? DEFAULT_DATABASE,
     connectionTimeoutMillis: config.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
     max: 5,
+    types: typeParsers,
     ssl: tlsOptions(config.ssl) as pg.PoolConfig['ssl'],
   })
   // Errors on idle clients are reported through the next query; without a listener they would crash the process.
@@ -82,6 +102,36 @@ class PostgresDriver implements Driver {
   async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
     const q = compileGroupCount(plan)
     return this.rows<Record<string, unknown>>(q.sql, q.parameters as unknown[])
+  }
+
+  async applyMutations(plan: MutationPlan): Promise<MutationResult[]> {
+    let client: pg.PoolClient
+    try {
+      client = await this.pool.connect()
+    } catch (err) {
+      throw mapPostgresError(err)
+    }
+    try {
+      await client.query('BEGIN')
+      const results = await runMutations(plan, {
+        execute: async (sql, parameters) => {
+          try {
+            const res = await client.query(sql, parameters as unknown[])
+            return { rows: res.rows as Record<string, unknown>[], affected: res.rowCount ?? 0, insertId: null }
+          } catch (err) {
+            throw mapPostgresError(err)
+          }
+        },
+      })
+      await client.query('COMMIT')
+      return results
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {})
+      if (err instanceof MutationFailedError) throw err
+      throw mapPostgresError(err)
+    } finally {
+      client.release()
+    }
   }
 
   async close(): Promise<void> {

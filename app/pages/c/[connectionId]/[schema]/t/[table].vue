@@ -56,6 +56,7 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
       <span class="font-data text-xs font-medium uppercase" :class="envText[view.environment]">
         {{ view.environment }}
       </span>
+      <UiBadge v-if="view.readonly || view.readonlyGlobal" tone="warning">{{ t('shell.status.readonly') }}</UiBadge>
       <span class="font-data ml-auto truncate text-xs text-fg-muted">{{ route.params.schema }}</span>
     </header>
 
@@ -80,7 +81,7 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
       </div>
 
       <div class="h-[60vh] min-h-72 min-w-0">
-        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" />
+        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" />
       </div>
 
       <div>
@@ -155,6 +156,7 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
     :schema="schemaName"
     :table="openRecord.table"
     :record-key="openRecord.key"
+    :connection="view"
   />
   </div>
 </template>

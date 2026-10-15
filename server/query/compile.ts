@@ -57,6 +57,11 @@ const builders: Record<Dialects, Kysely<Db>> = {
   sqlite: compileOnly('sqlite'),
 }
 
+/** The compile-only Kysely of a dialect, for the other compilers (mutations) that build raw SQL. */
+export function builderFor(dialect: Dialects): Kysely<Db> {
+  return builders[dialect]
+}
+
 /** LIKE wildcards in user text are escaped with `!`, which every dialect accepts via `ESCAPE '!'`. */
 export function escapeLike(text: string): string {
   return text.replace(/[!%_]/g, (ch) => `!${ch}`)

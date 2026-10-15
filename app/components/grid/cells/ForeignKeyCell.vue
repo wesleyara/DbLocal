@@ -13,6 +13,11 @@ const props = defineProps<{
   /** `undefined` while it loads, `null` when the parent does not exist. */
   parent: RecordSummary | null | undefined
   virtual?: boolean
+  /**
+   * Key of the target record built from the raw FK value (single-column FKs). Used while the parent
+   * is not resolved yet, or after the value was edited, so a click still opens the record.
+   */
+  fallbackKey?: RecordKey | null
 }>()
 const emit = defineEmits<{ open: [key: RecordKey, newTab: boolean] }>()
 const { t } = useI18n()
@@ -26,7 +31,8 @@ const text = computed(() => {
 
 function onClick(event: MouseEvent): void {
   event.stopPropagation()
-  if (props.parent) emit('open', props.parent.key, event.metaKey || event.ctrlKey)
+  const key = props.parent?.key ?? (props.parent === null ? null : props.fallbackKey)
+  if (key) emit('open', key, event.metaKey || event.ctrlKey)
 }
 
 // Hover preview: the parent is read in full only when the card opens, and only once.

@@ -4,7 +4,10 @@ import { DriverError, isDriverError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectSqlite } from './introspect/sqlite'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
+import { MutationFailedError } from '../query/errors'
+import { runMutations } from '../query/run-mutations'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
 /** Maps a better-sqlite3 error (`code` is the SQLite result code name) to a normalised DriverError. */
@@ -83,6 +86,42 @@ class SqliteDriver implements Driver {
   async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
     const q = compileGroupCount(plan)
     return this.run<Record<string, unknown>[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))
+  }
+
+  async applyMutations(plan: MutationPlan): Promise<MutationResult[]> {
+    try {
+      this.db.exec('BEGIN')
+    } catch (err) {
+      throw mapSqliteError(err)
+    }
+    try {
+      const results = await runMutations(plan, {
+        execute: async (sql, parameters) => {
+          try {
+            const stmt = this.db.prepare(sql)
+            const args = bind(parameters)
+            if (stmt.reader) {
+              const rows = stmt.all(...args) as Record<string, unknown>[]
+              return { rows, affected: rows.length, insertId: null }
+            }
+            const info = stmt.run(...args)
+            return { rows: [], affected: info.changes, insertId: null }
+          } catch (err) {
+            throw mapSqliteError(err)
+          }
+        },
+      })
+      this.db.exec('COMMIT')
+      return results
+    } catch (err) {
+      try {
+        this.db.exec('ROLLBACK')
+      } catch {
+        // The transaction may already be gone (SQLite rolls back on some errors by itself).
+      }
+      if (err instanceof MutationFailedError) throw err
+      throw mapSqliteError(err)
+    }
   }
 
   async close(): Promise<void> {

@@ -383,7 +383,11 @@
     "goToPage": "Go to page",
     "selectValue": "Select a value",
     "viewReadOnly": "This is a view, so its rows are read-only.",
-    "historyToggle": "History"
+    "historyToggle": "History",
+    "updated": "Updated {time}",
+    "updatedTitle": "Showing what was loaded {time}. Reload with ⌘R to read it again.",
+    "reload": "Reload data",
+    "reloadTitle": "Read the rows from the database again (⌘R)"
   },
   "relations": {
     "orphan": "No matching record in {target}",

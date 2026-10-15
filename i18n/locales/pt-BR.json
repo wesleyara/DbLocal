@@ -383,7 +383,11 @@
     "goToPage": "Ir para a página",
     "selectValue": "Selecione um valor",
     "viewReadOnly": "Isto é uma view, então suas linhas são somente leitura.",
-    "historyToggle": "Histórico"
+    "historyToggle": "Histórico",
+    "updated": "Atualizado {time}",
+    "updatedTitle": "Mostrando o que foi carregado {time}. Recarregue com ⌘R para ler de novo.",
+    "reload": "Recarregar dados",
+    "reloadTitle": "Ler as linhas do banco de novo (⌘R)"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",

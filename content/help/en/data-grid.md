@@ -46,6 +46,10 @@ Double-click a cell to see its full value. JSON opens as a tree you can collapse
 
 Choose how many rows a page shows (50, 100, 250 or 500). The footer shows the range and the total. For very large tables the total is an estimate, marked with `~`. Click **Count exactly** to count the real number of rows.
 
+## What you see is the last loaded state {#cached-view}
+
+Each tab remembers the last view it loaded: leaving the tab and coming back shows it at once, without asking the database again. The toolbar says when the rows were read ("Updated 3 minutes ago"). Nothing is refreshed on its own: click the reload button next to it, or press <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘</kbd>+<kbd>R</kbd> on macOS), to read the database again. Saving changes or running a statement that writes does it for you. The memory is dropped when you close the tab or reload the page.
+
 ## Share a view
 
 Sort, filters and the page are part of the address in your browser. Copy the link to open the same view again.

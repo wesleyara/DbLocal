@@ -46,6 +46,10 @@ Clique duas vezes numa célula para ver o valor completo. JSON abre como árvore
 
 Escolha quantas linhas cada página mostra (50, 100, 250 ou 500). O rodapé mostra o intervalo e o total. Em tabelas muito grandes o total é uma estimativa, marcada com `~`. Clique em **Contar exatamente** para contar o número real de linhas.
 
+## O que você vê é o último estado carregado {#cached-view}
+
+Cada aba lembra a última visão que carregou: sair da aba e voltar mostra tudo na hora, sem consultar o banco de novo. A barra de ferramentas informa quando as linhas foram lidas ("Atualizado há 3 minutos"). Nada é atualizado sozinho: clique no botão de recarregar ao lado, ou pressione <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘</kbd>+<kbd>R</kbd> no macOS), para ler o banco outra vez. Salvar alterações ou rodar um comando que escreve faz isso por você. A memória é descartada ao fechar a aba ou recarregar a página.
+
 ## Compartilhar uma visão
 
 Ordenação, filtros e a página fazem parte do endereço no navegador. Copie o link para abrir a mesma visão de novo.

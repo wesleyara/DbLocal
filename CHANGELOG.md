@@ -4,6 +4,11 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-15
+
+### Fixed
+- **grid:** hover preview on the inverse side of 1:1 relations
+
 ## [0.1.4] - 2026-10-15
 
 ### Fixed

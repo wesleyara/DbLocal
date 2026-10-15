@@ -13,6 +13,15 @@ interface EdgeData {
 
 const props = defineProps<EdgeProps<EdgeData>>()
 const ui = inject(ERD_UI)!
+const { t } = useI18n()
+
+/** Cardinality read from the two line ends (source = FK side). */
+const cardinalityLabel = computed(() => {
+  const d = props.data
+  if (!d) return ''
+  const key = d.sourceEnd === 'one' ? (d.targetEnd === 'one' ? 'oneToOne' : 'oneToMany') : d.targetEnd === 'one' ? 'manyToOne' : 'manyToMany'
+  return t(`virtualRelations.cardinalityOptions.${key}`)
+})
 
 const geometry = computed(() => {
   const [path] = getSmoothStepPath({
@@ -54,7 +63,7 @@ const dimmed = computed(
     <path :d="geometry" fill="none" stroke="transparent" stroke-width="14" />
     <path :d="geometry" class="line" fill="none" />
     <path v-if="markers" :d="markers" class="line" fill="none" />
-    <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }}</title>
+    <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }} · {{ cardinalityLabel }}</title>
   </g>
 </template>
 

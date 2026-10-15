@@ -266,6 +266,7 @@
     }
   },
   "tableView": {
+    "structureTitle": "Estrutura de {table}",
     "type": "Tipo",
     "unique": "Único",
     "default": "Default",

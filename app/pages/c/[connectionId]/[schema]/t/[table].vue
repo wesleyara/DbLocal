@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
 import { useSchemaStore } from '~/stores/schema'
-import { useUiStore } from '~/stores/ui'
 import TableStructure from '~/components/schema/TableStructure.vue'
 import TableGrid from '~/components/grid/TableGrid.vue'
 import RecordPanel from '~/components/record/RecordPanel.vue'
@@ -13,7 +12,7 @@ const schemaName = route.params.schema as string
 const { t } = useI18n()
 const { number } = useFormat()
 const store = useSchemaStore()
-const ui = useUiStore()
+const structureOpen = ref(false)
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, {
   key: `connection-${id}`,
@@ -44,7 +43,7 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
 
 <template>
   <div class="flex h-full min-h-0">
-  <div class="flex min-h-full min-w-0 flex-1 flex-col overflow-auto">
+  <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
     <!-- Environment strip: red across the top in prod, so the user always knows where they are. -->
     <div v-if="view" class="h-0.5 shrink-0" :class="envClass[view.environment]" aria-hidden="true" />
     <header v-if="view" class="flex items-center gap-2 border-b border-border px-3 py-1.5">
@@ -64,7 +63,7 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
     />
     <UiEmptyState v-else-if="!table" icon="lucide:triangle-alert" :title="t('tableView.notFound')" />
 
-    <section v-else class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4">
+    <section v-else class="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-4">
       <div class="flex flex-wrap items-baseline gap-3">
         <h2 class="font-data text-base font-semibold text-fg">{{ table.name }}</h2>
         <span class="text-xs text-fg-subtle">{{ table.kind === 'table' ? t('schemaTree.tables') : t('tableView.view') }}</span>
@@ -76,16 +75,13 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
         </span>
       </div>
 
-      <div class="h-[60vh] min-h-72 min-w-0">
-        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" />
+      <div class="min-h-72 min-w-0 flex-1">
+        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" @structure="structureOpen = true" />
       </div>
 
-      <TableStructure
-        v-if="ui.tableStructure"
-        :table="table"
-        :outgoing="node?.outgoing ?? []"
-        :incoming="node?.incoming ?? []"
-      />
+      <UiDialog v-model:open="structureOpen" wide :title="t('tableView.structureTitle', { table: table.name })">
+        <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" />
+      </UiDialog>
     </section>
   </div>
   <RecordPanel

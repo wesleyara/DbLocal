@@ -39,6 +39,7 @@ const props = defineProps<{
   /** The saved connection: its read-only flags and environment decide what editing is offered. */
   connection?: Pick<ConnectionView, 'name' | 'environment' | 'readonly' | 'readonlyGlobal'> | null
 }>()
+const emit = defineEmits<{ structure: [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const pendingStore = usePendingStore()
@@ -695,11 +696,9 @@ onMounted(() => state.start())
           </button>
           <button
             type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
-            :class="ui.tableStructure ? 'bg-surface text-fg' : 'text-fg-muted'"
-            :aria-pressed="ui.tableStructure"
+            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
             data-toggle-structure
-            @click="ui.tableStructure = !ui.tableStructure"
+            @click="emit('structure')"
           >
             <Icon name="lucide:table-properties" class="size-3" />
             {{ t('grid.structureToggle') }}

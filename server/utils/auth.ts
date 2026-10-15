@@ -51,11 +51,17 @@ export function hostAllowed(host: string | undefined, env: NodeJS.ProcessEnv = p
   const name = hostName(host)
   if (name === 'localhost' || name.endsWith('.localhost')) return true
   if (name.startsWith('[') || /^\d{1,3}(\.\d{1,3}){3}$/.test(name)) return true
+  return listedHost(host, env)
+}
+
+/** True when the Host header names an entry of `DBLOCAL_ALLOWED_HOSTS`. */
+export function listedHost(host: string | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (!host) return false
   const extra = (env.DBLOCAL_ALLOWED_HOSTS ?? '')
     .split(',')
     .map((h) => h.trim().toLowerCase())
     .filter(Boolean)
-  return extra.includes(name)
+  return extra.includes(hostName(host))
 }
 
 function hostName(host: string): string {

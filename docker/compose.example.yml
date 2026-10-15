@@ -17,6 +17,8 @@ services:
       - '127.0.0.1:5555:5555'
     environment:
       DBLOCAL_PASSWORD: ${DBLOCAL_PASSWORD:-}
+      # Names (comma separated, no port) you reach it by besides localhost; also hides the "exposed" warning.
+      DBLOCAL_ALLOWED_HOSTS: localhost,127.0.0.1
       # DBLOCAL_READONLY: '1'      # make every connection read-only
       # DBLOCAL_SECRET: ...        # encryption key for saved passwords (default: generated in /data/secret.key)
     volumes:

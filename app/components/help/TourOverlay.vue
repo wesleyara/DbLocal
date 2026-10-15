@@ -13,9 +13,7 @@ const tour = useTourStore()
 const el = ref<HTMLElement | null>(null)
 const rect = ref<{ top: number; left: number; width: number; height: number } | null>(null)
 let timer: ReturnType<typeof setInterval> | undefined
-let started = 0
 const PAD = 6
-const GIVE_UP_MS = 4000
 
 function measure() {
   const target = tour.step.target
@@ -39,13 +37,10 @@ function watchTarget() {
   clearInterval(timer)
   el.value = null
   rect.value = null
-  started = Date.now()
   measure()
-  timer = setInterval(() => {
-    measure()
-    // Stop polling for a missing element after a while; the centred card is shown meanwhile.
-    if (!el.value && Date.now() - started > GIVE_UP_MS) clearInterval(timer)
-  }, 200)
+  // Keeps polling for as long as the step is shown: on a slow machine the page's data can arrive
+  // after any fixed deadline, and the centred card is shown meanwhile.
+  timer = setInterval(measure, 200)
 }
 
 function onKey(event: KeyboardEvent) {

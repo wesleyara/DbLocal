@@ -141,6 +141,14 @@ body {
   outline-offset: 1px;
 }
 
+/* The rule above is unlayered, so it beats the `outline-none` utility; menus highlight with a background instead. */
+[role='option']:focus-visible,
+[role='listbox']:focus-visible,
+[role='menuitem']:focus-visible,
+[role='menu']:focus-visible {
+  outline: none;
+}
+
 * {
   border-color: var(--border);
 }

@@ -2,6 +2,7 @@
 #   docker compose -f docker/compose.example.yml up -d --build
 #   DBLOCAL_PASSWORD=change-me docker compose -f docker/compose.example.yml up -d --build   (with a login)
 # then open http://127.0.0.1:5555
+# SQLite files on your machine: DBLOCAL_SQLITE_DIR=/home/you/dbs docker compose -f docker/compose.example.yml up -d
 #
 # DBLOCAL_PASSWORD is optional. Inside the container the server binds to 0.0.0.0 (so the published port
 # works), which is why the port below is published on 127.0.0.1 only. Without a password anyone who can
@@ -23,8 +24,10 @@ services:
       # DBLOCAL_SECRET: ...        # encryption key for saved passwords (default: generated in /data/secret.key)
     volumes:
       - dblocal-data:/data
-      # SQLite files from the host, mounted read-only. Connect to /sqlite/app.db inside DbLocal.
-      # - ./databases:/sqlite:ro
+      # SQLite files from the host: set DBLOCAL_SQLITE_DIR to the folder that holds them (absolute path)
+      # and connect to /sqlite/<file> inside DbLocal. Mounted
+      # read-write so edits work; append :ro to the line to keep the files untouched.
+      - ${DBLOCAL_SQLITE_DIR:-./databases}:/sqlite
     extra_hosts:
       # Reach databases running on the host (Linux; Docker Desktop already defines it):
       # use host.docker.internal as the host of the connection.

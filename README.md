@@ -61,7 +61,14 @@ DBLOCAL_PASSWORD=change-me docker compose -f docker/compose.example.yml up -d --
 ```
 
 Without it there is no authentication, which is fine while the port stays on `127.0.0.1` (as published by the
-example). See the compose file for mounting SQLite files.
+example).
+
+SQLite files on your machine are not visible inside the container. Point `DBLOCAL_SQLITE_DIR` at the folder that
+holds them; it is mounted at `/sqlite`, so a file `~/dbs/app.db` is connected as `/sqlite/app.db`:
+
+```bash
+DBLOCAL_SQLITE_DIR=$HOME/dbs docker compose -f docker/compose.example.yml up -d --build
+```
 
 - Data (saved connections, queries, the encryption key) lives in the `dblocal-data` volume mounted at `/data`.
 - To reach a database running on your machine, use the host `host.docker.internal`. The database must accept

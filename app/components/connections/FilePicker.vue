@@ -17,7 +17,7 @@ const hidden = ref(false)
 const loading = ref(false)
 const error = ref(false)
 
-async function load(path?: string) {
+async function load(path?: string, retried = false) {
   loading.value = true
   error.value = false
   try {
@@ -26,6 +26,9 @@ async function load(path?: string) {
     })
     location.value = listing.value.path
   } catch {
+    // A start folder that is not visible to the server (e.g. a host path inside the container):
+    // fall back to the server's default folder instead of an empty error.
+    if (path && !retried) return load(undefined, true)
     error.value = true
   } finally {
     loading.value = false

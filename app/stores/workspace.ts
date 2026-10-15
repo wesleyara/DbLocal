@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { usePendingStore } from './pending-changes'
 
 export type WorkspaceTabType = 'table' | 'record' | 'query' | 'erd'
 
@@ -88,7 +89,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as WorkspaceTab[]
       if (Array.isArray(saved)) {
-        tabs.value = saved.filter((t) => t && typeof t.id === 'string' && typeof t.path === 'string' && Array.isArray(t.history))
+        // Unsaved edits live in memory only, so no restored tab is dirty.
+        tabs.value = saved
+          .filter((t) => t && typeof t.id === 'string' && typeof t.path === 'string' && Array.isArray(t.history))
+          .map((t) => ({ ...t, dirty: false }))
       }
       activeId.value = sessionStorage.getItem(ACTIVE_KEY)
     } catch {
@@ -137,6 +141,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return path
   }
 
+  /** Marks a tab as holding unsaved edits (closing it asks first). */
+  function setDirty(id: string, dirty: boolean): void {
+    const tab = tabs.value.find((t) => t.id === id)
+    if (tab && tab.dirty !== dirty) tab.dirty = dirty
+  }
+
   function pin(id: string): void {
     const tab = tabs.value.find((t) => t.id === id)
     if (tab) tab.preview = false
@@ -144,6 +154,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   /** Closes every tab of a connection. */
   function closeAll(connectionId: string): void {
+    const pending = usePendingStore()
+    for (const t of tabs.value) if (t.connectionId === connectionId) pending.discard(t.id)
     tabs.value = tabs.value.filter((t) => t.connectionId !== connectionId)
     activeId.value = null
   }
@@ -279,6 +291,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const tab = tabs.value[index]!
     const siblings = forConnection(tab.connectionId)
     const position = siblings.findIndex((t) => t.id === id)
+    usePendingStore().discard(id)
     tabs.value.splice(index, 1)
     if (activeId.value !== id) return null
     const neighbour = siblings[position + 1] ?? siblings[position - 1] ?? null
@@ -289,6 +302,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function closeOthers(id: string): void {
     const keep = tabs.value.find((t) => t.id === id)
     if (!keep) return
+    const pending = usePendingStore()
+    for (const t of tabs.value) if (t.connectionId === keep.connectionId && t.id !== id) pending.discard(t.id)
     tabs.value = tabs.value.filter((t) => t.connectionId !== keep.connectionId || t.id === id)
     activeId.value = id
   }
@@ -329,6 +344,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     expect,
     openTable,
     pin,
+    setDirty,
     closeAll,
     open,
     sync,

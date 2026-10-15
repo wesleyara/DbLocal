@@ -1,23 +1,40 @@
 <script setup lang="ts">
 import type { RelationRef, SchemaColumn, SchemaTable } from '#shared/types/db'
+import type { ConnectionView } from '#shared/types/connection'
 import type { FilterCondition, FilterNode, GridPrefs } from '#shared/types/rows'
+import { editableKey, readOnlyReason } from '#shared/editable'
 import { keyLabel } from '#shared/nav-url'
+import { keyId, rowErrorId, insertErrorId } from '#shared/pending'
 import { rowKey, useRelationData } from '~/composables/useRelationData'
 import { useRelationNav } from '~/composables/useRelationNav'
 import { useTableRows } from '~/composables/useTableRows'
 import { useToast } from '~/composables/useToast'
+import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
+import { useWorkspaceStore } from '~/stores/workspace'
 import DataGrid from './DataGrid.vue'
 import CellValue from './cells/CellValue.vue'
 import ForeignKeyCell from './cells/ForeignKeyCell.vue'
 import RelationCountCell from './cells/RelationCountCell.vue'
+import DeleteImpactDialog from './DeleteImpactDialog.vue'
+import FkPicker from './editors/FkPicker.vue'
 import FilterBar from './FilterBar.vue'
 import GridFooter from './GridFooter.vue'
+import PendingBar from './PendingBar.vue'
+import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
 import SortBar from './SortBar.vue'
 
-const props = defineProps<{ connectionId: string; schema: string; table: SchemaTable }>()
+const props = defineProps<{
+  connectionId: string
+  schema: string
+  table: SchemaTable
+  /** The saved connection: its read-only flags and environment decide what editing is offered. */
+  connection?: Pick<ConnectionView, 'name' | 'environment' | 'readonly' | 'readonlyGlobal'> | null
+}>()
 const { t } = useI18n()
 const toast = useToast()
+const pendingStore = usePendingStore()
+const workspace = useWorkspaceStore()
 
 const state = useTableRows({ connectionId: props.connectionId, schema: props.schema, table: props.table.name })
 const schemaStore = useSchemaStore()
@@ -25,8 +42,33 @@ const nav = useRelationNav({ connectionId: props.connectionId, schema: props.sch
 
 const primaryKey = computed(() => (props.table.implicitRowid ? [] : props.table.primaryKey))
 const foreignKeys = computed(() => props.table.foreignKeys.flatMap((fk) => fk.columns))
-/** Without a key a row cannot be addressed for an UPDATE, so the table stays read-only (editing comes later). */
-const readOnly = computed(() => primaryKey.value.length === 0)
+
+// ---- editing: which tables and connections allow it ------------------------------------------
+
+/** Columns that address a row for UPDATE / DELETE: the primary key, or a unique NOT NULL index. */
+const keyColumns = computed(() => editableKey(props.table))
+const connectionReadonly = computed(() => !!props.connection && (props.connection.readonly || props.connection.readonlyGlobal))
+/** Cells can be edited: the table has a usable key and the connection is not read-only. */
+const editable = computed(() => keyColumns.value !== null && !connectionReadonly.value)
+/** Why the grid is read-only, for the notice under the toolbar. Null when it is editable. */
+const readOnlyNotice = computed<string | null>(() => {
+  const reason = readOnlyReason(props.table)
+  if (reason === 'view') return t('grid.viewReadOnly')
+  if (reason === 'no-key') return t('grid.noPrimaryKey')
+  if (connectionReadonly.value) return t('edit.connectionReadonly')
+  return null
+})
+const tabId = computed(() => workspace.active?.id ?? '_')
+const pendingState = computed(() => pendingStore.peek(tabId.value))
+const pendingTable = computed(() => pendingState.value?.tables[props.table.name] ?? null)
+const pendingTotal = computed(() => pendingStore.count(tabId.value))
+watch(
+  pendingTotal,
+  (n) => {
+    if (workspace.active) workspace.setDirty(workspace.active.id, n > 0)
+  },
+  { immediate: true },
+)
 const filtered = computed(() => state.filter.value !== null)
 
 // ---- relations: FK chips and virtual count columns --------------------------------------------
@@ -77,7 +119,11 @@ const labelOf = (name: string) => relationLabels.value[name] ?? name
 
 const asRow = (row: unknown) => row as Record<string, unknown>
 const asCount = (value: unknown) => (typeof value === 'number' ? value : undefined)
-const parentOf = (ref: RelationRef, row: unknown) => relations.get(asRow(row))?.parents[ref.name]
+/** An edited FK shows the raw value: the resolved parent still describes the old one. */
+const parentOf = (ref: RelationRef, row: unknown) =>
+  ref.columns.some((c) => metaOf(row)?.changed[c]) || metaOf(row)?.state === 'new'
+    ? undefined
+    : relations.get(asRow(row))?.parents[ref.name]
 
 const relations = useRelationData(
   { connectionId: props.connectionId, schema: props.schema, table: props.table.name },
@@ -155,17 +201,203 @@ watch(
   },
 )
 
-/** Rows as the grid shows them: the table's values plus the count of every relation column. */
-const gridRows = computed(() => {
+/** Rows as the grid shows them: loaded values, pending edits on top, count columns, new rows first. */
+const gridRows = computed<Record<string, unknown>[]>(() => {
   void relations.resolved.value
-  if (childRefs.value.length === 0) return state.rows.value
-  return state.rows.value.map((row) => {
-    const data = relations.get(row)
-    const out: Record<string, unknown> = { ...row }
-    for (const ref of childRefs.value) out[REL + ref.name] = data?.counts[ref.name]
-    return out
-  })
+  const edits = pendingTable.value
+  const errors = pendingState.value?.errors ?? {}
+  const key = keyColumns.value
+  const out: Record<string, unknown>[] = []
+
+  for (const insert of edits?.inserts ?? []) {
+    const meta: RowMeta = {
+      state: 'new',
+      id: insert.id,
+      changed: {},
+      error: errors[insertErrorId(props.table.name, insert.id)],
+    }
+    out.push({ ...insert.values, [ROW_META]: meta })
+  }
+
+  for (const row of state.rows.value) {
+    const next: Record<string, unknown> = { ...row }
+    if (childRefs.value.length > 0) {
+      const data = relations.get(row)
+      for (const ref of childRefs.value) next[REL + ref.name] = data?.counts[ref.name]
+    }
+    const rowKeyValue = key ? rowKey(key, row) : null
+    const pending = rowKeyValue ? edits?.rows[keyId(rowKeyValue)] : undefined
+    if (rowKeyValue && pending) {
+      const changed: RowMeta['changed'] = {}
+      for (const [column, value] of Object.entries(pending.changes)) {
+        changed[column] = { original: row[column] }
+        next[column] = value
+      }
+      next[ROW_META] = {
+        state: pending.deleted ? 'deleted' : null,
+        changed,
+        key: rowKeyValue,
+        error: errors[rowErrorId(props.table.name, rowKeyValue)],
+      } satisfies RowMeta
+    }
+    out.push(next)
+  }
+  return out
 })
+
+/** The row as loaded from the server, by key: edits are compared against it, not against the overlay. */
+const loadedByKey = computed(() => {
+  const map = new Map<string, Record<string, unknown>>()
+  const key = keyColumns.value
+  if (!key) return map
+  for (const row of state.rows.value) {
+    const k = rowKey(key, row)
+    if (k) map.set(keyId(k), row)
+  }
+  return map
+})
+
+// ---- applying edits to the pending store -----------------------------------------------------
+
+function keyOf(row: Record<string, unknown>): Record<string, string | number> | null {
+  return metaOf(row)?.key ?? (keyColumns.value ? rowKey(keyColumns.value, row) : null)
+}
+
+function applyEdit(row: Record<string, unknown>, column: string, value: unknown): void {
+  const meta = metaOf(row)
+  if (meta?.state === 'new' && meta.id) {
+    pendingStore.editInsert(tabId.value, props.table.name, meta.id, column, value)
+    return
+  }
+  const key = keyOf(row)
+  if (!key) return
+  const original = loadedByKey.value.get(keyId(key))
+  if (!original) return
+  pendingStore.edit(tabId.value, props.table.name, key, original, column, value)
+}
+
+function addRecord(): void {
+  pendingStore.insert(tabId.value, props.table.name, {})
+}
+
+function duplicateRow(row: Record<string, unknown>): void {
+  const values: Record<string, unknown> = {}
+  for (const column of props.table.columns) {
+    // Generated columns take new values; a binary value on screen is only a preview of the bytes.
+    if (column.isGenerated || column.kind === 'binary') continue
+    const v = row[column.name]
+    if (v !== undefined) values[column.name] = v
+  }
+  pendingStore.insert(tabId.value, props.table.name, values)
+}
+
+function undoRow(row: Record<string, unknown>): void {
+  const meta = metaOf(row)
+  if (meta?.state === 'new' && meta.id) pendingStore.removeNew(tabId.value, props.table.name, meta.id)
+  else {
+    const key = keyOf(row)
+    if (key) pendingStore.undo(tabId.value, props.table.name, key)
+  }
+}
+
+// ---- deleting: new rows vanish at once, loaded rows ask with the impact first ----------------
+
+const deleteKeys = ref<Record<string, string | number>[]>([])
+const deleteOpen = ref(false)
+
+function requestDelete(rows: Record<string, unknown>[]): void {
+  const keys: Record<string, string | number>[] = []
+  for (const row of rows) {
+    const meta = metaOf(row)
+    if (meta?.state === 'new' && meta.id) {
+      pendingStore.removeNew(tabId.value, props.table.name, meta.id)
+      continue
+    }
+    const key = keyOf(row)
+    if (key && meta?.state !== 'deleted') keys.push(key)
+  }
+  if (keys.length === 0) return
+  deleteKeys.value = keys
+  deleteOpen.value = true
+}
+
+function confirmDelete(): void {
+  for (const key of deleteKeys.value) {
+    const original = loadedByKey.value.get(keyId(key))
+    if (original) pendingStore.remove(tabId.value, props.table.name, key, original, true)
+  }
+  deleteKeys.value = []
+}
+
+function restoreRows(rows: Record<string, unknown>[]): void {
+  for (const row of rows) {
+    const key = keyOf(row)
+    const original = key ? loadedByKey.value.get(keyId(key)) : undefined
+    if (key && original) pendingStore.remove(tabId.value, props.table.name, key, original, false)
+  }
+}
+
+// ---- foreign key editing: pick the parent record -------------------------------------------
+
+const pickerOpen = ref(false)
+const pickerRow = ref<Record<string, unknown> | null>(null)
+const pickerRef = ref<RelationRef | null>(null)
+
+/** FK columns that have a navigable parent relation: these are picked, not typed. */
+const pickableColumns = computed(() => {
+  const names = new Set<string>()
+  for (const ref of parentRefs.value) ref.columns.forEach((c) => names.add(c))
+  return [...names]
+})
+const columnHasDefault = (name: string): boolean => {
+  const column = props.table.columns.find((c) => c.name === name)
+  if (!column) return false
+  // A lone integer key is filled by the database (rowid / serial / auto_increment) when omitted.
+  const autoKey = column.isPrimaryKey && column.kind === 'number' && props.table.primaryKey.length === 1
+  return column.default !== null || column.isGenerated || autoKey
+}
+const pickerTarget = computed(() => schemaStore.tables.find((tb) => tb.name === pickerRef.value?.target) ?? null)
+
+function editForeignKey(row: Record<string, unknown>, column: string): void {
+  const ref = parentRefs.value.find((r) => r.columns.includes(column))
+  if (!ref || !schemaStore.tables.some((tb) => tb.name === ref.target)) return
+  pickerRow.value = row
+  pickerRef.value = ref
+  pickerOpen.value = true
+}
+
+function onPick(target: Record<string, unknown> | null): void {
+  const ref = pickerRef.value
+  const row = pickerRow.value
+  const targetTable = pickerTarget.value
+  if (!ref || !row || !targetTable) return
+  const targetColumns = ref.targetColumns.length ? ref.targetColumns : targetTable.primaryKey
+  ref.columns.forEach((column, i) => {
+    applyEdit(row, column, target ? (target[targetColumns[i]!] ?? null) : null)
+  })
+}
+
+const pickerNullable = computed(() => {
+  const ref = pickerRef.value
+  return !!ref && ref.columns.every((c) => props.table.columns.find((col) => col.name === c)?.nullable)
+})
+
+// A save succeeded somewhere (this grid or the record panel): read everything again.
+watch(
+  () => pendingStore.version,
+  () => {
+    relations.reset()
+    void state.reload().then(() => ensureVisible())
+  },
+)
+
+/** Key of the parent from the raw FK value, for single-column FKs (the target column is the referenced one). */
+function fallbackKeyOf(ref: RelationRef, value: unknown): Record<string, string | number> | null {
+  if (ref.columns.length !== 1 || (typeof value !== 'string' && typeof value !== 'number')) return null
+  const target = schemaStore.tables.find((tb) => tb.name === ref.target)
+  const column = ref.targetColumns[0] ?? target?.primaryKey[0]
+  return column ? { [column]: value } : null
+}
 
 function openParent(ref: RelationRef, key: Record<string, string | number>, label: string | null, newTab: boolean): void {
   void nav.openRecord(ref.target, key, label, newTab)
@@ -260,7 +492,7 @@ onMounted(() => state.start())
 </script>
 
 <template>
-  <section class="flex h-full min-h-0 flex-col gap-2">
+  <section class="relative flex h-full min-h-0 flex-col gap-2">
     <div class="flex flex-wrap items-center gap-2">
       <span
         v-if="state.scope.value"
@@ -282,6 +514,16 @@ onMounted(() => state.start())
       <FilterBar :columns="table.columns" :filter="state.filter.value" @change="state.setFilter" />
 
       <div class="ml-auto flex items-center gap-1">
+        <button
+          v-if="editable"
+          type="button"
+          class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+          data-add-record
+          @click="addRecord"
+        >
+          <Icon name="lucide:plus" class="size-3" />
+          {{ t('edit.addRecord') }}
+        </button>
         <UiPopover>
           <template #trigger>
             <button
@@ -318,9 +560,9 @@ onMounted(() => state.start())
 
     <SortBar :sort="state.sort.value" @change="state.setSort" />
 
-    <p v-if="readOnly" class="flex items-center gap-1.5 text-xs text-warning">
+    <p v-if="readOnlyNotice" class="flex items-center gap-1.5 text-xs text-warning" data-readonly-notice>
       <Icon name="lucide:info" class="size-3.5" />
-      {{ t('grid.noPrimaryKey') }}
+      {{ readOnlyNotice }}
     </p>
 
     <div class="min-h-0 flex-1">
@@ -336,8 +578,12 @@ onMounted(() => state.start())
         :sort="state.sort.value"
         :primary-key="primaryKey"
         :foreign-keys="foreignKeys"
+        :pickable="pickableColumns"
         :widths="state.prefs.value.widths"
         :loading="state.loading.value"
+        :editable="editable"
+        :dialect="schemaStore.dialect"
+        :selection-key="state.rows.value"
         :start-index="(state.page.value - 1) * state.pageSize.value"
         @update:sort="state.setSort"
         @update:widths="(w) => state.updatePrefs({ ...state.prefs.value, widths: w })"
@@ -348,16 +594,28 @@ onMounted(() => state.start())
         @hide="(name) => { const c = allColumns.find((x) => x.name === name); if (c) setColumnShown(c, false) }"
         @visible="onVisible"
         @open-row="openRow"
+        @edit="applyEdit"
+        @edit-foreign-key="editForeignKey"
+        @delete-rows="requestDelete"
+        @restore-rows="restoreRows"
+        @duplicate-row="duplicateRow"
+        @undo-row="undoRow"
       >
         <template #cell="{ column, row, value }">
+          <span
+            v-if="isDefaultValue(value) || (metaOf(row)?.state === 'new' && value === undefined && columnHasDefault(column))"
+            class="rounded-sm border border-border px-1 text-[10px] uppercase tracking-wide text-fg-subtle italic"
+            data-default-badge
+          >{{ t('edit.default') }}</span>
           <ForeignKeyCell
-            v-if="parentByColumn.has(column)"
+            v-else-if="parentByColumn.has(column)"
             :connection-id="connectionId"
             :schema="schema"
             :target="parentByColumn.get(column)!.target"
             :value="value"
             :virtual="parentByColumn.get(column)!.virtual"
             :parent="parentOf(parentByColumn.get(column)!, row)"
+            :fallback-key="fallbackKeyOf(parentByColumn.get(column)!, value)"
             @open="(key, newTab) => openParent(parentByColumn.get(column)!, key, parentOf(parentByColumn.get(column)!, row)?.label ?? null, newTab)"
           />
           <RelationCountCell
@@ -375,6 +633,36 @@ onMounted(() => state.start())
     <p v-if="state.settled.value && !state.error.value && state.rows.value.length === 0" class="text-xs text-fg-subtle">
       {{ filtered ? t('grid.noRowsFiltered') : t('grid.noRows') }}
     </p>
+
+    <PendingBar
+      v-if="connection"
+      :connection-id="connectionId"
+      :schema="schema"
+      :tab-id="tabId"
+      :connection-name="connection.name"
+      :environment="connection.environment"
+    />
+
+    <DeleteImpactDialog
+      v-model:open="deleteOpen"
+      :connection-id="connectionId"
+      :schema="schema"
+      :table="table.name"
+      :keys="deleteKeys"
+      @confirm="confirmDelete"
+    />
+
+    <FkPicker
+      v-if="pickerTarget"
+      v-model:open="pickerOpen"
+      :connection-id="connectionId"
+      :schema="schema"
+      :target="pickerTarget"
+      :display-column="schemaStore.graph?.tables[pickerTarget.name]?.displayColumn ?? null"
+      :nullable="pickerNullable"
+      :title="pickerRef?.name ?? pickerTarget.name"
+      @pick="onPick"
+    />
 
     <GridFooter
       :total="state.total.value"

@@ -4,6 +4,7 @@ import type { ConnectionCreateInput, ConnectionTestInput, ConnectionUpdateInput 
 import type { ConnectionView, Dialect, SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { StoreSchema } from '../store/db'
 import { decryptSecret, encryptSecret } from '../utils/secrets'
+import { globalReadonly } from '../utils/readonly'
 import { buildDriverConfig } from './config'
 
 type Db = Kysely<StoreSchema>
@@ -59,6 +60,7 @@ export function toView(row: Row): ConnectionView {
     environment: row.environment as ConnectionView['environment'],
     color: (row.color as ConnectionView['color']) ?? null,
     readonly: row.readonly === 1,
+    readonlyGlobal: globalReadonly(),
     defaultSchema: row.default_schema,
     hasPassword: Boolean(c.secrets.password),
     ssl: {

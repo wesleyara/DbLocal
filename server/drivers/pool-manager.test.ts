@@ -13,6 +13,7 @@ function fakeDriver(): Driver & { closed: boolean } {
     readRows: async () => [],
     countRows: async () => 0,
     countGroups: async () => [],
+    applyMutations: async () => [],
     introspect: async (schema: string) => ({ dialect: 'postgres' as const, schema, tables: [], readAt: '' }),
     close: async () => {
       driver.closed = true

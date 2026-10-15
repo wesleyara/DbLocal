@@ -1,5 +1,6 @@
 import type { SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 
 export type Dialect = 'postgres' | 'mysql' | 'sqlite'
@@ -59,6 +60,11 @@ export interface Driver {
   countRows(plan: RowsPlan): Promise<number>
   /** Row counts per distinct value of `plan.groupBy` (used to count related records in batch). */
   countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]>
+  /**
+   * Runs a validated batch of inserts, updates and deletes in one transaction. Any failure rolls
+   * everything back and throws a `MutationFailedError` with the index of the operation.
+   */
+  applyMutations(plan: MutationPlan): Promise<MutationResult[]>
   close(): Promise<void>
 }
 

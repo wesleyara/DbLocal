@@ -1,25 +1,36 @@
 <script setup lang="ts">
-import type { RelationRef } from '#shared/types/db'
+import type { ConnectionView } from '#shared/types/connection'
+import type { RelationRef, SchemaColumn } from '#shared/types/db'
 import type { RecordKey, RecordResponse } from '#shared/types/relations'
 import type { RowsResponse } from '#shared/types/rows'
+import { editableKey } from '#shared/editable'
+import { nextBoolean } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
+import { keyId } from '#shared/pending'
 import { recordAsInsert } from '#shared/record-sql'
 import { useRelationNav } from '~/composables/useRelationNav'
 import { useToast } from '~/composables/useToast'
+import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
 import { useWorkspaceStore } from '~/stores/workspace'
 import CellValue from '../grid/cells/CellValue.vue'
+import CellEditor from '../grid/editors/CellEditor.vue'
+import FkPicker from '../grid/editors/FkPicker.vue'
+import ValueDialog from '../grid/editors/ValueDialog.vue'
+import { isDefaultValue } from '../grid/row-meta'
 
 const props = defineProps<{
   connectionId: string
   schema: string
   table: string
   recordKey: RecordKey
+  connection?: Pick<ConnectionView, 'readonly' | 'readonlyGlobal'> | null
 }>()
 const { t } = useI18n()
 const toast = useToast()
 const schemaStore = useSchemaStore()
 const workspace = useWorkspaceStore()
+const pendingStore = usePendingStore()
 const ui = useUiStore()
 const nav = useRelationNav({ connectionId: props.connectionId, schema: props.schema })
 
@@ -53,6 +64,97 @@ async function load(): Promise<void> {
   }
 }
 watch(() => [props.table, JSON.stringify(props.recordKey)], load, { immediate: true })
+
+// ---- editing the record's fields (same pending changes as the grid) ---------------------------
+
+const tabId = computed(() => workspace.active?.id ?? '_')
+const writable = computed(
+  () => !!tableInfo.value && editableKey(tableInfo.value) !== null && !(props.connection?.readonly || props.connection?.readonlyGlobal),
+)
+const pendingRow = computed(
+  () => pendingStore.peek(tabId.value)?.tables[props.table]?.rows[keyId(props.recordKey)] ?? null,
+)
+const isDeleted = computed(() => pendingRow.value?.deleted ?? false)
+/** Value shown for a column: the pending edit when there is one, the loaded value otherwise. */
+const shown = (column: SchemaColumn): unknown =>
+  pendingRow.value && column.name in pendingRow.value.changes ? pendingRow.value.changes[column.name] : data.value?.row[column.name]
+const changed = (column: SchemaColumn): boolean => !!pendingRow.value && column.name in pendingRow.value.changes
+const editableColumn = (column: SchemaColumn): boolean => writable.value && !isDeleted.value && !column.isGenerated
+
+function applyEdit(column: string, value: unknown): void {
+  if (!data.value) return
+  pendingStore.edit(tabId.value, props.table, props.recordKey, data.value.row, column, value)
+}
+
+const editingField = ref<string | null>(null)
+const valueDialog = ref<{ open: boolean; column: SchemaColumn | null; value: unknown }>({ open: false, column: null, value: null })
+const pickerOpen = ref(false)
+const pickerRef = ref<RelationRef | null>(null)
+const pickerTarget = computed(() => schemaStore.tables.find((tb) => tb.name === pickerRef.value?.target) ?? null)
+
+function startEdit(column: SchemaColumn): void {
+  if (!editableColumn(column)) return
+  const ref = parentRefs.value.find((r) => r.columns.includes(column.name))
+  if (ref && column.kind !== 'boolean') {
+    pickerRef.value = ref
+    pickerOpen.value = true
+  } else if (column.kind === 'boolean') {
+    applyEdit(column.name, nextBoolean(shown(column), column.nullable))
+  } else if (column.kind === 'json' || column.kind === 'array') {
+    valueDialog.value = { open: true, column, value: shown(column) }
+  } else if (column.kind !== 'binary') {
+    editingField.value = column.name
+  }
+}
+
+function onFieldCommit(column: SchemaColumn, value: unknown): void {
+  editingField.value = null
+  applyEdit(column.name, value)
+}
+
+function onPick(target: Record<string, unknown> | null): void {
+  const ref = pickerRef.value
+  const targetTable = pickerTarget.value
+  if (!ref || !targetTable) return
+  const targetColumns = ref.targetColumns.length ? ref.targetColumns : targetTable.primaryKey
+  ref.columns.forEach((column, i) => applyEdit(column, target ? (target[targetColumns[i]!] ?? null) : null))
+}
+
+const pickerNullable = computed(
+  () => !!pickerRef.value && pickerRef.value.columns.every((c) => tableInfo.value?.columns.find((col) => col.name === c)?.nullable),
+)
+
+function undoAll(): void {
+  pendingStore.undo(tabId.value, props.table, props.recordKey)
+}
+
+function toggleDelete(): void {
+  if (!data.value) return
+  pendingStore.remove(tabId.value, props.table, props.recordKey, data.value.row, !isDeleted.value)
+}
+
+/** "Create related": a new row of the child table, with the foreign key already pointing at this record. */
+async function createRelated(ref: RelationRef): Promise<void> {
+  if (!data.value) return
+  const values: Record<string, unknown> = {}
+  ref.columns.forEach((column, i) => {
+    const target = ref.targetColumns[i]
+    if (target) values[target] = data.value!.row[column]
+  })
+  pendingStore.insert(tabId.value, ref.target, values)
+  await nav.openRelated(props.table, ref.name, props.recordKey, ref.target, { count: count(ref) })
+}
+const canCreateRelated = (ref: RelationRef): boolean => {
+  if (ref.cardinality !== 'one-to-many' && ref.cardinality !== 'one-to-one') return false
+  const target = schemaStore.tables.find((tb) => tb.name === ref.target)
+  return writable.value && !!target && editableKey(target) !== null
+}
+
+// A save elsewhere changed the data: read the record again.
+watch(
+  () => pendingStore.version,
+  () => void load(),
+)
 
 const label = computed(() => {
   const v = displayColumn.value ? data.value?.row[displayColumn.value] : null
@@ -209,6 +311,16 @@ function onKeydown(event: KeyboardEvent): void {
           {{ keyLabel(recordKey) }}<span v-if="label" class="font-normal text-fg-muted"> · {{ label }}</span>
         </h2>
       </div>
+      <UiIconButton v-if="writable && pendingRow" icon="lucide:undo-2" :label="t('edit.undoRow')" size="sm" data-record-undo @click="undoAll" />
+      <UiIconButton
+        v-if="writable"
+        :icon="isDeleted ? 'lucide:archive-restore' : 'lucide:trash-2'"
+        :label="isDeleted ? t('edit.restoreRow') : t('edit.deleteRow')"
+        size="sm"
+        data-record-delete
+        :disabled="!data"
+        @click="toggleDelete"
+      />
       <UiIconButton icon="lucide:external-link" :label="t('record.openInTab')" size="sm" @click="nav.openRecord(table, recordKey, label, true)" />
       <UiIconButton icon="lucide:braces" :label="t('record.copyJson')" size="sm" :disabled="!data" @click="copyJson" />
       <UiIconButton icon="lucide:file-code" :label="t('record.copyInsert')" size="sm" :disabled="!data" @click="copyInsert" />
@@ -262,7 +374,46 @@ function onKeydown(event: KeyboardEvent): void {
                 {{ column.name }}
                 <span class="block truncate text-[10px] text-fg-subtle">{{ column.nativeType }}</span>
               </dt>
-              <dd class="min-w-0 break-words text-fg"><CellValue :value="data.row[column.name]" :kind="column.kind" /></dd>
+              <dd
+                class="group/field flex min-w-0 items-start gap-1 break-words text-fg"
+                :class="[changed(column) && 'border-l-2 border-warning bg-warning-soft pl-1', isDeleted && 'line-through opacity-60']"
+                :title="changed(column) ? t('edit.was', { value: String(data.row[column.name] ?? 'NULL') }) : undefined"
+                :data-field="column.name"
+              >
+                <CellEditor
+                  v-if="editingField === column.name"
+                  class="h-7 min-w-0 flex-1"
+                  :column="column"
+                  :value="shown(column)"
+                  @commit="(v) => onFieldCommit(column, v)"
+                  @cancel="editingField = null"
+                />
+                <span v-else-if="isDefaultValue(shown(column))" class="rounded-sm border border-border px-1 text-[10px] uppercase italic text-fg-subtle">{{ t('edit.default') }}</span>
+                <CellValue v-else class="min-w-0 flex-1" :value="shown(column)" :kind="column.kind" />
+                <template v-if="editableColumn(column) && editingField !== column.name">
+                  <button
+                    v-if="column.kind !== 'binary'"
+                    type="button"
+                    class="hidden size-5 shrink-0 items-center justify-center rounded-sm text-fg-subtle hover:text-accent group-hover/field:flex"
+                    :aria-label="t('edit.editValue')"
+                    :title="t('edit.editValue')"
+                    data-field-edit
+                    @click="startEdit(column)"
+                  >
+                    <Icon name="lucide:pencil" class="size-3" />
+                  </button>
+                  <button
+                    v-if="column.nullable"
+                    type="button"
+                    class="hidden size-5 shrink-0 items-center justify-center rounded-sm text-fg-subtle hover:text-accent group-hover/field:flex"
+                    :aria-label="t('edit.setNull')"
+                    :title="t('edit.setNull')"
+                    @click="applyEdit(column.name, null)"
+                  >
+                    <Icon name="lucide:circle-slash" class="size-3" />
+                  </button>
+                </template>
+              </dd>
             </template>
           </dl>
         </section>
@@ -314,10 +465,32 @@ function onKeydown(event: KeyboardEvent): void {
                   {{ t('record.viewAll', { count: count(ref) ?? 0, target: ref.target }) }}
                 </button>
               </div>
+              <div v-if="canCreateRelated(ref)" class="border-t border-border px-2 py-1">
+                <button type="button" class="text-xs text-accent hover:underline" data-create-related @click="createRelated(ref)">
+                  <Icon name="lucide:plus" class="mr-0.5 inline size-3" />{{ t('edit.createRelated', { target: ref.target }) }}
+                </button>
+              </div>
             </li>
           </ul>
         </section>
       </template>
     </div>
+    <ValueDialog
+      v-model:open="valueDialog.open"
+      :column="valueDialog.column"
+      :value="valueDialog.value"
+      @commit="(v) => valueDialog.column && applyEdit(valueDialog.column.name, v)"
+    />
+    <FkPicker
+      v-if="pickerTarget"
+      v-model:open="pickerOpen"
+      :connection-id="connectionId"
+      :schema="schema"
+      :target="pickerTarget"
+      :display-column="schemaStore.graph?.tables[pickerTarget.name]?.displayColumn ?? null"
+      :nullable="pickerNullable"
+      :title="pickerRef?.name ?? pickerTarget.name"
+      @pick="onPick"
+    />
   </aside>
 </template>

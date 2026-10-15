@@ -7,6 +7,8 @@ import type { RelationGraph, SchemaResponse, SchemaSnapshot, VirtualRelationDef 
  * relations. Shared by the sidebar tree, the table view and the virtual relations dialog.
  */
 export const useSchemaStore = defineStore('schema', () => {
+  // Forwards the session cookie during SSR (a bare $fetch would reach the API unauthenticated on a reload).
+  const requestFetch = useRequestFetch()
   const connectionId = ref<string | null>(null)
   const schema = ref<string | null>(null)
   const snapshot = shallowRef<SchemaSnapshot | null>(null)
@@ -28,13 +30,13 @@ export const useSchemaStore = defineStore('schema', () => {
     error.value = null
     try {
       const res = refresh
-        ? await $fetch<SchemaResponse>(`/api/c/${id}/schema/refresh${schemaQuery(name)}`, { method: 'POST' })
-        : await $fetch<SchemaResponse>(`/api/c/${id}/schema${schemaQuery(name)}`)
+        ? await requestFetch<SchemaResponse>(`/api/c/${id}/schema/refresh${schemaQuery(name)}`, { method: 'POST' })
+        : await requestFetch<SchemaResponse>(`/api/c/${id}/schema${schemaQuery(name)}`)
       connectionId.value = id
       schema.value = res.snapshot.schema
       snapshot.value = res.snapshot
       graph.value = res.graph
-      virtual.value = await $fetch<VirtualRelationDef[]>(
+      virtual.value = await requestFetch<VirtualRelationDef[]>(
         `/api/c/${id}/virtual-relations${schemaQuery(res.snapshot.schema)}`,
       )
     } catch (err) {
@@ -66,23 +68,23 @@ export const useSchemaStore = defineStore('schema', () => {
   }
 
   async function addVirtual(input: VirtualRelationInput): Promise<void> {
-    await $fetch(`/api/c/${connectionId.value}/virtual-relations`, { method: 'POST', body: input })
+    await requestFetch(`/api/c/${connectionId.value}/virtual-relations`, { method: 'POST', body: input })
     await reload()
   }
 
   async function updateVirtual(relationId: string, input: VirtualRelationInput): Promise<void> {
-    await $fetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'PATCH', body: input })
+    await requestFetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'PATCH', body: input })
     await reload()
   }
 
   async function removeVirtual(relationId: string): Promise<void> {
-    await $fetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'DELETE' })
+    await requestFetch(`/api/c/${connectionId.value}/virtual-relations/${relationId}`, { method: 'DELETE' })
     await reload()
   }
 
   /** `column: null` clears the override and goes back to the inferred display column. */
   async function setDisplayColumn(table: string, column: string | null): Promise<void> {
-    await $fetch(`/api/c/${connectionId.value}/display-column`, {
+    await requestFetch(`/api/c/${connectionId.value}/display-column`, {
       method: 'PUT',
       body: { schema: schema.value, table, column },
     })

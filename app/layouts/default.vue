@@ -11,11 +11,12 @@ const status = await useFetch('/api/auth/status')
 const connectionId = computed(() => route.params.connectionId as string | undefined)
 const schema = computed(() => route.params.schema as string | undefined)
 
+const requestFetch = useRequestFetch() // forwards the session cookie during SSR
 const { data: activeConnection } = await useAsyncData(
   'active-connection',
   () =>
     connectionId.value
-      ? $fetch<{ name: string; dialect: string; readonly: boolean }>(`/api/connections/${connectionId.value}`).catch(
+      ? requestFetch<{ name: string; dialect: string; readonly: boolean }>(`/api/connections/${connectionId.value}`).catch(
           () => null,
         )
       : Promise.resolve(null),

@@ -24,3 +24,11 @@ export class MutationFailedError extends Error {
     this.name = 'MutationFailedError'
   }
 }
+
+/** A write or DDL statement on a `prod` connection was sent without `confirmWrites`. Mapped to 409. */
+export class ConfirmationRequiredError extends Error {
+  constructor(readonly kinds: string[]) {
+    super('This connection is marked as production: confirm before running writes or DDL')
+    this.name = 'ConfirmationRequiredError'
+  }
+}

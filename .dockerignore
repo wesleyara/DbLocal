@@ -1,0 +1,16 @@
+node_modules
+.nuxt
+.output
+.data
+.git
+.github
+.claude
+.githooks
+test-results
+playwright-report
+fixtures/dev.sqlite*
+tests
+docker
+*.log
+.env
+Dockerfile

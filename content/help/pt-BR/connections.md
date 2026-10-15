@@ -41,3 +41,7 @@ Na aba **Avançado**, marque a conexão como `staging` ou `prod` para ver uma fa
 ## Escolher um schema
 
 Ao abrir uma conexão, a sidebar lista os schemas (Postgres) ou bancos (MySQL e SQLite). Os schemas do sistema ficam ocultos até você ativar **Mostrar schemas do sistema**. O schema escolhido fica lembrado na conexão.
+
+## Turso (libSQL)
+
+Escolha **SQLite / Turso**, defina *Local* como **Turso (remoto)** e informe a URL do banco (`libsql://meu-db-org.turso.io`) e um token de autenticação, ou cole `libsql://...?authToken=...` no campo de connection string. O token é guardado criptografado e nunca é exibido de novo. Um statement em execução não pode ser cancelado no servidor: *Cancelar* apenas para de esperar por ele.

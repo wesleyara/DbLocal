@@ -41,3 +41,7 @@ In **Advanced**, mark a connection as `staging` or `prod` to get a coloured stri
 ## Choose a schema
 
 When you open a connection, the sidebar lists its schemas (Postgres) or databases (MySQL and SQLite). System schemas stay hidden until you turn on **Show system schemas**. The schema you pick is remembered for the connection.
+
+## Turso (libSQL)
+
+Choose **SQLite / Turso**, set *Location* to **Turso (remote)** and enter the database URL (`libsql://my-db-org.turso.io`) and an auth token, or paste `libsql://...?authToken=...` in the connection string field. The token is stored encrypted and never shown again. A running statement cannot be cancelled on the server: *Cancel* only stops waiting for it.

@@ -27,6 +27,9 @@ interface FormState {
   password: string
   database: string
   filePath: string
+  /** SQLite dialect only: a remote Turso / libSQL database instead of a file. */
+  sqliteRemote: boolean
+  tursoUrl: string
   environment: Environment
   color: ConnectionColor
   readonly: boolean
@@ -54,6 +57,8 @@ const emptyForm = (): FormState => ({
   password: '',
   database: '',
   filePath: '',
+  sqliteRemote: false,
+  tursoUrl: '',
   environment: 'local',
   color: 'neutral',
   readonly: false,
@@ -76,6 +81,7 @@ const tab = ref('general')
 const connectionStringError = ref(false)
 const testResult = ref<{ ok: boolean; text: string } | null>(null)
 const testing = ref(false)
+const pickerOpen = ref(false)
 const saving = ref(false)
 const saveError = ref<string | null>(null)
 
@@ -85,7 +91,7 @@ const isSqlite = computed(() => form.dialect === 'sqlite')
 const dialectOptions = [
   { value: 'postgres', label: 'PostgreSQL' },
   { value: 'mysql', label: 'MySQL' },
-  { value: 'sqlite', label: 'SQLite' },
+  { value: 'sqlite', label: 'SQLite / Turso' },
 ]
 const environmentOptions = computed(() =>
   (['local', 'staging', 'prod'] as const).map((value) => ({ value, label: t(`env.${value}`) })),
@@ -148,6 +154,8 @@ function toForm(c: ConnectionView | null): Partial<FormState> {
     user: c.user ?? '',
     database: c.database ?? '',
     filePath: c.filePath ?? '',
+    sqliteRemote: c.dialect === 'sqlite' && !!c.host && !c.filePath,
+    tursoUrl: c.dialect === 'sqlite' ? (c.host ?? '') : '',
     environment: c.environment,
     color: c.color ?? 'neutral',
     readonly: c.readonly,
@@ -166,7 +174,11 @@ function applyConnectionString() {
   if (!form.connectionString.trim()) return
   try {
     const parsed = parseConnectionString(form.dialect, form.connectionString)
-    if (parsed.host) form.host = parsed.host
+    if (form.dialect === 'sqlite') {
+      // A libsql:// / https:// string is a Turso database: the URL goes to its own field.
+      if (parsed.host) form.tursoUrl = parsed.host
+      if (parsed.host) form.sqliteRemote = true
+    } else if (parsed.host) form.host = parsed.host
     if (parsed.port) form.port = String(parsed.port)
     if (parsed.user) form.user = parsed.user
     if (parsed.password) form.password = parsed.password
@@ -186,6 +198,7 @@ const blankToUndefined = (v: string) => (v.trim() === '' ? undefined : v)
  */
 function buildBody(forTest: boolean) {
   const sqlite = isSqlite.value
+  const remote = sqlite && form.sqliteRemote
   const port = form.port.trim() === '' ? undefined : Number(form.port)
   const ssl = sqlite
     ? { mode: 'disable' as const }
@@ -213,12 +226,13 @@ function buildBody(forTest: boolean) {
 
   const common = {
     dialect: form.dialect,
-    host: sqlite ? undefined : blankToUndefined(form.host),
+    // SQLite: a file, or a Turso URL (`host`) with its auth token (`password`). null clears the other mode's field.
+    host: sqlite ? (remote ? blankToUndefined(form.tursoUrl) : null) : blankToUndefined(form.host),
     port: sqlite ? undefined : port,
     user: sqlite ? undefined : blankToUndefined(form.user),
-    password: sqlite ? undefined : blankToUndefined(form.password),
+    password: sqlite ? (remote ? blankToUndefined(form.password) : null) : blankToUndefined(form.password),
     database: sqlite ? undefined : blankToUndefined(form.database),
-    filePath: sqlite ? blankToUndefined(form.filePath) : undefined,
+    filePath: sqlite ? (remote ? null : blankToUndefined(form.filePath)) : undefined,
     ssl,
     ssh,
   }
@@ -341,10 +355,59 @@ async function save() {
               </label>
             </template>
 
-            <label v-else class="grid gap-1 text-xs text-fg-muted">
-              {{ t('connections.fields.filePath') }}
-              <UiInput v-model="form.filePath" mono placeholder="/path/to/app.db" />
-            </label>
+            <template v-else>
+              <label class="grid gap-1 text-xs text-fg-muted">
+                {{ t('connections.fields.location') }}
+                <UiSelect
+                  :model-value="form.sqliteRemote ? 'turso' : 'file'"
+                  :options="[
+                    { value: 'file', label: t('connections.fields.locationFile') },
+                    { value: 'turso', label: t('connections.fields.locationTurso') },
+                  ]"
+                  @update:model-value="(v) => (form.sqliteRemote = v === 'turso')"
+                />
+              </label>
+              <label v-if="!form.sqliteRemote" class="grid gap-1 text-xs text-fg-muted">
+                {{ t('connections.fields.filePath') }}
+                <span class="flex gap-1">
+                  <UiInput v-model="form.filePath" mono placeholder="/path/to/app.db" />
+                  <UiButton @click="pickerOpen = true">
+                    <Icon name="lucide:folder-open" class="size-4" />{{ t('connections.picker.browse') }}
+                  </UiButton>
+                  <ConnectionsFilePicker v-model:open="pickerOpen" :start="form.filePath" @select="(p) => (form.filePath = p)" />
+                </span>
+              </label>
+              <template v-else>
+                <label class="grid gap-1 text-xs text-fg-muted">
+                  {{ t('connections.fields.connectionString') }}
+                  <UiInput
+                    v-model="form.connectionString"
+                    mono
+                    :invalid="connectionStringError"
+                    placeholder="libsql://my-db-org.turso.io?authToken=..."
+                    @blur="applyConnectionString"
+                    @keydown.enter.prevent="applyConnectionString"
+                  />
+                  <span v-if="connectionStringError" class="text-danger">
+                    {{ t('connections.fields.connectionStringInvalid') }}
+                  </span>
+                </label>
+                <label class="grid gap-1 text-xs text-fg-muted">
+                  {{ t('connections.fields.tursoUrl') }}
+                  <UiInput v-model="form.tursoUrl" mono placeholder="libsql://my-db-org.turso.io" />
+                </label>
+                <label class="grid gap-1 text-xs text-fg-muted">
+                  {{ t('connections.fields.authToken') }}
+                  <UiInput
+                    v-model="form.password"
+                    type="password"
+                    mono
+                    autocomplete="new-password"
+                    :placeholder="connection?.hasPassword ? t('connections.fields.passwordStored') : ''"
+                  />
+                </label>
+              </template>
+            </template>
 
           </div>
         </template>

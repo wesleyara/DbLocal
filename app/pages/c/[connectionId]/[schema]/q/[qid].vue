@@ -248,7 +248,6 @@ const timeoutText = computed({
   set: (v) => (queries.timeoutMs = Math.max(1, Math.min(600, Math.floor(Number(v)) || 30)) * 1000),
 })
 
-useHead({ title: () => draft.name || t('query.untitled') })
 </script>
 
 <template>

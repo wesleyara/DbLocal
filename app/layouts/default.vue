@@ -6,8 +6,6 @@ const status = await useFetch('/api/auth/status')
 const connectionId = computed(() => route.params.connectionId as string | undefined)
 const schema = computed(() => route.params.schema as string | undefined)
 
-useHead({ htmlAttrs: { lang: () => locale.value } })
-
 const { data: activeConnection } = await useAsyncData(
   'active-connection',
   () =>
@@ -18,6 +16,12 @@ const { data: activeConnection } = await useAsyncData(
       : Promise.resolve(null),
   { watch: [connectionId] },
 )
+
+// The browser tab always reads "DbLocal - <connection>", whatever page is open.
+useHead({
+  htmlAttrs: { lang: () => locale.value },
+  title: () => (activeConnection.value ? `${t('app.name')} - ${activeConnection.value.name}` : t('app.name')),
+})
 
 const themes = computed(() => [
   { value: 'dark', label: t('theme.dark') },

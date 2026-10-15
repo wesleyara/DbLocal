@@ -49,7 +49,16 @@ onMounted(refresh)
 watch([search, status], () => void loadHistory())
 watch(() => props.connectionId, refresh)
 
-const first = (sql: string) => sql.replace(/\s+/g, ' ').trim().slice(0, 140)
+/** SQL as written, trimmed; the entry clamps it to a few lines until it is expanded. */
+const clean = (sql: string) => sql.trim().replace(/\n{3,}/g, '\n\n')
+
+const expanded = ref(new Set<string>())
+function toggle(id: string) {
+  const next = new Set(expanded.value)
+  if (!next.delete(id)) next.add(id)
+  expanded.value = next
+}
+const isLong = (sql: string) => sql.trim().split('\n').length > 3 || sql.length > 160
 
 async function copy(sql: string) {
   await navigator.clipboard.writeText(sql)
@@ -92,7 +101,7 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
 </script>
 
 <template>
-  <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-l border-border bg-bg-subtle" data-query-panel>
+  <aside class="flex h-full min-h-0 w-96 max-w-[45vw] shrink-0 flex-col border-l border-border bg-bg-subtle" data-query-panel>
     <div class="flex border-b border-border">
       <button
         v-for="k in (['saved', 'history'] as const)"
@@ -109,19 +118,29 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
 
     <div v-if="tab === 'saved'" class="min-h-0 flex-1 overflow-auto p-2">
       <p v-if="saved.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noSaved') }}</p>
-      <ul class="grid gap-1">
+      <ul class="grid min-w-0 gap-1.5">
         <li
           v-for="q in saved"
           :key="q.id"
-          class="group rounded-md border px-2 py-1.5"
+          class="min-w-0 rounded-md border px-2 py-1.5"
           :class="q.id === activeSavedId ? 'border-accent bg-accent-soft' : 'border-border bg-surface'"
           data-saved-query
         >
           <button type="button" class="block w-full text-left" @click="emit('open', { sql: q.sql, savedId: q.id, name: q.name })">
             <span class="block truncate text-sm font-medium text-fg">{{ q.name }}</span>
-            <span class="font-data block truncate text-xs text-fg-muted">{{ first(q.sql) }}</span>
+            <span
+              class="font-data mt-0.5 block whitespace-pre-wrap break-words text-xs text-fg-muted"
+              :class="!expanded.has(q.id) && 'line-clamp-3'"
+            >{{ clean(q.sql) }}</span>
           </button>
-          <div class="mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+          <div class="mt-1 flex items-center gap-0.5">
+            <UiIconButton
+              v-if="isLong(q.sql)"
+              :icon="expanded.has(q.id) ? 'lucide:chevron-up' : 'lucide:chevron-down'"
+              :label="expanded.has(q.id) ? t('query.collapse') : t('query.expand')"
+              size="sm"
+              @click="toggle(q.id)"
+            />
             <UiIconButton icon="lucide:play" :label="t('query.rerun')" size="sm" @click="emit('rerun', q.sql)" />
             <UiIconButton icon="lucide:pencil" :label="t('query.rename')" size="sm" @click="startRename(q)" />
             <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" @click="copy(q.sql)" />
@@ -149,19 +168,29 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
       </div>
       <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
         <p v-if="history.entries.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noHistory') }}</p>
-        <ul class="grid gap-1">
-          <li v-for="h in history.entries" :key="h.id" class="group rounded-md border border-border bg-surface px-2 py-1.5" data-history-entry>
-            <button type="button" class="block w-full text-left" @click="emit('open', { sql: h.sql })">
-              <span class="font-data block truncate text-xs text-fg">{{ first(h.sql) }}</span>
-            </button>
-            <div class="mt-1 flex items-center gap-2 text-xs text-fg-subtle">
+        <ul class="grid min-w-0 gap-1.5">
+          <li v-for="h in history.entries" :key="h.id" class="min-w-0 rounded-md border border-border bg-surface px-2 py-1.5" data-history-entry>
+            <div class="flex items-center gap-2 text-xs text-fg-subtle">
               <UiBadge :tone="statusTone(h.status)">{{ t(`query.status.${h.status}`) }}</UiBadge>
               <span v-if="h.durationMs !== null" class="font-data">{{ h.durationMs }} ms</span>
               <span v-if="h.rowCount !== null" class="font-data">{{ t('query.rows', { count: h.rowCount }) }}</span>
-              <span class="ml-auto">{{ date(h.executedAt) }}</span>
+              <span class="ml-auto shrink-0">{{ date(h.executedAt) }}</span>
             </div>
-            <p v-if="h.error" class="font-data mt-1 truncate text-xs text-danger" :title="h.error">{{ h.error }}</p>
-            <div class="mt-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+            <button type="button" class="mt-1 block w-full text-left" :title="t('query.openInEditor')" @click="emit('open', { sql: h.sql })">
+              <span
+                class="font-data block whitespace-pre-wrap break-words text-xs text-fg"
+                :class="!expanded.has(String(h.id)) && 'line-clamp-3'"
+              >{{ clean(h.sql) }}</span>
+            </button>
+            <p v-if="h.error" class="font-data mt-1 break-words text-xs text-danger" :class="!expanded.has(String(h.id)) && 'line-clamp-2'">{{ h.error }}</p>
+            <div class="mt-1 flex items-center gap-0.5">
+              <UiIconButton
+                v-if="isLong(h.sql)"
+                :icon="expanded.has(String(h.id)) ? 'lucide:chevron-up' : 'lucide:chevron-down'"
+                :label="expanded.has(String(h.id)) ? t('query.collapse') : t('query.expand')"
+                size="sm"
+                @click="toggle(String(h.id))"
+              />
               <UiIconButton icon="lucide:play" :label="t('query.rerun')" size="sm" @click="emit('rerun', h.sql)" />
               <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" @click="copy(h.sql)" />
             </div>

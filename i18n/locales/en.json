@@ -35,7 +35,8 @@
       "disconnected": "Not connected",
       "connected": "Connected to {name}",
       "readonly": "read-only"
-    }
+    },
+    "home": "Back to home"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -376,7 +377,9 @@
     "unsaved": "Unsaved changes",
     "unsavedTitle": "Close tab with unsaved changes?",
     "unsavedBody": "{name} has changes that are not saved. They will be lost.",
-    "discardAndClose": "Discard and close"
+    "discardAndClose": "Discard and close",
+    "keepOpen": "Keep open",
+    "closeAll": "Close all tabs"
   },
   "breadcrumb": {
     "label": "Navigation trail",

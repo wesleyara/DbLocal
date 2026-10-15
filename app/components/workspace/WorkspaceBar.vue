@@ -47,9 +47,21 @@ function menuFor(tab: WorkspaceTab) {
   return [
     { label: t('tabs.duplicate'), icon: 'lucide:copy', onSelect: () => void duplicate(tab) },
     { separator: true } as never,
+    ...(tab.preview ? [{ label: t('tabs.keepOpen'), icon: 'lucide:pin', onSelect: () => workspace.pin(tab.id) }] : []),
     { label: t('tabs.close'), icon: 'lucide:x', onSelect: () => requestClose(tab) },
-    { label: t('tabs.closeOthers'), icon: 'lucide:panel-top-close', onSelect: () => workspace.closeOthers(tab.id) },
+    { label: t('tabs.closeOthers'), icon: 'lucide:panel-top-close', onSelect: () => void closeOthers(tab) },
+    { label: t('tabs.closeAll'), icon: 'lucide:square-x', onSelect: () => void closeAll() },
   ]
+}
+
+async function closeOthers(tab: WorkspaceTab): Promise<void> {
+  workspace.closeOthers(tab.id)
+  if (route.fullPath !== tab.path) await navigateTo(tab.path)
+}
+
+async function closeAll(): Promise<void> {
+  workspace.closeAll(props.connectionId)
+  await navigateTo(`/c/${props.connectionId}`)
 }
 
 async function goBack(): Promise<void> {
@@ -91,13 +103,14 @@ defineExpose({ goBack, goForward, requestClose })
           :class="tab.id === workspace.activeId ? 'border-border bg-bg text-fg' : 'border-transparent text-fg-muted hover:bg-surface-hover'"
           :data-tab="tab.title"
           @click="activate(tab)"
+          @dblclick="workspace.pin(tab.id)"
           @auxclick.middle.prevent="requestClose(tab)"
           @dragstart="dragging = tab.id"
           @dragover.prevent
           @drop.prevent="dragging && workspace.move(dragging, tab.id); dragging = null"
         >
           <Icon :name="tab.icon" class="size-3.5 shrink-0" />
-          <span class="font-data min-w-0 flex-1 truncate">{{ tab.title }}</span>
+          <span class="font-data min-w-0 flex-1 truncate" :class="tab.preview && 'italic'">{{ tab.title }}</span>
           <span v-if="tab.dirty" class="size-1.5 shrink-0 rounded-full bg-warning" :title="t('tabs.unsaved')" />
           <button
             type="button"

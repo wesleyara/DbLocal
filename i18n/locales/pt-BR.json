@@ -35,7 +35,8 @@
       "disconnected": "Desconectado",
       "connected": "Conectado a {name}",
       "readonly": "somente leitura"
-    }
+    },
+    "home": "Voltar para o início"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -376,7 +377,9 @@
     "unsaved": "Alterações não salvas",
     "unsavedTitle": "Fechar aba com alterações não salvas?",
     "unsavedBody": "{name} tem alterações não salvas. Elas serão perdidas.",
-    "discardAndClose": "Descartar e fechar"
+    "discardAndClose": "Descartar e fechar",
+    "keepOpen": "Manter aberta",
+    "closeAll": "Fechar todas as abas"
   },
   "breadcrumb": {
     "label": "Trilha de navegação",

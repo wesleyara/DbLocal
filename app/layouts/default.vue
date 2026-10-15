@@ -111,7 +111,7 @@ function onResize(e: PointerEvent) {
         :label="t('shell.toggleSidebar')"
         @click="ui.sidebarCollapsed = !ui.sidebarCollapsed"
       />
-      <span class="text-sm font-semibold">{{ t('app.name') }}</span>
+      <NuxtLink to="/" :title="t('shell.home')" class="text-sm font-semibold hover:text-accent">{{ t('app.name') }}</NuxtLink>
       <div class="ml-2 flex items-center gap-2">
         <UiBadge tone="success">{{ t('env.local') }}</UiBadge>
       </div>

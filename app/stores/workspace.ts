@@ -29,6 +29,8 @@ export interface WorkspaceTab {
   trail: TrailSegment[]
   /** Set by editors with unsaved changes; closing such a tab asks first. */
   dirty: boolean
+  /** A preview tab (italic title) is replaced by the next table opened from the sidebar, until it is pinned. */
+  preview?: boolean
 }
 
 export interface TabMeta {
@@ -99,6 +101,53 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const forConnection = (connectionId: string) => tabs.value.filter((t) => t.connectionId === connectionId)
   const active = computed(() => tabs.value.find((t) => t.id === activeId.value) ?? null)
 
+  /**
+   * Opens a table from the sidebar. An existing tab on that table is reused; otherwise the preview
+   * tab is replaced, or a new preview tab is created. `pin` (double click) makes it a regular tab.
+   * Returns the path to navigate to.
+   */
+  function openTable(connectionId: string, path: string, meta: TabMeta, pin = false): string {
+    const list = forConnection(connectionId)
+    const existing = list.find((t) => pathnameOf(t.path) === pathnameOf(path))
+    if (existing) {
+      activeId.value = existing.id
+      if (pin) existing.preview = false
+      return existing.path
+    }
+    const root: TrailSegment = { label: meta.title, path, kind: 'table' }
+    const reusable = list.find((t) => t.preview && !t.dirty)
+    if (reusable) {
+      Object.assign(reusable, {
+        schema: meta.schema,
+        type: meta.type,
+        title: meta.title,
+        icon: meta.icon,
+        path,
+        history: [{ path, trail: [root] }],
+        index: 0,
+        trail: [root],
+        preview: !pin,
+      })
+      activeId.value = reusable.id
+      return path
+    }
+    const tab = create(connectionId, path, meta)
+    tab.preview = !pin
+    activeId.value = tab.id
+    return path
+  }
+
+  function pin(id: string): void {
+    const tab = tabs.value.find((t) => t.id === id)
+    if (tab) tab.preview = false
+  }
+
+  /** Closes every tab of a connection. */
+  function closeAll(connectionId: string): void {
+    tabs.value = tabs.value.filter((t) => t.connectionId !== connectionId)
+    activeId.value = null
+  }
+
   /** Marks the next navigation as a relation hop, with the breadcrumb segment it adds. */
   function expect(segment: TrailSegment): void {
     pending = segment
@@ -165,6 +214,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         paramOf(tab.path, 'r') !== paramOf(fullPath, 'r') ||
         paramOf(tab.path, 'rel') !== paramOf(fullPath, 'rel')
       if (pending) {
+        tab.preview = false
         tab.trail = [...tab.trail, pending]
       } else if (pathnameOf(tab.path) !== pathnameOf(fullPath)) {
         tab.trail = [{ label: meta.title, path: fullPath, kind: 'table' }]
@@ -277,6 +327,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     hydrate,
     forConnection,
     expect,
+    openTable,
+    pin,
+    closeAll,
     open,
     sync,
     canGoBack,

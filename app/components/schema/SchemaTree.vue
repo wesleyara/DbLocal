@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SchemaTable } from '#shared/types/db'
 import { useSchemaStore } from '~/stores/schema'
+import { useWorkspaceStore } from '~/stores/workspace'
 import type { MenuItem } from '../ui/DropdownMenu.vue'
 
 const props = defineProps<{ connectionId: string; schema?: string }>()
@@ -66,9 +67,15 @@ function toggle(name: string) {
   expanded.value = next
 }
 
-function openTable(name: string) {
+const workspace = useWorkspaceStore()
+
+/** Single click opens the table in the preview tab; double click (`pin`) keeps it as its own tab. */
+function openTable(name: string, pin = false) {
   active.value = name
-  void navigateTo(`/c/${props.connectionId}/${encodeURIComponent(props.schema ?? store.schema ?? '')}/t/${encodeURIComponent(name)}`)
+  const schema = props.schema ?? store.schema ?? ''
+  const path = `/c/${props.connectionId}/${encodeURIComponent(schema)}/t/${encodeURIComponent(name)}`
+  const target = workspace.openTable(props.connectionId, path, { schema, type: 'table', title: name, icon: 'lucide:table-2' }, pin)
+  void navigateTo(target)
 }
 
 /** Quotes identifiers the way the dialect expects. */
@@ -243,6 +250,7 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
               class="group flex h-7 cursor-default items-center gap-1.5 rounded-sm px-1 text-sm text-fg hover:bg-surface focus-visible:outline focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent"
               :class="active === tb.name && 'bg-surface'"
               @click="openTable(tb.name)"
+              @dblclick="openTable(tb.name, true)"
               @focus="active = tb.name"
             >
               <button

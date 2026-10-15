@@ -1,4 +1,5 @@
 import type { RecordKey, ResolvedRow, ResolveResponse } from '#shared/types/relations'
+import { tablePrefix } from '#shared/grid-cache'
 
 interface Target {
   connectionId: string
@@ -34,10 +35,13 @@ export function rowKey(primaryKey: string[], row: Record<string, unknown>): Reco
  * are visible; the ones not resolved yet are fetched together, one request per burst, and the
  * server answers with one query per relation.
  */
-export function useRelationData(target: Target, primaryKey: () => string[]) {
-  const resolved = shallowRef(new Map<string, ResolvedRow>())
+export function useRelationData(target: Target, primaryKey: () => string[], tabId: () => string = () => '_') {
+  const { cache } = useGridCacheStore()
+  // What was resolved lives in the grid cache, so coming back to the table shows it without a request.
+  const entry = cache.relations(tabId(), tablePrefix(target.connectionId, target.schema, target.table))
+  const resolved = shallowRef(entry.resolved)
   /** Relation names that have been asked for, per row id, so toggling a column fetches only what is missing. */
-  const asked = new Map<string, Set<string>>()
+  const asked = entry.asked
   const failed = ref(false)
   let timer: ReturnType<typeof setTimeout> | undefined
   let generation = 0
@@ -66,6 +70,7 @@ export function useRelationData(target: Target, primaryKey: () => string[]) {
         const row = res.rows[index]!
         next.set(id, { parents: { ...prev?.parents, ...row.parents }, counts: { ...prev?.counts, ...row.counts } })
       })
+      entry.resolved = next
       resolved.value = next
       failed.value = false
     } catch {
@@ -101,7 +106,8 @@ export function useRelationData(target: Target, primaryKey: () => string[]) {
     clearTimeout(timer)
     queue.clear()
     asked.clear()
-    resolved.value = new Map()
+    entry.resolved = new Map()
+    resolved.value = entry.resolved
   }
 
   function get(row: Record<string, unknown>): ResolvedRow | undefined {

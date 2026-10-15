@@ -111,7 +111,12 @@
       "color": "Colour",
       "readonly": "Read-only",
       "readonlyHint": "Blocks every write from DbLocal to this connection.",
-      "defaultSchema": "Default schema"
+      "defaultSchema": "Default schema",
+      "location": "Location",
+      "locationFile": "Local file",
+      "locationTurso": "Turso (remote)",
+      "tursoUrl": "Database URL",
+      "authToken": "Auth token"
     },
     "colors": {
       "accent": "Blue",
@@ -167,7 +172,18 @@
       "editDescription": "Leave a password blank to keep the stored one."
     },
     "pickSchema": "Choose a schema",
-    "connectionError": "Could not connect"
+    "connectionError": "Could not connect",
+    "picker": {
+      "title": "Choose a database file",
+      "browse": "Browse",
+      "up": "Parent folder",
+      "folder": "Folder",
+      "error": "Cannot read this folder.",
+      "empty": "No database files here.",
+      "choose": "Select",
+      "allFiles": "Show all files",
+      "hidden": "Show hidden"
+    }
   },
   "schema": {
     "label": "Schema",
@@ -445,8 +461,74 @@
       "datetime": "Not a valid date and time.",
       "time": "Use HH:MM or HH:MM:SS.",
       "uuid": "Not a valid UUID.",
+      "function": "This column does not accept that function.",
       "required": "This column cannot be NULL."
     },
+    "generate": "Generate {fn}",
     "undoCell": "Undo this cell"
+  },
+  "query": {
+    "new": "New query",
+    "untitled": "Untitled query",
+    "run": "Run",
+    "runAll": "Run all",
+    "cancel": "Cancel",
+    "format": "Format",
+    "export": "Export",
+    "exportCsv": "Export result as CSV",
+    "exportJson": "Export result as JSON",
+    "exportAllCsv": "Re-run without limit as CSV",
+    "exportAllJson": "Re-run without limit as JSON",
+    "exportFailed": "Export failed.",
+    "saved": "Saved",
+    "saveTitle": "Save query",
+    "namePlaceholder": "Query name",
+    "saveGlobal": "Available on every connection",
+    "history": "History",
+    "noSaved": "No saved queries yet. Press ⌘S in the editor.",
+    "noHistory": "Nothing ran yet.",
+    "rename": "Rename",
+    "copy": "Copy SQL",
+    "copied": "SQL copied",
+    "rerun": "Run again",
+    "global": "All connections",
+    "searchHistory": "Search history",
+    "allStatuses": "Any status",
+    "loadMore": "Load more",
+    "keepLast": "Keep last",
+    "clearHistory": "Clear history",
+    "clearHistoryConfirm": "Delete the history of this connection? This cannot be undone.",
+    "status": {
+      "ok": "ok",
+      "error": "error",
+      "cancelled": "cancelled",
+      "timeout": "timeout"
+    },
+    "rows": "{count} rows",
+    "affected": "{count} rows affected",
+    "done": "Statement executed.",
+    "skipped": "Skipped: an earlier statement failed.",
+    "truncated": "Result truncated at {count} rows",
+    "settings": "Query settings",
+    "rowLimit": "Row limit",
+    "timeoutSeconds": "Timeout (seconds)",
+    "togglePanel": "Saved queries and history",
+    "resize": "Resize editor",
+    "emptyTitle": "Run a query",
+    "emptyHint": "⌘Enter runs the statement under the cursor, ⌘⇧Enter runs everything.",
+    "confirmTitle": "Confirm changes on a production connection",
+    "confirmProd": "This connection is marked as production. The statement changes data or the schema.",
+    "runAnyway": "Run anyway",
+    "explain": {
+      "run": "Explain",
+      "analyze": "Explain analyze",
+      "analyzeWarning": "EXPLAIN ANALYZE executes the statement to measure it.",
+      "tree": "Tree",
+      "raw": "Raw",
+      "unparsed": "The plan could not be drawn as a tree; see the raw output.",
+      "cost": "cost",
+      "rows": "rows",
+      "time": "time"
+    }
   }
 }

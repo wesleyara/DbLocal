@@ -111,7 +111,12 @@
       "color": "Cor",
       "readonly": "Somente leitura",
       "readonlyHint": "Bloqueia qualquer escrita do DbLocal nesta conexão.",
-      "defaultSchema": "Schema padrão"
+      "defaultSchema": "Schema padrão",
+      "location": "Local",
+      "locationFile": "Arquivo local",
+      "locationTurso": "Turso (remoto)",
+      "tursoUrl": "URL do banco",
+      "authToken": "Token de autenticação"
     },
     "colors": {
       "accent": "Azul",
@@ -167,7 +172,18 @@
       "editDescription": "Deixe a senha em branco para manter a salva."
     },
     "pickSchema": "Escolha um schema",
-    "connectionError": "Não foi possível conectar"
+    "connectionError": "Não foi possível conectar",
+    "picker": {
+      "title": "Escolher arquivo de banco",
+      "browse": "Procurar",
+      "up": "Pasta acima",
+      "folder": "Pasta",
+      "error": "Não foi possível ler esta pasta.",
+      "empty": "Nenhum arquivo de banco aqui.",
+      "choose": "Selecionar",
+      "allFiles": "Mostrar todos os arquivos",
+      "hidden": "Mostrar ocultos"
+    }
   },
   "schema": {
     "label": "Schema",
@@ -445,8 +461,74 @@
       "datetime": "Data e hora inválidas.",
       "time": "Use HH:MM ou HH:MM:SS.",
       "uuid": "UUID inválido.",
+      "function": "Esta coluna não aceita essa função.",
       "required": "Esta coluna não aceita NULL."
     },
+    "generate": "Gerar {fn}",
     "undoCell": "Desfazer esta célula"
+  },
+  "query": {
+    "new": "Nova query",
+    "untitled": "Query sem nome",
+    "run": "Executar",
+    "runAll": "Executar tudo",
+    "cancel": "Cancelar",
+    "format": "Formatar",
+    "export": "Exportar",
+    "exportCsv": "Exportar resultado em CSV",
+    "exportJson": "Exportar resultado em JSON",
+    "exportAllCsv": "Reexecutar sem limite em CSV",
+    "exportAllJson": "Reexecutar sem limite em JSON",
+    "exportFailed": "Falha ao exportar.",
+    "saved": "Salvas",
+    "saveTitle": "Salvar query",
+    "namePlaceholder": "Nome da query",
+    "saveGlobal": "Disponível em todas as conexões",
+    "history": "Histórico",
+    "noSaved": "Nenhuma query salva. Use ⌘S no editor.",
+    "noHistory": "Nada foi executado ainda.",
+    "rename": "Renomear",
+    "copy": "Copiar SQL",
+    "copied": "SQL copiado",
+    "rerun": "Executar de novo",
+    "global": "Todas as conexões",
+    "searchHistory": "Buscar no histórico",
+    "allStatuses": "Qualquer status",
+    "loadMore": "Carregar mais",
+    "keepLast": "Manter últimas",
+    "clearHistory": "Limpar histórico",
+    "clearHistoryConfirm": "Apagar o histórico desta conexão? Isso não pode ser desfeito.",
+    "status": {
+      "ok": "ok",
+      "error": "erro",
+      "cancelled": "cancelada",
+      "timeout": "timeout"
+    },
+    "rows": "{count} linhas",
+    "affected": "{count} linhas afetadas",
+    "done": "Statement executado.",
+    "skipped": "Ignorado: um statement anterior falhou.",
+    "truncated": "Resultado truncado em {count} linhas",
+    "settings": "Configurações da query",
+    "rowLimit": "Limite de linhas",
+    "timeoutSeconds": "Timeout (segundos)",
+    "togglePanel": "Queries salvas e histórico",
+    "resize": "Redimensionar editor",
+    "emptyTitle": "Execute uma query",
+    "emptyHint": "⌘Enter executa o statement sob o cursor, ⌘⇧Enter executa tudo.",
+    "confirmTitle": "Confirme alterações numa conexão de produção",
+    "confirmProd": "Esta conexão está marcada como produção. O statement altera dados ou o schema.",
+    "runAnyway": "Executar mesmo assim",
+    "explain": {
+      "run": "Explain",
+      "analyze": "Explain analyze",
+      "analyzeWarning": "EXPLAIN ANALYZE executa o statement para medi-lo.",
+      "tree": "Árvore",
+      "raw": "Bruto",
+      "unparsed": "Não foi possível desenhar o plano como árvore; veja a saída bruta.",
+      "cost": "custo",
+      "rows": "linhas",
+      "time": "tempo"
+    }
   }
 }

@@ -30,6 +30,7 @@ const localeOptions = computed(() =>
 
 // ---- workspace tabs: the route is the source of truth, the store follows it --------------------
 const workspace = useWorkspaceStore()
+const queries = useQueriesStore()
 const bar = ref<{ goBack: () => void; goForward: () => void; requestClose: (tab: never) => void } | null>(null)
 const mounted = ref(false)
 
@@ -38,6 +39,16 @@ function syncWorkspace() {
   const name = schema.value
   if (!id || !name) return
   const table = route.params.table as string | undefined
+  const qid = route.params.qid as string | undefined
+  if (qid) {
+    workspace.sync(id, route.fullPath, {
+      schema: name,
+      type: 'query',
+      title: queries.drafts[qid]?.name || t('query.untitled'),
+      icon: 'lucide:terminal',
+    })
+    return
+  }
   const recordOpen = typeof route.query.r === 'string'
   workspace.sync(id, route.fullPath, {
     schema: name,
@@ -73,15 +84,25 @@ function onShortcut(event: KeyboardEvent) {
   }
 }
 
+function newQuery() {
+  const id = connectionId.value
+  const name = schema.value
+  if (!id || !name) return
+  const qid = queries.create()
+  void navigateTo(`/c/${id}/${encodeURIComponent(name)}/q/${qid}`)
+}
+
 onMounted(() => {
   workspace.hydrate()
+  queries.hydrate()
   mounted.value = true
   syncWorkspace()
   window.addEventListener('keydown', onShortcut)
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', onShortcut))
 watch(
-  () => `${connectionId.value}|${schema.value}|${route.fullPath}`,
+  () =>
+    `${connectionId.value}|${schema.value}|${route.fullPath}|${queries.drafts[route.params.qid as string]?.name ?? ''}`,
   () => mounted.value && syncWorkspace(),
 )
 
@@ -115,6 +136,9 @@ function onResize(e: PointerEvent) {
       <div class="ml-2 flex items-center gap-2">
         <UiBadge tone="success">{{ t('env.local') }}</UiBadge>
       </div>
+      <UiButton v-if="connectionId && schema" size="sm" data-new-query @click="newQuery">
+        <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.new') }}
+      </UiButton>
       <div class="mx-auto hidden w-full max-w-sm items-center md:flex">
         <UiInput :placeholder="t('shell.search')" :aria-label="t('shell.search')" />
       </div>

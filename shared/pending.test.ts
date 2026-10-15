@@ -98,3 +98,23 @@ describe('pending changes', () => {
     expect(pendingCount(s)).toBe(1)
   })
 })
+
+describe('numeric cells', () => {
+  it('does not count "50.00" edited to 50 as a change', () => {
+    const state = emptyPending()
+    setCell(state, 't', { id: 1 }, { id: 1, amount: '50.00' }, 'amount', 50)
+    expect(state.tables.t).toBeUndefined()
+    setCell(state, 't', { id: 1 }, { id: 1, amount: '50.00' }, 'amount', 50.5)
+    expect(state.tables.t!.rows[keyId({ id: 1 })]!.changes).toEqual({ amount: 50.5 })
+    setCell(state, 't', { id: 1 }, { id: 1, amount: '50.00' }, 'amount', 50)
+    expect(state.tables.t).toBeUndefined()
+  })
+
+  it('only equates a number with its text form, never two texts', () => {
+    const state = emptyPending()
+    setCell(state, 't', { id: 1 }, { id: 1, label: '1.0' }, 'label', '1')
+    expect(state.tables.t).toBeDefined()
+    setCell(state, 't', { id: 2 }, { id: 2, n: '-0.50' }, 'n', -0.5)
+    expect(state.tables.t!.rows[keyId({ id: 2 })]).toBeUndefined()
+  })
+})

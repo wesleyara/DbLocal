@@ -4,7 +4,8 @@ import type { RelationRef, SchemaColumn } from '#shared/types/db'
 import type { RecordKey, RecordResponse } from '#shared/types/relations'
 import type { RowsResponse } from '#shared/types/rows'
 import { editableKey } from '#shared/editable'
-import { nextBoolean } from '#shared/edit-values'
+import { isFunctionValue } from '#shared/edit-functions'
+import { generatedKeyValues } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
 import { keyId } from '#shared/pending'
 import { recordAsInsert } from '#shared/record-sql'
@@ -95,11 +96,9 @@ const pickerTarget = computed(() => schemaStore.tables.find((tb) => tb.name === 
 function startEdit(column: SchemaColumn): void {
   if (!editableColumn(column)) return
   const ref = parentRefs.value.find((r) => r.columns.includes(column.name))
-  if (ref && column.kind !== 'boolean') {
+  if (ref) {
     pickerRef.value = ref
     pickerOpen.value = true
-  } else if (column.kind === 'boolean') {
-    applyEdit(column.name, nextBoolean(shown(column), column.nullable))
   } else if (column.kind === 'json' || column.kind === 'array') {
     valueDialog.value = { open: true, column, value: shown(column) }
   } else if (column.kind !== 'binary') {
@@ -136,7 +135,8 @@ function toggleDelete(): void {
 /** "Create related": a new row of the child table, with the foreign key already pointing at this record. */
 async function createRelated(ref: RelationRef): Promise<void> {
   if (!data.value) return
-  const values: Record<string, unknown> = {}
+  const targetTable = schemaStore.tables.find((tb) => tb.name === ref.target)
+  const values: Record<string, unknown> = targetTable ? generatedKeyValues(targetTable.columns) : {}
   ref.columns.forEach((column, i) => {
     const target = ref.targetColumns[i]
     if (target) values[target] = data.value!.row[column]
@@ -388,6 +388,7 @@ function onKeydown(event: KeyboardEvent): void {
                   @commit="(v) => onFieldCommit(column, v)"
                   @cancel="editingField = null"
                 />
+                <span v-else-if="isFunctionValue(shown(column))" class="font-data rounded-sm border border-border px-1 text-[11px] italic text-fg-subtle">{{ (shown(column) as { $fn: string }).$fn }}()</span>
                 <span v-else-if="isDefaultValue(shown(column))" class="rounded-sm border border-border px-1 text-[10px] uppercase italic text-fg-subtle">{{ t('edit.default') }}</span>
                 <CellValue v-else class="min-w-0 flex-1" :value="shown(column)" :kind="column.kind" />
                 <template v-if="editableColumn(column) && editingField !== column.name">

@@ -42,11 +42,35 @@ export function keyId(key: MutationKey): string {
 export const rowErrorId = (table: string, key: MutationKey): string => `${table}|${keyId(key)}`
 export const insertErrorId = (table: string, id: string): string => `${table}|new:${id}`
 
+const PLAIN_DECIMAL = /^([+-]?)(\d*)(?:\.(\d*))?$/
+
+/**
+ * Canonical text of a plain decimal (`"50.00"` and `50` both give `"50"`), or null when the value is
+ * not one. Done on the digits, so a `numeric` beyond 2^53 is not rounded by going through a number.
+ */
+function canonicalDecimal(v: unknown): string | null {
+  const text = typeof v === 'number' ? (Number.isFinite(v) ? String(v) : null) : typeof v === 'string' ? v.trim() : null
+  if (text === null || text === '') return null
+  if (/[eE]/.test(text)) return typeof v === 'number' || Number.isFinite(Number(text)) ? canonicalDecimal(Number(text).toFixed(20)) : null
+  const m = PLAIN_DECIMAL.exec(text)
+  if (!m || (!m[2] && !m[3])) return null
+  const int = (m[2] ?? '').replace(/^0+/, '') || '0'
+  const frac = (m[3] ?? '').replace(/0+$/, '')
+  const body = frac ? `${int}.${frac}` : int
+  return body === '0' ? '0' : `${m[1] === '-' ? '-' : ''}${body}`
+}
+
 function same(a: unknown, b: unknown): boolean {
   if (a === b) return true
   if (a === null || b === null || a === undefined || b === undefined) return false
   if (typeof a === 'object' || typeof b === 'object') return JSON.stringify(a) === JSON.stringify(b)
   // `1` and `"1"` are the same cell: ids come back from the server as strings, editors give numbers.
+  // Same for `"50.00"` (a numeric(10,2) as the driver sends it) and the `50` the editor parses.
+  if (typeof a !== typeof b || typeof a === 'number') {
+    const x = canonicalDecimal(a)
+    const y = canonicalDecimal(b)
+    if (x !== null && y !== null) return x === y
+  }
   return String(a) === String(b)
 }
 

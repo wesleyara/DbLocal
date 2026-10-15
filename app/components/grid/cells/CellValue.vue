@@ -10,6 +10,7 @@ const { t } = useI18n()
 const { number, date } = useFormat()
 
 const isNull = computed(() => props.value === null || props.value === undefined)
+const isTrue = computed(() => props.value === true || props.value === 1 || props.value === '1' || props.value === 't' || props.value === 'true')
 
 const binary = computed<BinaryPreview | null>(() => {
   if (props.kind !== 'binary' || typeof props.value !== 'object' || props.value === null) return null
@@ -103,10 +104,7 @@ const temporalLabel = computed(() => {
     <!-- NULL is a badge, never the string "NULL", so it cannot be confused with an empty string. -->
     <span v-if="isNull" class="rounded-sm border border-border px-1 text-[10px] uppercase tracking-wide text-type-null italic">{{ t('grid.null') }}</span>
 
-    <template v-else-if="props.kind === 'boolean'">
-      <Icon v-if="props.value === true || props.value === 1 || props.value === '1' || props.value === 't'" name="lucide:check" class="inline size-3.5 text-success" :aria-label="t('common.yes')" />
-      <Icon v-else name="lucide:x" class="inline size-3.5 text-fg-subtle" :aria-label="t('common.no')" />
-    </template>
+    <template v-else-if="props.kind === 'boolean'">{{ isTrue ? 'true' : 'false' }}</template>
 
     <template v-else-if="binary">
       <span class="text-fg-muted">{{ t('grid.binaryBytes', { size: number(binary.size) }) }}</span>

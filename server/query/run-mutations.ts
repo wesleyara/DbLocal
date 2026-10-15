@@ -3,7 +3,7 @@ import { compileMutation, reselectPlan } from './compile-mutations'
 import { compileRows } from './compile'
 import { DriverError } from '../drivers/errors'
 import { MutationFailedError } from './errors'
-import { DEFAULT_MARK } from './mutation-plan'
+import { DEFAULT_MARK, INCREMENT_MARK } from './mutation-plan'
 
 type Row = Record<string, unknown>
 
@@ -47,7 +47,7 @@ export async function runMutations(plan: MutationPlan, tx: TransactionExecutor):
         const source = op.type === 'update' ? { ...op.pk, ...op.values } : op.values
         for (const column of op.keyColumns) {
           const given = source[column]
-          key[column] = given !== undefined && given !== DEFAULT_MARK ? given : null
+          key[column] = given !== undefined && given !== DEFAULT_MARK && given !== INCREMENT_MARK ? given : null
         }
         if (op.type === 'insert' && res.insertId !== null && op.keyColumns.length === 1 && key[op.keyColumns[0]!] === null) {
           key[op.keyColumns[0]!] = res.insertId

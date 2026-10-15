@@ -162,3 +162,24 @@ describe('SQLite mutations', () => {
     expect(res!.row).toMatchObject({ at: 'now' })
   })
 })
+
+describe('increment()', () => {
+  it('takes the maximum plus one, also across the inserts of one batch', async () => {
+    raw.exec(`create table counters (n integer not null, label text, primary key (n))`)
+    raw.exec(`insert into counters values (10, 'a')`)
+    const fresh = await driver.introspect('main')
+    const res = await driver.applyMutations(
+      planMutations(fresh, [
+        { type: 'insert', table: 'counters', values: { n: { $fn: 'increment' }, label: 'b' } },
+        { type: 'insert', table: 'counters', values: { n: { $fn: 'increment' }, label: 'c' } },
+      ]),
+    )
+    expect(res.map((r) => r.row?.n)).toEqual([11, 12])
+  })
+
+  it('refuses it on a non-number column and as a key', async () => {
+    const fresh = await driver.introspect('main')
+    expect(() => planMutations(fresh, [{ type: 'insert', table: 'counters', values: { label: { $fn: 'increment' } } }])).toThrow(/number column/)
+    expect(() => planMutations(fresh, [{ type: 'update', table: 'counters', pk: { n: { $fn: 'increment' } as never }, values: { label: 'x' } }])).toThrow()
+  })
+})

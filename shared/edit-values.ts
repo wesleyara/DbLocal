@@ -1,6 +1,7 @@
+import { functionsFor, generateValue, isFunctionValue, parseFunctionInput, type FunctionValue } from './edit-functions'
 import type { SchemaColumn } from './types/db'
 
-export type ParsedInput = { ok: true; value: unknown } | { ok: false; error: 'number' | 'integer' | 'json' | 'array' | 'date' | 'datetime' | 'time' | 'uuid' }
+export type ParsedInput = { ok: true; value: unknown } | { ok: false; error: 'function' | 'number' | 'integer' | 'json' | 'array' | 'date' | 'datetime' | 'time' | 'uuid' }
 
 const NUMERIC = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/
 const INTEGER = /^[+-]?\d+$/
@@ -24,6 +25,7 @@ export function toLocalInput(date: Date): string {
 /** The text an editor starts with for the current value of a cell. */
 export function toInputText(column: SchemaColumn, value: unknown): string {
   if (value === null || value === undefined) return ''
+  if (isFunctionValue(value)) return `${value.$fn}()`
   if (column.kind === 'json' || column.kind === 'array') {
     return typeof value === 'string' ? value : JSON.stringify(value, null, 2)
   }
@@ -40,6 +42,17 @@ export function toInputText(column: SchemaColumn, value: unknown): string {
  * An empty number / date / time is NULL (the editors have no other way to clear them).
  */
 export function parseInput(column: SchemaColumn, text: string): ParsedInput {
+  const fn = parseFunctionInput(text)
+  if (fn?.kind === 'literal') return parsePlain(column, fn.text)
+  if (fn?.kind === 'call') {
+    if (!functionsFor(column).includes(fn.fn)) return { ok: false, error: 'function' }
+    if (fn.fn === 'increment') return { ok: true, value: { $fn: 'increment' } satisfies FunctionValue }
+    return { ok: true, value: generateValue(fn.fn, column) }
+  }
+  return parsePlain(column, text)
+}
+
+function parsePlain(column: SchemaColumn, text: string): ParsedInput {
   switch (column.kind) {
     case 'number': {
       const t = text.trim()
@@ -112,4 +125,27 @@ export function nextBoolean(current: unknown, nullable: boolean): boolean | null
 /** Whether the grid lets this column be typed into inline. Binary can only be set to NULL or DEFAULT. */
 export function isTextEditable(column: SchemaColumn): boolean {
   return !column.isGenerated && column.kind !== 'binary'
+}
+
+const TEXT_TYPE = /char|text|uuid|string/i
+
+/**
+ * Whether a new row must be given this primary key by the client: a text or uuid key the database
+ * does not fill by itself (no default, not identity). Prisma, for one, generates `cuid()` / `uuid()`
+ * ids in its client, so the column has no default and an insert without a value would be NULL.
+ */
+export function needsGeneratedKey(column: SchemaColumn): boolean {
+  return (
+    column.isPrimaryKey &&
+    !column.isGenerated &&
+    column.default === null &&
+    (column.kind === 'uuid' || (column.kind === 'string' && TEXT_TYPE.test(column.nativeType)))
+  )
+}
+
+/** Values for the key columns of a new row that the database will not generate (a random UUID v4 each). */
+export function generatedKeyValues(columns: SchemaColumn[], uuid: () => string = () => crypto.randomUUID()): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const column of columns) if (needsGeneratedKey(column)) out[column.name] = uuid()
+  return out
 }

@@ -37,6 +37,21 @@ const SSLMODE: Record<string, SslMode> = {
 export function parseConnectionString(dialect: Dialect, input: string): ParsedConnection {
   const raw = input.trim()
   if (dialect === 'sqlite') {
+    // `libsql://db-org.turso.io?authToken=...`: a remote Turso database, not a file.
+    if (/^(libsql|https?|wss?):\/\//i.test(raw)) {
+      let remote: URL
+      try {
+        remote = new URL(raw)
+      } catch {
+        throw new ConnectionStringError('Invalid connection string')
+      }
+      const token = remote.searchParams.get('authToken') ?? remote.searchParams.get('auth_token')
+      remote.searchParams.delete('authToken')
+      remote.searchParams.delete('auth_token')
+      const search = remote.searchParams.toString()
+      const base = `${remote.protocol}//${remote.host}${remote.pathname === '/' ? '' : remote.pathname}${search ? `?${search}` : ''}`
+      return { host: base, password: token ?? undefined }
+    }
     const filePath = raw.replace(/^sqlite:(\/\/)?/i, '')
     if (!filePath) throw new ConnectionStringError('SQLite connection string has no file path')
     return { filePath }

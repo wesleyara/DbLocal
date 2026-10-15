@@ -1,10 +1,17 @@
 import { editableKey } from '#shared/editable'
 import type { SchemaColumn, SchemaSnapshot, SchemaTable } from '#shared/types/db'
 import type { MutationOp, MutationPlan, PlannedOp } from '#shared/types/mutations'
+import { isFunctionValue } from '#shared/edit-functions'
 import { MutationFailedError } from './errors'
 
 /** Stands for "use the column default" inside a planned operation. Never sent as a parameter. */
 export const DEFAULT_MARK = Symbol('default')
+
+/**
+ * Stands for `increment()`: the column's current maximum plus one, computed by the database inside
+ * the transaction. Operations run in order, so a second insert of the batch sees the first one.
+ */
+export const INCREMENT_MARK = Symbol('increment')
 
 const fail = (index: number, message: string) => new MutationFailedError(index, 'syntax', message)
 
@@ -45,6 +52,10 @@ function mysqlDatetime(text: string): string {
  */
 export function coerceValue(index: number, column: SchemaColumn, value: unknown, dialect: SchemaSnapshot['dialect']): unknown {
   if (isDefault(value)) return DEFAULT_MARK
+  if (isFunctionValue(value)) {
+    if (column.kind !== 'number') throw fail(index, `Column ${column.name}: increment() needs a number column`)
+    return INCREMENT_MARK
+  }
   if (value === null) return null
   switch (column.kind) {
     case 'number':
@@ -116,7 +127,7 @@ function coerceKey(index: number, table: SchemaTable, key: string[], pk: Record<
   const out: Record<string, unknown> = {}
   for (const name of key) {
     const value = coerceValue(index, columns.get(name)!, pk[name], dialect)
-    if (value === null || value === DEFAULT_MARK) throw fail(index, `Key column ${name} needs a value`)
+    if (value === null || value === DEFAULT_MARK || value === INCREMENT_MARK) throw fail(index, `Key column ${name} needs a value`)
     out[name] = value
   }
   return out

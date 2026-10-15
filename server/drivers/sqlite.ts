@@ -8,7 +8,15 @@ import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 import { MutationFailedError } from '../query/errors'
 import { runMutations } from '../query/run-mutations'
-import type { ConnectionTestResult, Driver, DriverConfig } from './types'
+import type {
+  ConnectionTestResult,
+  Driver,
+  DriverConfig,
+  QuerySession,
+  QuerySessionOptions,
+  RawStatementOutput,
+  StreamHandlers,
+} from './types'
 
 /** Maps a better-sqlite3 error (`code` is the SQLite result code name) to a normalised DriverError. */
 export function mapSqliteError(err: unknown): DriverError {
@@ -42,7 +50,7 @@ export async function createSqliteDriver(config: DriverConfig): Promise<Driver> 
     )
   }
   try {
-    return new SqliteDriver(new Database(filePath, { fileMustExist: true }))
+    return new SqliteDriver(new Database(filePath, { fileMustExist: true }), filePath)
   } catch (err) {
     throw mapSqliteError(err)
   }
@@ -51,7 +59,10 @@ export async function createSqliteDriver(config: DriverConfig): Promise<Driver> 
 class SqliteDriver implements Driver {
   readonly dialect = 'sqlite' as const
 
-  constructor(private readonly db: Database.Database) {}
+  constructor(
+    private readonly db: Database.Database,
+    private readonly filePath: string,
+  ) {}
 
   async testConnection(): Promise<ConnectionTestResult> {
     const started = performance.now()
@@ -124,6 +135,19 @@ class SqliteDriver implements Driver {
     }
   }
 
+  /**
+   * Raw SQL runs on its own handle, so it can yield to the event loop between rows (cancel and
+   * timeout are then honoured) without holding the shared handle busy.
+   */
+  async openQuerySession(options: QuerySessionOptions): Promise<QuerySession> {
+    try {
+      const db = new Database(this.filePath, { fileMustExist: true, readonly: options.readonly })
+      return new SqliteQuerySession(db)
+    } catch (err) {
+      throw mapSqliteError(err)
+    }
+  }
+
   async close(): Promise<void> {
     this.db.close()
   }
@@ -134,5 +158,99 @@ class SqliteDriver implements Driver {
     } catch (err) {
       throw mapSqliteError(err)
     }
+  }
+}
+
+/** Rows are read in slices of this duration, then the event loop gets a turn (cancel, timeouts). */
+const SLICE_MS = 25
+
+function sqliteTypeOf(value: unknown): string {
+  if (typeof value === 'number') return Number.isInteger(value) ? 'INTEGER' : 'REAL'
+  if (typeof value === 'bigint') return 'INTEGER'
+  if (typeof value === 'string') return 'TEXT'
+  if (value instanceof Uint8Array) return 'BLOB'
+  return ''
+}
+
+class SqliteQuerySession implements QuerySession {
+  private cancelled = false
+
+  constructor(private readonly db: Database.Database) {}
+
+  async run(sql: string, limit: number): Promise<RawStatementOutput> {
+    this.cancelled = false
+    try {
+      const stmt = this.db.prepare(sql)
+      if (!stmt.reader) {
+        const info = stmt.run()
+        return { columns: [], rows: [], truncated: false, affectedRows: info.changes, notices: [] }
+      }
+      const declared = stmt.columns()
+      const rows: unknown[][] = []
+      let truncated = false
+      let sliceStart = performance.now()
+      for (const row of stmt.raw().iterate() as IterableIterator<unknown[]>) {
+        if (rows.length >= limit) {
+          truncated = true
+          break
+        }
+        rows.push(row)
+        if (performance.now() - sliceStart > SLICE_MS) {
+          await new Promise<void>((r) => setImmediate(r))
+          if (this.cancelled) throw new DriverError('timeout', 'Query cancelled')
+          sliceStart = performance.now()
+        }
+      }
+      const columns = declared.map((c, i) => ({
+        name: c.name,
+        type: c.type ?? sqliteTypeOf(rows.find((r) => r[i] !== null && r[i] !== undefined)?.[i]),
+      }))
+      return { columns, rows, truncated, affectedRows: null, notices: [] }
+    } catch (err) {
+      throw mapSqliteError(err)
+    }
+  }
+
+  async stream(sql: string, handlers: StreamHandlers): Promise<void> {
+    this.cancelled = false
+    try {
+      const stmt = this.db.prepare(sql)
+      if (!stmt.reader) throw new DriverError('syntax', 'Only statements that return rows can be exported')
+      const declared = stmt.columns()
+      let batch: unknown[][] = []
+      let sent = false
+      const sendColumns = async (sample?: unknown[]) => {
+        if (sent) return
+        sent = true
+        await handlers.onColumns(declared.map((c, i) => ({ name: c.name, type: c.type ?? sqliteTypeOf(sample?.[i]) })))
+      }
+      let sliceStart = performance.now()
+      for (const row of stmt.raw().iterate() as IterableIterator<unknown[]>) {
+        await sendColumns(row)
+        batch.push(row)
+        if (batch.length >= 500) {
+          const out = batch
+          batch = []
+          await handlers.onRows(out)
+        }
+        if (performance.now() - sliceStart > SLICE_MS) {
+          await new Promise<void>((r) => setImmediate(r))
+          if (this.cancelled) throw new DriverError('timeout', 'Query cancelled')
+          sliceStart = performance.now()
+        }
+      }
+      await sendColumns()
+      if (batch.length > 0) await handlers.onRows(batch)
+    } catch (err) {
+      throw mapSqliteError(err)
+    }
+  }
+
+  async cancel(): Promise<void> {
+    this.cancelled = true
+  }
+
+  async close(): Promise<void> {
+    this.db.close()
   }
 }

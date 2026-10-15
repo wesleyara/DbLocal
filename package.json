@@ -40,7 +40,10 @@
     "db:seed": "node scripts/db.mjs seed",
     "prepare": "nuxt prepare",
     "prepack": "pnpm build",
-    "start": "node bin/dblocal.mjs"
+    "start": "node bin/dblocal.mjs",
+    "release:patch": "node scripts/release.mjs patch",
+    "release:minor": "node scripts/release.mjs minor",
+    "release:major": "node scripts/release.mjs major"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.143",

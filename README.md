@@ -96,8 +96,26 @@ your machine, not like a service.
 
 ## Releasing
 
-Versions follow [semver](https://semver.org): update `CHANGELOG.md`, bump `version` in `package.json`
-and tag `vX.Y.Z`. Nothing is published; the tag is what people check out.
+Releases are cut locally, from `develop`, and published by merging into `main`.
+
+1. Nothing to write by hand: the changelog is generated from the Conventional Commits since the last tag
+   (`feat` → Added, `fix` → Fixed, `perf` → Performance, `refactor` → Changed, `!` → Breaking changes;
+   docs, test, build, ci and chore are left out). Anything already under `## [Unreleased]` is kept on top.
+2. On `develop`, clean and in sync with `origin/develop`, run one of:
+
+   ```bash
+   pnpm release:patch    # 0.1.0 -> 0.1.1
+   pnpm release:minor    # 0.1.0 -> 0.2.0
+   pnpm release:major    # 0.1.0 -> 1.0.0
+   ```
+
+   Add `--dry-run` to see the plan without changing anything. The script bumps `package.json`, writes the
+   new section to `CHANGELOG.md`, commits `chore(release): vX.Y.Z`, creates the annotated tag and
+   pushes `develop` and the tag.
+3. Open a PR `develop` → `main` and merge it. `.github/workflows/release.yml` then creates the GitHub release
+   for that tag, with the changelog section as its notes.
+
+Nothing is published to npm or a container registry.
 
 ## License
 

@@ -299,6 +299,13 @@ function onResize(e: PointerEvent) {
       v-if="ui.statusBar"
       class="font-data flex h-6 shrink-0 items-center gap-3 border-t border-border bg-bg-subtle px-3 text-xs text-fg-subtle"
     >
+      <span
+        class="size-2 shrink-0 rounded-full"
+        :class="activeConnection ? 'bg-success' : 'bg-fg-subtle'"
+        role="img"
+        :aria-label="activeConnection ? t('shell.status.connected', { name: activeConnection.name }) : t('shell.status.disconnected')"
+        data-status-dot
+      />
       <template v-if="activeConnection">
         <span>{{ t('shell.status.connected', { name: activeConnection.name }) }}</span>
         <span>{{ activeConnection.dialect }}</span>

@@ -44,7 +44,7 @@ No hardcoded user-facing text in components: use `t('domain.key')`. Keys are gro
 
 ## Access control
 - Binds to `127.0.0.1` by default. In dev, `DBLOCAL_HOST` / `DBLOCAL_PORT` (default 5555) are read in `nuxt.config.ts`; for the built server use `NITRO_HOST` / `NITRO_PORT` (the future CLI maps them).
-- `DBLOCAL_PASSWORD` set → `/login`, signed httpOnly SameSite=Strict session cookie, `server/middleware/auth.ts` protects pages (302) and `/api/**` (401); login is rate limited (5/min per IP). Unset → open; the shell shows a warning if the host is not loopback.
+- `DBLOCAL_PASSWORD` set → `/login`, signed httpOnly SameSite=Strict session cookie, `server/middleware/auth.ts` protects pages (302) and `/api/**` (401); login is rate limited (5/min per IP). Unset → open; the shell shows a warning if the bind host is not loopback and the page is reached by a name that is neither local nor in `DBLOCAL_ALLOWED_HOSTS` (`/api/auth/status`).
 - Mutating requests with an `Origin` different from `Host` get 403 (CSRF).
 - Without a password, a `Host` that is not `localhost`/`*.localhost`, an IP literal or listed in `DBLOCAL_ALLOWED_HOSTS` gets 403 (`hostAllowed`, DNS rebinding).
 

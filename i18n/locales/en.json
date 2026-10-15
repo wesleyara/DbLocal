@@ -279,7 +279,10 @@
     "relations": "Relations",
     "outgoing": "Points to",
     "incoming": "Referenced by",
-    "view": "View"
+    "view": "View",
+    "historyTitle": "Query history",
+    "historyHint": "Everything run on this connection, newest first.",
+    "historyThisTable": "Only {table}"
   },
   "grid": {
     "structureToggle": "Structure",
@@ -379,7 +382,8 @@
     "noColumnMatch": "No matching columns",
     "goToPage": "Go to page",
     "selectValue": "Select a value",
-    "viewReadOnly": "This is a view, so its rows are read-only."
+    "viewReadOnly": "This is a view, so its rows are read-only.",
+    "historyToggle": "History"
   },
   "relations": {
     "orphan": "No matching record in {target}",

@@ -279,7 +279,10 @@
     "relations": "Relações",
     "outgoing": "Aponta para",
     "incoming": "Referenciada por",
-    "view": "View"
+    "view": "View",
+    "historyTitle": "Histórico de queries",
+    "historyHint": "Tudo que foi executado nesta conexão, do mais recente ao mais antigo.",
+    "historyThisTable": "Só {table}"
   },
   "grid": {
     "structureToggle": "Estrutura",
@@ -379,7 +382,8 @@
     "noColumnMatch": "Nenhuma coluna encontrada",
     "goToPage": "Ir para a página",
     "selectValue": "Selecione um valor",
-    "viewReadOnly": "Isto é uma view, então suas linhas são somente leitura."
+    "viewReadOnly": "Isto é uma view, então suas linhas são somente leitura.",
+    "historyToggle": "Histórico"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",

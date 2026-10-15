@@ -266,6 +266,12 @@
     }
   },
   "tableView": {
+    "type": "Type",
+    "unique": "Unique",
+    "default": "Default",
+    "references": "References",
+    "generated": "Generated",
+    "compositeUnique": "Part of a unique index over several columns",
     "notFound": "This table is not in the current schema.",
     "columns": "Columns",
     "relations": "Relations",
@@ -274,6 +280,7 @@
     "view": "View"
   },
   "grid": {
+    "structureToggle": "Structure",
     "sqlToggle": "Show SQL",
     "sqlEdited": "Edited: Run executes your SQL here",
     "sqlBackToTable": "Back to the table",

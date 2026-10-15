@@ -693,6 +693,17 @@ onMounted(() => state.start())
             <Icon name="lucide:code-2" class="size-3" />
             {{ t('grid.sqlToggle') }}
           </button>
+          <button
+            type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
+            :class="ui.tableStructure ? 'bg-surface text-fg' : 'text-fg-muted'"
+            :aria-pressed="ui.tableStructure"
+            data-toggle-structure
+            @click="ui.tableStructure = !ui.tableStructure"
+          >
+            <Icon name="lucide:table-properties" class="size-3" />
+            {{ t('grid.structureToggle') }}
+          </button>
         </template>
       </FilterBar>
 

@@ -266,6 +266,12 @@
     }
   },
   "tableView": {
+    "type": "Tipo",
+    "unique": "Único",
+    "default": "Default",
+    "references": "Referencia",
+    "generated": "Gerada",
+    "compositeUnique": "Parte de um índice único com várias colunas",
     "notFound": "Esta tabela não está no schema atual.",
     "columns": "Colunas",
     "relations": "Relações",
@@ -274,6 +280,7 @@
     "view": "View"
   },
   "grid": {
+    "structureToggle": "Estrutura",
     "sqlToggle": "Ver SQL",
     "sqlEdited": "Editado: Run executa o seu SQL aqui",
     "sqlBackToTable": "Voltar para a tabela",

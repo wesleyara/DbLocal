@@ -12,7 +12,9 @@ import { useRelationNav } from '~/composables/useRelationNav'
 import { useTableRows } from '~/composables/useTableRows'
 import { useToast } from '~/composables/useToast'
 import { usePendingStore } from '~/stores/pending-changes'
+import { useQueriesStore } from '~/stores/queries'
 import { useSchemaStore } from '~/stores/schema'
+import { useUiStore } from '~/stores/ui'
 import { useWorkspaceStore } from '~/stores/workspace'
 import DataGrid from './DataGrid.vue'
 import CellValue from './cells/CellValue.vue'
@@ -515,6 +517,59 @@ const exportItems = computed(() => [
   { label: t('query.exportJson'), icon: 'lucide:file-json', onSelect: () => void exportTable('json') },
 ])
 
+// ---- the SQL behind the view (a bar that starts hidden) ----------------------------------------
+const ui = useUiStore()
+const queries = useQueriesStore()
+const viewSql = ref('')
+let sqlTimer: ReturnType<typeof setTimeout> | undefined
+
+async function loadViewSql(): Promise<void> {
+  if (!ui.gridSql) return
+  const names = visibleColumns.value.map((c) => c.name).filter((n) => !n.startsWith('@rel:'))
+  const all = props.table.columns.length
+  try {
+    const res = await $fetch<{ sql: string }>(`/api/c/${props.connectionId}/tables/${encodeURIComponent(props.table.name)}/sql`, {
+      method: 'POST',
+      body: {
+        schema: props.schema,
+        filter: state.filter.value,
+        sort: state.sort.value,
+        limit: state.pageSize.value,
+        offset: (state.page.value - 1) * state.pageSize.value,
+        scope: state.scope.value ?? undefined,
+        columns: names.length > 0 && names.length < all ? names : undefined,
+      },
+    })
+    viewSql.value = res.sql
+  } catch {
+    viewSql.value = ''
+  }
+}
+watch(
+  () => [ui.gridSql, state.filter.value, state.sort.value, state.scope.value, state.page.value, state.pageSize.value, visibleColumns.value.map((c) => c.name).join('|')],
+  () => {
+    clearTimeout(sqlTimer)
+    sqlTimer = setTimeout(() => void loadViewSql(), 150)
+  },
+  { deep: true, immediate: true },
+)
+onBeforeUnmount(() => clearTimeout(sqlTimer))
+
+async function copyViewSql(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(viewSql.value)
+    toast.push({ kind: 'success', title: t('query.copied') })
+  } catch {
+    toast.push({ kind: 'error', title: t('grid.sqlCopyFailed') })
+  }
+}
+
+function openViewInEditor(): void {
+  if (!viewSql.value) return
+  const qid = queries.create({ sql: viewSql.value, name: props.table.name })
+  void navigateTo(`/c/${props.connectionId}/${encodeURIComponent(props.schema)}/q/${qid}`)
+}
+
 onMounted(() => state.start())
 </script>
 
@@ -538,7 +593,21 @@ onMounted(() => state.start())
           <Icon name="lucide:x" class="size-3" />
         </button>
       </span>
-      <FilterBar :columns="table.columns" :filter="state.filter.value" @change="state.setFilter" />
+      <FilterBar :columns="table.columns" :filter="state.filter.value" @change="state.setFilter">
+        <template #after-advanced>
+          <button
+            type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
+            :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
+            :aria-pressed="ui.gridSql"
+            data-toggle-sql
+            @click="ui.gridSql = !ui.gridSql"
+          >
+            <Icon name="lucide:code-2" class="size-3" />
+            {{ t('grid.sqlToggle') }}
+          </button>
+        </template>
+      </FilterBar>
 
       <div class="ml-auto flex items-center gap-1">
         <button
@@ -597,6 +666,21 @@ onMounted(() => state.start())
     </div>
 
     <SortBar :sort="state.sort.value" @change="state.setSort" />
+
+    <div v-if="ui.gridSql" class="rounded-md border border-border bg-bg-subtle" data-view-sql>
+      <div class="flex items-center gap-1 border-b border-border px-2 py-1">
+        <span class="text-xs font-medium text-fg-muted">{{ t('grid.sqlTitle') }}</span>
+        <span class="text-[11px] text-fg-subtle">{{ t('grid.sqlHint') }}</span>
+        <div class="ml-auto flex items-center gap-1">
+          <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" :disabled="!viewSql" @click="copyViewSql" />
+          <UiButton size="sm" :disabled="!viewSql" data-open-in-editor @click="openViewInEditor">
+            <Icon name="lucide:terminal" class="size-3.5" />{{ t('grid.openInEditor') }}
+          </UiButton>
+          <UiIconButton icon="lucide:x" :label="t('grid.sqlHide')" size="sm" @click="ui.gridSql = false" />
+        </div>
+      </div>
+      <pre class="font-data max-h-32 overflow-auto whitespace-pre-wrap break-words px-2 py-1.5 text-xs text-fg">{{ viewSql || '…' }}</pre>
+    </div>
 
     <p v-if="readOnlyNotice" class="flex items-center gap-1.5 text-xs text-warning" data-readonly-notice>
       <Icon name="lucide:info" class="size-3.5" />

@@ -274,6 +274,12 @@
     "view": "View"
   },
   "grid": {
+    "sqlToggle": "Ver SQL",
+    "sqlTitle": "SQL desta visão",
+    "sqlHint": "O que o grid executa, com os valores preenchidos",
+    "openInEditor": "Abrir no editor SQL",
+    "sqlHide": "Esconder SQL",
+    "sqlCopyFailed": "Não foi possível copiar o SQL",
     "noRows": "Nenhuma linha nesta tabela",
     "noRowsFiltered": "Nenhuma linha corresponde aos filtros",
     "loadError": "Não foi possível carregar as linhas",

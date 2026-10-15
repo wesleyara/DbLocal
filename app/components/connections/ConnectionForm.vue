@@ -414,10 +414,10 @@ async function save() {
 
         <template #ssl>
           <div class="grid gap-3">
-            <label class="grid gap-1 text-xs text-fg-muted">
-              {{ t('connections.ssl.mode') }}
-              <UiSelect v-model="form.sslMode" :options="sslOptions" />
-            </label>
+            <div class="grid gap-1 text-xs text-fg-muted">
+              <span class="flex items-center gap-1">{{ t('connections.ssl.mode') }}<HelpHint id="connection.ssl" /></span>
+              <UiSelect v-model="form.sslMode" :options="sslOptions" :aria-label="t('connections.ssl.mode')" />
+            </div>
             <template v-if="form.sslMode !== 'disable'">
               <label class="grid gap-1 text-xs text-fg-muted">
                 {{ t('connections.ssl.ca') }}
@@ -437,7 +437,10 @@ async function save() {
 
         <template #ssh>
           <div class="grid gap-3">
-            <UiSwitch v-model="form.sshEnabled" :label="t('connections.ssh.enabled')" />
+            <div class="flex items-center gap-1">
+              <UiSwitch v-model="form.sshEnabled" :label="t('connections.ssh.enabled')" />
+              <HelpHint id="connection.ssh" />
+            </div>
             <template v-if="form.sshEnabled">
               <div class="grid grid-cols-[1fr_6rem] gap-2">
                 <label class="grid gap-1 text-xs text-fg-muted">
@@ -500,7 +503,10 @@ async function save() {
               </label>
             </div>
 
-            <UiCheckbox v-model="form.readonly" :label="t('connections.fields.readonly')" />
+            <div class="flex items-center gap-1">
+              <UiCheckbox v-model="form.readonly" :label="t('connections.fields.readonly')" />
+              <HelpHint id="connection.environment" />
+            </div>
             <p class="-mt-2 text-xs text-fg-subtle">{{ t('connections.fields.readonlyHint') }}</p>
 
             <p v-if="connection" class="text-xs text-fg-muted">

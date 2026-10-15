@@ -24,7 +24,7 @@ Uma relação liga duas tabelas. A barra lateral mostra o nome pelo qual você n
 - Uma relação com chave estrangeira no banco é uma relação normal.
 - Uma **relação virtual** é uma que você declara. Ela tem contorno tracejado e um ponto na barra lateral.
 
-## Adicionar uma relação virtual
+## Adicionar uma relação virtual {#add-a-virtual-relation}
 
 1. Clique no botão de **link** no topo da barra lateral.
 2. Escolha a tabela e a coluna de cada lado, e a cardinalidade.
@@ -35,7 +35,7 @@ O DbLocal confere a relação antes de salvar. Ele recusa tabela ou coluna que n
 
 Edite ou exclua uma relação virtual pelo mesmo diálogo.
 
-## Coluna de exibição
+## Coluna de exibição {#display-column}
 
 Cada tabela tem uma coluna que representa um dos seus registros, como `name` ou `title`. O DbLocal escolhe uma para você. Para escolher outra, abra o menu da tabela e selecione **Definir coluna de exibição**. Escolha **Automática** para voltar ao padrão.
 

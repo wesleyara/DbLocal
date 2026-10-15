@@ -22,6 +22,8 @@ interface StoredConfig {
   ssl: { mode: SslMode }
   ssh: { enabled: boolean; host: string | null; port: number | null; user: string | null; authMethod: SshAuthMethod }
   secrets: Partial<Record<SecretKey, string>>
+  /** The built-in demo database (`server/demo`): reset and "demo" badge apply to it only. */
+  demo?: boolean
 }
 
 export class ConnectionNotFoundError extends Error {
@@ -79,6 +81,7 @@ export function toView(row: Row): ConnectionView {
       hasPrivateKey: Boolean(c.secrets.sshPrivateKey),
       hasPassphrase: Boolean(c.secrets.sshPassphrase),
     },
+    demo: c.demo === true,
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -237,6 +240,7 @@ export async function updateConnection(
         }
       : current.ssh,
     secrets: applySecrets(current.secrets, { password: patch.password, ssl: patch.ssl, ssh: patch.ssh }),
+    ...(current.demo ? { demo: true } : {}),
   }
 
   buildDriverConfig({ ...draftFrom(dialect, next), dialect }, id)
@@ -274,11 +278,41 @@ export async function duplicateConnection(db: Db, id: string): Promise<Connectio
   const row = await getConnectionRow(db, id)
   const copyId = randomUUID()
   const now = new Date().toISOString()
+  // A copy of the demo is an ordinary connection: it is not the one "Reset demo" restores.
+  const config = JSON.stringify({ ...readConfig(row), demo: undefined })
   await db
     .insertInto('connections')
-    .values({ ...row, id: copyId, name: `${row.name} (copy)`, last_used_at: null, created_at: now, updated_at: now })
+    .values({ ...row, id: copyId, name: `${row.name} (copy)`, config, last_used_at: null, created_at: now, updated_at: now })
     .execute()
   return getConnection(db, copyId)
+}
+
+/** The saved demo connection, if the user has opened the demo database before. */
+export async function findDemoConnection(db: Db): Promise<ConnectionView | null> {
+  const rows = await db.selectFrom('connections').selectAll().execute()
+  const row = rows.find((r) => readConfig(r).demo === true)
+  return row ? toView(row) : null
+}
+
+/** Creates the demo connection for a SQLite file and flags it (the flag lives in `config`). */
+export async function createDemoConnection(db: Db, filePath: string, name: string): Promise<ConnectionView> {
+  const created = await createConnection(db, {
+    name,
+    dialect: 'sqlite',
+    filePath,
+    ssl: { mode: 'disable' },
+    environment: 'local',
+    color: 'accent',
+    readonly: false,
+    defaultSchema: 'main',
+  })
+  const row = await getConnectionRow(db, created.id)
+  await db
+    .updateTable('connections')
+    .set({ config: JSON.stringify({ ...readConfig(row), demo: true }) })
+    .where('id', '=', created.id)
+    .execute()
+  return getConnection(db, created.id)
 }
 
 export async function markUsed(db: Db, id: string): Promise<void> {

@@ -146,6 +146,7 @@ function copyPreview(): void {
   >
     <span class="size-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />
     <span class="text-sm text-fg" data-pending-count>{{ t('edit.pending', { count }) }}</span>
+    <HelpHint :id="environment === 'prod' ? 'grid.prod' : 'grid.pending'" />
     <UiButton size="sm" variant="ghost" :disabled="saving" data-discard @click="confirmDiscard = true">{{ t('edit.discard') }}</UiButton>
     <UiButton size="sm" variant="secondary" :disabled="saving" data-preview-sql @click="openPreview">{{ t('edit.previewSql') }}</UiButton>
     <UiButton size="sm" variant="primary" :loading="saving" data-save @click="requestSave">

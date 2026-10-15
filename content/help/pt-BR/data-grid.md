@@ -10,6 +10,8 @@ related: [schema-browser]
 
 Abra uma tabela na barra lateral para ver as linhas no grid. O grid lê uma página por vez, então tabelas grandes continuam rápidas.
 
+![O grid de dados com chips de chave estrangeira](/help/shots/grid-{theme}.png)
+
 ## Ordenar
 
 Clique no cabeçalho de uma coluna para ordenar em ordem crescente, clique de novo para decrescente e um terceiro clique remove a ordenação. Segure **Shift** para adicionar uma coluna à ordenação sem perder as outras.
@@ -22,7 +24,7 @@ Arraste um cabeçalho sobre outro para mover a coluna. Passe o mouse sobre um ca
 
 A barra de ordenação acima do grid lista cada ordenação. Clique num chip para inverter a direção, arraste para mudar a ordem, ou use o **×** para remover.
 
-## Filtrar
+## Filtrar {#filter}
 
 
 Clique em **Filtro** para adicionar uma condição. **Filtros avançados** abre uma árvore para combinar condições com E e OU, aninhadas em até três níveis: escolha a coluna, o operador e o valor. Cada condição vira um chip. Clique no chip para editá-lo, ou use o **×** para removê-lo. **Limpar tudo** remove todas as condições.
@@ -48,6 +50,6 @@ Escolha quantas linhas cada página mostra (50, 100, 250 ou 500). O rodapé most
 
 Ordenação, filtros e a página fazem parte do endereço no navegador. Copie o link para abrir a mesma visão de novo.
 
-## Tabelas sem chave primária
+## Tabelas sem chave primária {#tables-without-a-primary-key}
 
 Uma tabela sem chave primária pode ser lida, filtrada e ordenada, mas as linhas são somente leitura. O grid mostra um aviso quando isso acontece.

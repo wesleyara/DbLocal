@@ -10,7 +10,7 @@ related: []
 
 Uma conexão é uma forma salva de alcançar um banco: o host, as credenciais e, se necessário, SSL e um túnel SSH. O DbLocal guarda tudo somente nesta máquina.
 
-## Adicionar uma conexão
+## Adicionar uma conexão {#add-a-connection}
 
 1. Clique em **Nova conexão**.
 2. Escolha o dialeto e preencha os campos, ou cole uma string de conexão como `postgres://usuario:senha@host:5432/banco`. Os campos são preenchidos ao sair do campo da string.
@@ -21,7 +21,7 @@ Uma conexão é uma forma salva de alcançar um banco: o host, as credenciais e,
 
 Senhas, certificados SSL e chaves SSH são criptografados antes de serem guardados. Eles nunca são mostrados de novo: um campo salvo mostra "Salvo", e deixá-lo em branco mantém o valor guardado.
 
-## SSL
+## SSL {#ssl}
 
 Escolha um modo de SSL na aba **SSL**:
 
@@ -30,11 +30,11 @@ Escolha um modo de SSL na aba **SSL**:
 - **Verificar CA**: verifica o certificado com a CA que você colar.
 - **Verificar CA e nome do host**: o modo mais rigoroso; também confere se o certificado corresponde ao host.
 
-## Túnel SSH
+## Túnel SSH {#ssh-tunnel}
 
 Ative **Conectar por túnel SSH** na aba **SSH** para alcançar um banco que só é visível a partir de um bastion. O DbLocal abre o túnel ao conectar e o reabre se a sessão SSH cair.
 
-## Ambiente e somente leitura
+## Ambiente e somente leitura {#environment-and-read-only}
 
 Na aba **Avançado**, marque a conexão como `staging` ou `prod` para ver uma faixa colorida no topo do workspace. Ative **Somente leitura** para bloquear qualquer escrita do DbLocal nessa conexão.
 

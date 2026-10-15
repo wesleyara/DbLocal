@@ -24,7 +24,7 @@ A relation links two tables. The sidebar shows the name you navigate by, for exa
 - A relation with a foreign key in the database is a normal relation.
 - A **virtual relation** is one you declare yourself. It has a dashed outline and a dot in the sidebar.
 
-## Add a virtual relation
+## Add a virtual relation {#add-a-virtual-relation}
 
 1. Click the **link** button at the top of the sidebar.
 2. Pick the table and column on each side, and the cardinality.
@@ -35,7 +35,7 @@ DbLocal checks the relation before saving. It rejects a table or column that doe
 
 Edit or delete a virtual relation from the same dialog.
 
-## Display column
+## Display column {#display-column}
 
 Every table has a column that represents one of its rows, such as `name` or `title`. DbLocal picks it for you. To choose another one, open the table's menu and select **Set display column**. Choose **Automatic** to go back to the default.
 

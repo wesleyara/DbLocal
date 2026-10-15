@@ -11,6 +11,14 @@ export default defineNuxtConfig({
     host: process.env.DBLOCAL_HOST || '127.0.0.1',
     port: Number(process.env.DBLOCAL_PORT) || 5555,
   },
+  // Help articles (Markdown) and the demo seed are bundled into the server, so the build stays self-contained.
+  nitro: {
+    serverAssets: [
+      { baseName: 'help', dir: './content/help' },
+      // The demo database is generated from the relational seed on first use.
+      { baseName: 'seed', dir: './fixtures/seed' },
+    ],
+  },
   fonts: {
     families: [
       { name: 'Inter', provider: 'google', weights: ['400 700'], styles: ['normal'] },

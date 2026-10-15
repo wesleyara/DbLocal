@@ -245,6 +245,7 @@ const timeoutText = computed({
         <h1 class="max-w-48 truncate text-sm font-semibold text-fg">{{ draft.name || t('query.untitled') }}<span v-if="queries.isModified(draft)" class="text-warning"> •</span></h1>
         <span v-if="view" class="font-data text-xs font-medium uppercase" :class="envText[view.environment]">{{ view.environment }}</span>
         <UiBadge v-if="readonly" tone="warning">{{ t('shell.status.readonly') }}</UiBadge>
+        <HelpHint v-if="readonly" id="sql.readonly" />
 
         <div class="ml-3 flex items-center gap-1">
           <UiButton v-if="!running" size="sm" variant="primary" data-run @click="runCurrent()">
@@ -267,6 +268,7 @@ const timeoutText = computed({
           <UiPopover v-model:open="settingsOpen">
             <template #trigger><UiIconButton icon="lucide:settings-2" :label="t('query.settings')" size="sm" /></template>
             <div class="grid w-56 gap-2">
+              <div class="flex items-center justify-between text-xs font-medium text-fg"><span>{{ t('query.settings') }}</span><HelpHint id="sql.limits" /></div>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.rowLimit') }}<UiInput v-model="limitText" type="number" mono /></label>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.timeoutSeconds') }}<UiInput v-model="timeoutText" type="number" mono /></label>
             </div>

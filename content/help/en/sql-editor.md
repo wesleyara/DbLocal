@@ -10,7 +10,9 @@ related: [data-grid, editing]
 
 **New query** in the top bar opens an editor tab bound to the current connection and schema. The text is kept as you type, so a reload loses nothing.
 
-## Running
+![The SQL editor with a result](/help/shots/sql-editor-{theme}.png)
+
+## Running {#running}
 
 - **⌘/Ctrl+Enter** runs the selection, or the statement under the cursor.
 - **⌘/Ctrl+Shift+Enter** runs the whole script. Each statement gets its own result tab; a failing statement stops the script and the rest are shown as skipped.
@@ -21,7 +23,7 @@ related: [data-grid, editing]
 
 Tables, columns (after `alias.`), functions and keywords are suggested for your dialect. After `JOIN` the editor offers the joins your relations describe, virtual ones included. **Format** (⇧⌥F) tidies the script.
 
-## Safety
+## Safety {#safety}
 
 - On a read-only connection only reads run; the database enforces it as well.
 - On a `prod` connection a statement that writes or changes the schema asks for confirmation first.

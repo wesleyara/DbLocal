@@ -10,6 +10,8 @@ related: [schema-browser, relationships]
 
 Clique em **Diagrama** na barra superior para abrir o schema como diagrama. Ele abre em uma aba própria do workspace, uma por schema.
 
+![O diagrama do schema](/help/shots/erd-{theme}.png)
+
 ## Lendo o diagrama
 
 - Cada caixa é uma tabela. As chaves vêm primeiro: o ícone de chave marca chaves primárias e o de elo marca chaves estrangeiras. Os tipos aparecem à direita. Um `?` depois do nome indica que a coluna aceita NULL, `U` marca índice único e `D` um valor default (passe o mouse na coluna para ver o default, a coluna referenciada e os índices únicos compostos).
@@ -31,7 +33,7 @@ Clique em **Diagrama** na barra superior para abrir o schema como diagrama. Ele 
 - **Duplo clique** numa tabela abre os dados dela numa aba.
 - Com uma tabela selecionada, **Mostrar só as tabelas perto de X** mantém apenas as tabelas a até N relações dela (1 a 4 saltos). A escolha fica no endereço, então o link pode ser compartilhado.
 
-## Layout
+## Layout {#layout}
 
 O primeiro layout é calculado automaticamente. Arraste as tabelas para organizá-las; as posições são salvas por conexão e schema e voltam na próxima vez. **Resetar layout** volta ao automático.
 

@@ -78,3 +78,23 @@ export function parseConnectionString(dialect: Dialect, input: string): ParsedCo
     sslMode: sslmode ? SSLMODE[sslmode] : undefined,
   }
 }
+
+/** Dialect of a connection string, from its scheme (`postgres://`, `mysql://`, `libsql://`) or a file path. */
+export function detectDialect(input: string): Dialect {
+  const raw = input.trim()
+  if (/^postgres(ql)?:\/\//i.test(raw)) return 'postgres'
+  if (/^mysql:\/\//i.test(raw)) return 'mysql'
+  if (/^(libsql|https?|wss?|sqlite):/i.test(raw)) return 'sqlite'
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) {
+    throw new ConnectionStringError(`Unsupported connection string scheme: ${raw.split('://')[0]}`)
+  }
+  return 'sqlite'
+}
+
+/** A readable connection name that never carries the password: `user@host/db` or the file name. */
+export function connectionNameFor(dialect: Dialect, parsed: ParsedConnection): string {
+  if (parsed.filePath) return parsed.filePath.split(/[\\/]/).pop() || parsed.filePath
+  if (dialect === 'sqlite' && parsed.host) return parsed.host.replace(/^[a-z]+:\/\//i, '').split('?')[0]!
+  const where = `${parsed.host ?? 'localhost'}${parsed.port ? `:${parsed.port}` : ''}`
+  return `${parsed.database ? `${parsed.database}@` : ''}${where}`
+}

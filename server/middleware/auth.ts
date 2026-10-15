@@ -1,6 +1,6 @@
 import { authEnabled, originAllowed, SESSION_COOKIE, verifySessionToken } from '../utils/auth'
 
-const PUBLIC = ['/login', '/api/auth/login', '/_nuxt/', '/__nuxt', '/_fonts/', '/favicon']
+const PUBLIC = ['/login', '/api/health', '/api/auth/login', '/_i18n/', '/_nuxt/', '/__nuxt', '/_fonts/', '/favicon']
 
 export default defineEventHandler((event) => {
   const path = event.path.split('?')[0]!

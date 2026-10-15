@@ -24,6 +24,12 @@ describe('with DBLOCAL_PASSWORD', async () => {
     expect((await fetch('/api/auth/status')).status).toBe(401)
   })
 
+  it('keeps the health probe public', async () => {
+    const res = await fetch('/api/health')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'ok' })
+  })
+
   it('rejects a wrong password and accepts the right one with a strict httpOnly cookie', async () => {
     expect((await login('nope')).status).toBe(401)
     const ok = await login('hunter2')

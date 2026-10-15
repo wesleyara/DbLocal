@@ -305,6 +305,10 @@ const hopOptions = [1, 2, 3, 4].map((n) => ({ value: String(n), label: t('erd.ho
 const pendingLink = ref<{ fromTable: string; fromColumn: string; toTable: string; toColumn: string } | null>(null)
 const linkOpen = ref(false)
 const linkCardinality = ref<Cardinality>('many-to-one')
+const linkCardinalityModel = computed<string>({
+  get: () => linkCardinality.value,
+  set: (v) => (linkCardinality.value = v as Cardinality),
+})
 const linkName = ref('')
 const linkSaving = ref(false)
 
@@ -490,7 +494,7 @@ const minimapColor = () => 'var(--border-strong)'
         </p>
         <label class="block text-xs text-fg-muted">
           {{ t('virtualRelations.cardinality') }}
-          <UiSelect v-model="linkCardinality as string" class="mt-1" :options="cardinalityOptions" />
+          <UiSelect v-model="linkCardinalityModel" class="mt-1" :options="cardinalityOptions" />
         </label>
         <label class="block text-xs text-fg-muted">
           {{ t('erd.relationName') }}

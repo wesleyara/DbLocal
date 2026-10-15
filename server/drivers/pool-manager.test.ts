@@ -12,6 +12,7 @@ function fakeDriver(): Driver & { closed: boolean } {
     listSchemas: async () => [],
     readRows: async () => [],
     countRows: async () => 0,
+    countGroups: async () => [],
     introspect: async (schema: string) => ({ dialect: 'postgres' as const, schema, tables: [], readAt: '' }),
     close: async () => {
       driver.closed = true

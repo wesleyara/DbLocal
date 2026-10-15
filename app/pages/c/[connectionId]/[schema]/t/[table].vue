@@ -2,6 +2,8 @@
 import type { ConnectionView } from '#shared/types/connection'
 import { useSchemaStore } from '~/stores/schema'
 import TableGrid from '~/components/grid/TableGrid.vue'
+import RecordPanel from '~/components/record/RecordPanel.vue'
+import { decodeRecord } from '#shared/nav-url'
 
 const route = useRoute()
 const id = route.params.connectionId as string
@@ -31,6 +33,10 @@ const tableName = computed(() => route.params.table as string)
 const table = computed(() => store.tables.find((tb) => tb.name === tableName.value) ?? null)
 const node = computed(() => (tableName.value ? store.graph?.tables[tableName.value] : undefined))
 
+/** The record open in the side panel, from `?r=`. It may belong to another table than the page's. */
+const openRecord = computed(() => decodeRecord(typeof route.query.r === 'string' ? route.query.r : null, tableName.value))
+const recordTableKnown = computed(() => !!openRecord.value && store.tables.some((tb) => tb.name === openRecord.value!.table))
+
 const CARDINALITY_KEY = {
   'many-to-one': 'manyToOne',
   'one-to-many': 'oneToMany',
@@ -41,7 +47,8 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col">
+  <div class="flex h-full min-h-0">
+  <div class="flex min-h-full min-w-0 flex-1 flex-col overflow-auto">
     <!-- Environment strip: red across the top in prod, so the user always knows where they are. -->
     <div v-if="view" class="h-0.5 shrink-0" :class="envClass[view.environment]" aria-hidden="true" />
     <header v-if="view" class="flex items-center gap-2 border-b border-border px-3 py-1.5">
@@ -140,5 +147,14 @@ const cardinality = (c: keyof typeof CARDINALITY_KEY) => t(`virtualRelations.car
         </div>
       </div>
     </section>
+  </div>
+  <RecordPanel
+    v-if="openRecord && recordTableKnown"
+    :key="`${openRecord.table}:${JSON.stringify(openRecord.key)}`"
+    :connection-id="id"
+    :schema="schemaName"
+    :table="openRecord.table"
+    :record-key="openRecord.key"
+  />
   </div>
 </template>

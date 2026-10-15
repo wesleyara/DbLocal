@@ -9,11 +9,16 @@ export const useUiStore = defineStore(
     const sidebarWidth = ref(260)
     const sidebarCollapsed = ref(false)
     const statusBar = ref(true)
+    const recordPanelWidth = ref(420)
 
     function setSidebarWidth(w: number) {
       sidebarWidth.value = Math.min(480, Math.max(200, Math.round(w)))
     }
 
-    return { theme, sidebarWidth, sidebarCollapsed, statusBar, setSidebarWidth }
+    function setRecordPanelWidth(w: number) {
+      recordPanelWidth.value = Math.min(900, Math.max(320, Math.round(w)))
+    }
+
+    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, setSidebarWidth, setRecordPanelWidth }
   },
 )

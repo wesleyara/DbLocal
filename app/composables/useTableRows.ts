@@ -1,6 +1,7 @@
 import type { CountResponse, FilterNode, GridPrefs, RowsResponse, SortItem } from '#shared/types/rows'
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '#shared/types/rows'
 import { decodeUrlState, encodeUrlState } from '#shared/grid-url'
+import { decodeScope } from '#shared/nav-url'
 
 interface Target {
   connectionId: string
@@ -32,6 +33,8 @@ export function useTableRows(target: Target) {
     const parsed = decodeUrlState<unknown>(param('s'))
     return Array.isArray(parsed) ? (parsed as SortItem[]) : []
   })
+  /** "Rows related to this record": set by following a relation, shown as a removable chip. */
+  const scope = computed(() => decodeScope(param('rel')))
   const pageSize = computed(() => {
     const n = Number(param('size'))
     return (PAGE_SIZES as readonly number[]).includes(n) ? n : DEFAULT_PAGE_SIZE
@@ -66,6 +69,7 @@ export function useTableRows(target: Target) {
     sort: sort.value,
     limit: pageSize.value,
     offset,
+    scope: scope.value,
   })
 
   async function fetchRows(body: ReturnType<typeof rowsBody>): Promise<RowsResponse> {
@@ -114,7 +118,7 @@ export function useTableRows(target: Target) {
     try {
       const res = await $fetch<CountResponse>(`${base()}/count`, {
         method: 'POST',
-        body: { schema: target.schema, filter: filter.value, exact: exactRequested },
+        body: { schema: target.schema, filter: filter.value, exact: exactRequested, scope: scope.value },
       })
       if (seq === countSeq) {
         total.value = res.count
@@ -136,6 +140,10 @@ export function useTableRows(target: Target) {
   function setFilter(next: FilterNode | null): void {
     const empty = !next || (next.type === 'group' && next.children.length === 0)
     patch({ f: empty ? undefined : encodeUrlState(next), p: undefined })
+  }
+
+  function clearScope(): void {
+    patch({ rel: undefined, p: undefined })
   }
 
   function setSort(next: SortItem[]): void {
@@ -160,8 +168,8 @@ export function useTableRows(target: Target) {
     return Promise.all([loadRows(), loadCount(false)]).then(() => undefined)
   }
 
-  watch(() => [param('f'), param('s'), param('p'), param('size')], () => void loadRows())
-  watch(() => param('f'), () => void loadCount(false))
+  watch(() => [param('f'), param('s'), param('p'), param('size'), param('rel')], () => void loadRows())
+  watch(() => [param('f'), param('rel')], () => void loadCount(false))
 
   /** Loads the grid preferences of this table. Missing preferences mean the defaults. */
   async function loadPrefs(): Promise<void> {
@@ -192,6 +200,7 @@ export function useTableRows(target: Target) {
   return {
     filter,
     sort,
+    scope,
     page,
     pageSize,
     rows,
@@ -204,6 +213,7 @@ export function useTableRows(target: Target) {
     prefs,
     setFilter,
     setSort,
+    clearScope,
     setPage,
     setPageSize,
     countExactly,

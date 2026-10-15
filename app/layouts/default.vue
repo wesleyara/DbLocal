@@ -28,6 +28,63 @@ const localeOptions = computed(() =>
   locales.value.map((l) => ({ value: l.code, label: l.name ?? l.code })),
 )
 
+// ---- workspace tabs: the route is the source of truth, the store follows it --------------------
+const workspace = useWorkspaceStore()
+const bar = ref<{ goBack: () => void; goForward: () => void; requestClose: (tab: never) => void } | null>(null)
+const mounted = ref(false)
+
+function syncWorkspace() {
+  const id = connectionId.value
+  const name = schema.value
+  if (!id || !name) return
+  const table = route.params.table as string | undefined
+  const recordOpen = typeof route.query.r === 'string'
+  workspace.sync(id, route.fullPath, {
+    schema: name,
+    type: table ? (recordOpen ? 'record' : 'table') : 'table',
+    title: table ?? name,
+    icon: recordOpen ? 'lucide:panel-right' : table ? 'lucide:table-2' : 'lucide:database',
+  })
+}
+
+function onShortcut(event: KeyboardEvent) {
+  const mod = event.metaKey || event.ctrlKey
+  const id = connectionId.value
+  if (!mod || !id) return
+  const target = event.target as HTMLElement | null
+  const typing = !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+  if (typing) return
+  if (event.key === '[' && !event.shiftKey) {
+    event.preventDefault()
+    bar.value?.goBack()
+  } else if (event.key === ']' && !event.shiftKey) {
+    event.preventDefault()
+    bar.value?.goForward()
+  } else if (event.shiftKey && (event.key === '[' || event.key === '{' || event.key === ']' || event.key === '}')) {
+    event.preventDefault()
+    const next = workspace.neighbour(id, event.key === '[' || event.key === '{' ? -1 : 1)
+    if (next) {
+      workspace.activate(next.id)
+      void navigateTo(next.path)
+    }
+  } else if (event.key.toLowerCase() === 'w' && workspace.active?.connectionId === id) {
+    event.preventDefault()
+    bar.value?.requestClose(workspace.active as never)
+  }
+}
+
+onMounted(() => {
+  workspace.hydrate()
+  mounted.value = true
+  syncWorkspace()
+  window.addEventListener('keydown', onShortcut)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', onShortcut))
+watch(
+  () => `${connectionId.value}|${schema.value}|${route.fullPath}`,
+  () => mounted.value && syncWorkspace(),
+)
+
 const dragging = ref(false)
 function startResize(e: PointerEvent) {
   dragging.value = true
@@ -107,9 +164,12 @@ function onResize(e: PointerEvent) {
         />
       </aside>
 
-      <main class="min-w-0 flex-1 overflow-auto">
-        <slot />
-      </main>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <WorkspaceBar v-if="mounted && connectionId" ref="bar" :connection-id="connectionId" />
+        <main class="min-h-0 min-w-0 flex-1 overflow-auto">
+          <slot />
+        </main>
+      </div>
     </div>
 
     <footer

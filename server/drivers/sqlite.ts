@@ -3,8 +3,8 @@ import { accessSync, constants } from 'node:fs'
 import { DriverError, isDriverError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
 import { introspectSqlite } from './introspect/sqlite'
-import { compileCount, compileRows } from '../query/compile'
-import type { RowsPlan } from '#shared/types/rows'
+import { compileCount, compileGroupCount, compileRows } from '../query/compile'
+import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 import type { ConnectionTestResult, Driver, DriverConfig } from './types'
 
 /** Maps a better-sqlite3 error (`code` is the SQLite result code name) to a normalised DriverError. */
@@ -78,6 +78,11 @@ class SqliteDriver implements Driver {
     const q = compileCount(plan)
     const [row] = this.run<{ count: number }[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))
     return Number(row?.count ?? 0)
+  }
+
+  async countGroups(plan: GroupCountPlan): Promise<Record<string, unknown>[]> {
+    const q = compileGroupCount(plan)
+    return this.run<Record<string, unknown>[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))
   }
 
   async close(): Promise<void> {

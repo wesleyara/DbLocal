@@ -54,6 +54,7 @@ function withTunnel(driver: Driver, tunnel: SshTunnel): Driver {
     introspect: (schema) => driver.introspect(schema),
     readRows: (plan) => driver.readRows(plan),
     countRows: (plan) => driver.countRows(plan),
+    countGroups: (plan) => driver.countGroups(plan),
     async close() {
       try {
         await driver.close()

@@ -152,3 +152,257 @@ body {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
 }
+
+/* Help articles (rendered Markdown): typography, callouts, code blocks and tables. */
+.help-prose {
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 46rem;
+}
+.help-prose h1 {
+  margin: 0 0 0.5rem;
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.help-prose h2,
+.help-prose h3 {
+  position: relative;
+  scroll-margin-top: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.help-prose h2 {
+  margin: 2.25rem 0 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 18px;
+}
+.help-prose h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 15px;
+}
+.help-prose .help-anchor {
+  margin-left: 0.4rem;
+  color: var(--fg-subtle);
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+}
+.help-prose h2:hover .help-anchor,
+.help-prose h3:hover .help-anchor,
+.help-prose .help-anchor:focus-visible {
+  opacity: 1;
+}
+.help-prose p {
+  margin: 0.75rem 0;
+}
+.help-prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.help-prose ul,
+.help-prose ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+}
+.help-prose ul {
+  list-style: disc;
+}
+.help-prose ol {
+  list-style: decimal;
+}
+.help-prose li {
+  margin: 0.3rem 0;
+}
+.help-prose li::marker {
+  color: var(--fg-subtle);
+}
+.help-prose strong {
+  font-weight: 600;
+}
+.help-prose code {
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.help-prose kbd {
+  display: inline-flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+}
+.help-prose .help-code {
+  position: relative;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.help-prose .help-code pre {
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.85rem 1rem;
+}
+.help-prose .help-code code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.help-prose .help-code-lang {
+  position: absolute;
+  top: 0.4rem;
+  right: 2.4rem;
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.help-prose .help-copy {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.4rem;
+  display: inline-flex;
+  width: 1.7rem;
+  height: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--fg-subtle);
+  opacity: 0;
+}
+.help-prose .help-code:hover .help-copy,
+.help-prose .help-copy:focus-visible,
+.help-prose .help-copy[data-copied] {
+  opacity: 1;
+}
+.help-prose .help-copy:hover {
+  background: var(--surface-hover);
+  color: var(--fg);
+}
+.help-prose .help-copy::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  mask: var(--help-icon-copy) center / contain no-repeat;
+}
+.help-prose .help-copy[data-copied]::before {
+  mask-image: var(--help-icon-check);
+  color: var(--success);
+}
+.help-prose .help-callout {
+  margin: 1rem 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.help-prose .help-callout > :first-child {
+  margin-top: 0;
+}
+.help-prose .help-callout > :last-child {
+  margin-bottom: 0;
+}
+.help-prose .help-callout-label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.help-prose .help-callout-info {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+.help-prose .help-callout-info .help-callout-label {
+  color: var(--accent);
+}
+.help-prose .help-callout-warning {
+  border-left-color: var(--warning);
+  background: var(--warning-soft);
+}
+.help-prose .help-callout-warning .help-callout-label {
+  color: var(--warning);
+}
+.help-prose .help-callout-danger {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+.help-prose .help-callout-danger .help-callout-label {
+  color: var(--danger);
+}
+.help-prose blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border-strong);
+  color: var(--fg-muted);
+}
+.help-prose .help-table {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.help-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.help-prose th,
+.help-prose td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.help-prose th {
+  background: var(--surface);
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.help-prose tr:last-child td {
+  border-bottom: 0;
+}
+.help-prose img {
+  display: block;
+  max-width: 100%;
+  margin: 1rem 0;
+  cursor: zoom-in;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.help-prose hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+mark.help-mark {
+  border-radius: 2px;
+  background: var(--warning-soft);
+  color: inherit;
+}
+
+:root {
+  --help-icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='14' x='8' y='8' rx='2'/%3E%3Cpath d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2'/%3E%3C/svg%3E");
+  --help-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}

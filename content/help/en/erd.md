@@ -10,6 +10,8 @@ related: [schema-browser, relationships]
 
 Click **Diagram** in the top bar to open the schema as a diagram. It opens in its own workspace tab, one per schema.
 
+![The schema diagram](/help/shots/erd-{theme}.png)
+
 ## Reading the diagram
 
 - Each box is a table. Keys come first: a key icon marks primary keys and a link icon marks foreign keys. Types are shown on the right. A `?` after a name means the column accepts NULL, `U` marks a unique index and `D` a default value (hover a column for the details: default, referenced column, composite unique indexes).
@@ -31,7 +33,7 @@ Click **Diagram** in the top bar to open the schema as a diagram. It opens in it
 - **Double click** a table to open its data in a tab.
 - With a table selected, **Show only tables near X** keeps only the tables within N relations of it (1 to 4 hops). The choice is in the address, so you can share the link.
 
-## Layout
+## Layout {#layout}
 
 The first layout is computed automatically. Drag tables to arrange them; positions are saved for the connection and schema and come back next time. **Reset layout** goes back to the automatic one.
 

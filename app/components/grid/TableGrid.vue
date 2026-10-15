@@ -41,11 +41,15 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ structure: []; history: [] }>()
 const { t } = useI18n()
+const { minutesAgo } = useFormat()
 const toast = useToast()
 const pendingStore = usePendingStore()
 const workspace = useWorkspaceStore()
 
-const state = useTableRows({ connectionId: props.connectionId, schema: props.schema, table: props.table.name })
+const state = useTableRows(
+  { connectionId: props.connectionId, schema: props.schema, table: props.table.name },
+  () => workspace.active?.id ?? '_',
+)
 const schemaStore = useSchemaStore()
 const nav = useRelationNav({ connectionId: props.connectionId, schema: props.schema })
 
@@ -138,6 +142,7 @@ const parentOf = (ref: RelationRef, row: unknown) =>
 const relations = useRelationData(
   { connectionId: props.connectionId, schema: props.schema, table: props.table.name },
   () => primaryKey.value,
+  () => workspace.active?.id ?? '_',
 )
 
 // ---- columns: order, visibility and pins are preferences of the table ------------------------
@@ -591,6 +596,15 @@ watch(
 )
 onBeforeUnmount(() => clearTimeout(sqlTimer))
 
+// "Updated 3 minutes ago": when the rows on screen were read from the database, ticking once a minute.
+const now = ref(Date.now())
+let nowTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => (nowTimer = setInterval(() => (now.value = Date.now()), 30_000)))
+onBeforeUnmount(() => clearInterval(nowTimer))
+/** Same as ⌘R: bumping the version makes every grid and record panel read the database again. */
+const reloadData = () => void pendingStore.version++
+const updatedAgo = computed(() => (state.fetchedAt.value === null ? null : minutesAgo(state.fetchedAt.value, now.value)))
+
 function resetSql(): void {
   edited.value = false
   sqlText.value = viewSql.value
@@ -625,6 +639,8 @@ async function runSql(sql?: string, confirmWrites = false): Promise<void> {
     if (res.schemaInvalidated) await schemaStore.reload().catch(() => {})
     // A write changes what the table shows.
     if (res.statements.some((s) => s.status === 'ok' && s.columns.length === 0)) {
+      // The statement may have touched any table of the connection, so other cached views are stale too.
+      useGridCacheStore().cache.invalidateConnection(props.connectionId)
       state.reload()
     }
   } catch (err) {
@@ -663,10 +679,11 @@ onMounted(() => state.start())
 </script>
 
 <template>
-  <section class="relative flex h-full min-h-0 flex-col gap-2">
+  <section class="relative flex h-full min-h-0 flex-col gap-2" data-tour="grid">
     <div class="flex flex-wrap items-center gap-2">
       <span
         v-if="state.scope.value"
+        data-tour="scope"
         class="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-accent bg-accent-soft pl-2 pr-1 text-xs text-accent"
         data-relation-chip
       >
@@ -712,6 +729,24 @@ onMounted(() => state.start())
           >
             <Icon name="lucide:history" class="size-3" />
             {{ t('grid.historyToggle') }}
+          </button>
+          <span
+            v-if="updatedAgo"
+            class="hidden h-6 items-center px-2 text-xs text-fg-subtle md:inline-flex"
+            data-updated-at
+            :title="t('grid.updatedTitle', { time: updatedAgo })"
+          >
+            {{ t('grid.updated', { time: updatedAgo }) }}
+          </span>
+          <button
+            type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+            :title="t('grid.reloadTitle')"
+            :aria-label="t('grid.reload')"
+            data-reload
+            @click="reloadData"
+          >
+            <Icon name="lucide:rotate-cw" class="size-3" :class="state.loading.value && 'animate-spin'" />
           </button>
         </template>
       </FilterBar>
@@ -807,6 +842,7 @@ onMounted(() => state.start())
     <p v-if="readOnlyNotice" class="flex items-center gap-1.5 text-xs text-warning" data-readonly-notice>
       <Icon name="lucide:info" class="size-3.5" />
       {{ readOnlyNotice }}
+      <HelpEmptyLink v-if="readOnlyReason(table) === 'no-key'" topic="noPrimaryKey" />
     </p>
 
     <div class="min-h-0 flex-1">
@@ -904,6 +940,7 @@ onMounted(() => state.start())
 
     <p v-if="state.settled.value && !state.error.value && state.rows.value.length === 0" class="text-xs text-fg-subtle">
       {{ filtered ? t('grid.noRowsFiltered') : t('grid.noRows') }}
+      <HelpEmptyLink v-if="filtered" topic="noResults" class="ml-2" />
     </p>
 
     <PendingBar

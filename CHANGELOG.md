@@ -4,6 +4,12 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-15
+
+### Added
+- **grid:** keep each tab's last view in memory and add a reload button
+- **help:** add in-app help centre, contextual hints, demo database and tour
+
 ## [0.1.1] - 2026-10-15
 
 ### Added

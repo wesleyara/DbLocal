@@ -10,6 +10,8 @@ related: [schema-browser]
 
 Open a table from the sidebar to see its rows in the grid. The grid reads a page at a time, so large tables stay fast.
 
+![The data grid with foreign key chips](/help/shots/grid-{theme}.png)
+
 ## Sort
 
 Click a column header to sort ascending, click again for descending, and click a third time to remove the sort. Hold **Shift** to add a column to the sort without dropping the others.
@@ -22,7 +24,7 @@ Drag a header onto another to move the column. Hover a header and click the pin 
 
 The sort bar above the grid lists each sort. Click a chip to flip its direction, drag it to change the order, or use its **×** to remove it.
 
-## Filter
+## Filter {#filter}
 
 
 Click **Filter** to add a condition. **Advanced filters** opens a tree where you combine conditions with AND and OR, nested up to three levels: pick a column, an operator and a value. Each condition becomes a chip. Click a chip to edit it, or use its **×** to remove it. **Clear all** removes every condition.
@@ -44,10 +46,14 @@ Double-click a cell to see its full value. JSON opens as a tree you can collapse
 
 Choose how many rows a page shows (50, 100, 250 or 500). The footer shows the range and the total. For very large tables the total is an estimate, marked with `~`. Click **Count exactly** to count the real number of rows.
 
+## What you see is the last loaded state {#cached-view}
+
+Each tab remembers the last view it loaded: leaving the tab and coming back shows it at once, without asking the database again. The toolbar says when the rows were read ("Updated 3 minutes ago"). Nothing is refreshed on its own: click the reload button next to it, or press <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘</kbd>+<kbd>R</kbd> on macOS), to read the database again. Saving changes or running a statement that writes does it for you. The memory is dropped when you close the tab or reload the page.
+
 ## Share a view
 
 Sort, filters and the page are part of the address in your browser. Copy the link to open the same view again.
 
-## Tables without a primary key
+## Tables without a primary key {#tables-without-a-primary-key}
 
 A table without a primary key can be read, filtered and sorted, but its rows are read-only. The grid shows a notice when this happens.

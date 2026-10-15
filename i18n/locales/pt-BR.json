@@ -383,7 +383,11 @@
     "goToPage": "Ir para a página",
     "selectValue": "Selecione um valor",
     "viewReadOnly": "Isto é uma view, então suas linhas são somente leitura.",
-    "historyToggle": "Histórico"
+    "historyToggle": "Histórico",
+    "updated": "Atualizado {time}",
+    "updatedTitle": "Mostrando o que foi carregado {time}. Recarregue com ⌘R para ler de novo.",
+    "reload": "Recarregar dados",
+    "reloadTitle": "Ler as linhas do banco de novo (⌘R)"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",
@@ -655,7 +659,8 @@
       "gridFilter": "Filtrar pelo valor da célula",
       "runStatement": "Executar o statement sob o cursor",
       "runAll": "Executar tudo",
-      "format": "Formatar SQL"
+      "format": "Formatar SQL",
+      "help": "Abrir a ajuda"
     }
   },
   "search": {
@@ -695,5 +700,166 @@
     "subtitle": "Postgres, MySQL e SQLite, com relações que você segue.",
     "recent": "Suas conexões",
     "count": "{count} conexão | {count} conexões"
+  },
+  "help": {
+    "title": "Ajuda",
+    "open": "Abrir a ajuda",
+    "search": "Buscar na ajuda…",
+    "clearSearch": "Limpar busca",
+    "home": {
+      "title": "Como podemos ajudar?",
+      "subtitle": "Guias de cada parte do DbLocal. Busque ou comece pelo básico.",
+      "start": "Comece aqui",
+      "browse": "Explorar por assunto"
+    },
+    "results": "{count} resultados",
+    "noResults": "Nenhum artigo corresponde a “{query}”.",
+    "noResultsHint": "Tente um termo mais curto ou explore os assuntos ao lado.",
+    "navLabel": "Assuntos da ajuda",
+    "breadcrumb": "Trilha",
+    "onThisPage": "Nesta página",
+    "related": "Artigos relacionados",
+    "notFound": {
+      "title": "Artigo não encontrado",
+      "description": "Este artigo não existe (ou não existe mais)."
+    },
+    "back": "Voltar para a ajuda",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "zoom": "Ampliar imagem",
+    "closeImage": "Fechar imagem",
+    "callout": {
+      "info": "Nota",
+      "warning": "Atenção",
+      "danger": "Cuidado"
+    },
+    "learnMore": "Saiba mais",
+    "hintLabel": "Ajuda: {topic}",
+    "openInCentre": "Abrir na central de ajuda",
+    "palette": "Ajuda",
+    "shortcut": "Abrir a ajuda",
+    "hints": {
+      "connection": {
+        "ssl": {
+          "title": "SSL / TLS",
+          "text": "Criptografa a conexão. “Require” criptografa sem verificar o certificado; os modos verify também o validam com a sua CA."
+        },
+        "ssh": {
+          "title": "Túnel SSH",
+          "text": "Alcança um banco visível só a partir de outra máquina, passando por um servidor SSH no qual você consegue entrar."
+        },
+        "environment": {
+          "title": "Ambiente e somente leitura",
+          "text": "Conexões prod pedem confirmação extra antes de escrever. Somente leitura bloqueia toda escrita do DbLocal."
+        }
+      },
+      "relations": {
+        "virtual": {
+          "title": "Relações virtuais",
+          "text": "Descrevem uma ligação que o banco não declara como chave estrangeira. Ficam guardadas no DbLocal e nunca alteram o seu banco."
+        },
+        "display": {
+          "title": "Coluna de exibição",
+          "text": "A coluna mostrada nos chips de chave estrangeira e nos seletores. É inferida e pode ser trocada por tabela."
+        }
+      },
+      "grid": {
+        "filters": {
+          "title": "Filtros",
+          "text": "Combine condições com grupos AND / OR. Os operadores dependem do tipo da coluna e o filtro faz parte da URL."
+        },
+        "pending": {
+          "title": "Alterações pendentes",
+          "text": "As edições ficam aqui até você salvar. Salvar roda tudo numa transação, então uma falha não altera nada."
+        },
+        "prod": {
+          "title": "Escrever em prod",
+          "text": "Numa conexão prod, salvar pede que você digite o nome da conexão antes."
+        }
+      },
+      "sql": {
+        "limits": {
+          "title": "Limite de linhas e timeout",
+          "text": "O resultado para no limite de linhas e o statement é cancelado no timeout, então um erro não trava o app."
+        },
+        "readonly": {
+          "title": "Sessões somente leitura",
+          "text": "Uma conexão somente leitura roda as queries numa transação de leitura; o próprio banco recusa escritas."
+        }
+      },
+      "erd": {
+        "layout": {
+          "title": "Layout do diagrama",
+          "text": "As tabelas são posicionadas automaticamente. Arraste para organizar; as posições são salvas por schema e podem ser resetadas."
+        }
+      }
+    }
+  },
+  "demo": {
+    "try": "Experimentar o banco de demonstração",
+    "badge": "demo",
+    "reset": "Resetar a demo",
+    "resetTitle": "Resetar o banco de demonstração?",
+    "resetBody": "A demo volta aos dados originais. Tudo que você alterou nela é perdido. Seus próprios bancos não são afetados.",
+    "resetConfirm": "Resetar demo",
+    "resetDone": "Banco de demonstração restaurado."
+  },
+  "tour": {
+    "title": "Faça o tour de 2 minutos",
+    "description": "Um passeio guiado pelo fluxo principal, num banco de demonstração seguro. Seus próprios bancos nunca são tocados.",
+    "start": "Iniciar o tour",
+    "notNow": "Agora não",
+    "palette": "Fazer o tour guiado",
+    "progress": "Passo {current} de {total}",
+    "skip": "Pular tour",
+    "back": "Voltar",
+    "next": "Próximo",
+    "finish": "Concluir",
+    "steps": {
+      "tables": {
+        "title": "Suas tabelas",
+        "body": "Todas as tabelas do schema estão listadas aqui. Clique numa para abri-la; duplo clique a mantém como aba própria."
+      },
+      "grid": {
+        "title": "O grid de dados",
+        "body": "As linhas carregam conforme você rola. Ordene pelo cabeçalho da coluna, filtre pela barra acima e use as setas para andar entre as células."
+      },
+      "children": {
+        "title": "Filhos a um clique",
+        "body": "As colunas de contagem mostram os registros que apontam para esta linha. Clique em “orders” para ver só os pedidos deste usuário."
+      },
+      "parents": {
+        "title": "Siga uma chave estrangeira",
+        "body": "Um chip é o registro relacionado: clique para abri-lo no painel lateral, ou passe o mouse para ver uma prévia."
+      },
+      "related": {
+        "title": "Uma visão filtrada",
+        "body": "Este chip diz que as linhas estão limitadas aos pedidos de um usuário. Remova-o para ver a tabela inteira; a barra de endereço sempre reproduz o que você vê."
+      },
+      "record": {
+        "title": "O painel de registro",
+        "body": "Todos os campos e todas as relações de um registro. Siga relações a partir daqui sem sair do painel."
+      },
+      "trail": {
+        "title": "Sua trilha",
+        "body": "O breadcrumb lembra de onde você veio. Use-o, ou Voltar e Avançar, para refazer o caminho."
+      },
+      "edit": {
+        "title": "Edite e salve",
+        "body": "Dê duplo clique numa célula, digite um valor e pressione Enter. A alteração fica pendente até você salvar pela barra inferior (Ctrl/⌘ + S), depois de ver o SQL. Esta demo é segura para alterar."
+      },
+      "sql": {
+        "title": "O editor SQL",
+        "body": "Para tudo que o grid não cobre: autocomplete do seu schema, rodar o statement sob o cursor, salvar queries e ver o histórico."
+      },
+      "palette": {
+        "title": "Tudo pelo teclado",
+        "body": "A paleta de comandos encontra tabelas, queries e ações, e vai direto a um registro com #tabela id. Pressione F1 a qualquer momento para a ajuda."
+      }
+    },
+    "language": {
+      "title": "Escolha o idioma",
+      "description": "Você pode mudar quando quiser nas configurações."
+    }
   }
 }

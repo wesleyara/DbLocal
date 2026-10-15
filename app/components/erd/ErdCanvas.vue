@@ -448,6 +448,7 @@ const minimapColor = () => 'var(--border-strong)'
       </UiButton>
 
       <span class="font-data ml-auto text-xs text-fg-subtle">{{ t('erd.stats', stats) }}</span>
+      <HelpHint id="erd.layout" />
       <UiButton size="sm" @click="resetLayout"><Icon name="lucide:rotate-ccw" class="size-3.5" />{{ t('erd.resetLayout') }}</UiButton>
       <UiButton size="sm" :disabled="exporting" @click="exportImage('png')"><Icon name="lucide:image" class="size-3.5" />PNG</UiButton>
       <UiButton size="sm" :disabled="exporting" @click="exportImage('svg')"><Icon name="lucide:file-code" class="size-3.5" />SVG</UiButton>

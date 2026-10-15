@@ -2,6 +2,7 @@
 import type { PaletteAction } from '~/components/shell/CommandPalette.vue'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
+import { useTourStore } from '~/stores/tour'
 const { t, locale, setLocale } = useI18n()
 const ui = useUiStore()
 const { format } = useShortcuts()
@@ -87,6 +88,7 @@ function openErd() {
 onMounted(() => {
   workspace.hydrate()
   queries.hydrate()
+  tour.hydrate()
   mounted.value = true
   syncWorkspace()
   readResolved()
@@ -102,6 +104,8 @@ watch(
 const paletteOpen = ref(false)
 const searchOpen = ref(false)
 const cheatSheetOpen = ref(false)
+const { openCentre } = useHelp()
+const tour = useTourStore()
 const settingsOpen = ref(false)
 const pendingStore = usePendingStore()
 const schemaStore = useSchemaStore()
@@ -152,6 +156,8 @@ const paletteActions = computed<PaletteAction[]>(() => {
     { id: 'theme', label: t('palette.actions.toggleTheme'), icon: 'lucide:sun-moon', keywords: 'dark light', run: toggleTheme },
     { id: 'locale', label: t('palette.actions.switchLanguage'), icon: 'lucide:languages', keywords: 'idioma english português', run: toggleLocale },
     { id: 'sidebar', label: t('shell.toggleSidebar'), icon: 'lucide:panel-left', shortcut: 'nav.sidebar', run: () => (ui.sidebarCollapsed = !ui.sidebarCollapsed) },
+    { id: 'tour', label: t('tour.palette'), icon: 'lucide:route', keywords: 'tour guide onboarding demo ajuda', run: () => void tour.start() },
+    { id: 'help', label: t('help.palette'), icon: 'lucide:circle-help', shortcut: 'global.help', keywords: 'help ajuda docs guide tour', run: () => void openCentre() },
     { id: 'shortcuts', label: t('palette.actions.shortcuts'), icon: 'lucide:keyboard', shortcut: 'global.shortcuts', run: () => (cheatSheetOpen.value = true) },
   )
   if (status.data.value?.authEnabled) {
@@ -166,6 +172,7 @@ useShortcutsRegistration([
   // global
   { id: 'global.palette', keys: 'mod+k', description: 'shortcuts.items.palette', context: 'global', allowInInput: true, run: () => (paletteOpen.value = !paletteOpen.value) },
   { id: 'global.search', keys: 'mod+shift+f', description: 'shortcuts.items.search', context: 'global', allowInInput: true, when: () => hasSchema.value, run: () => (searchOpen.value = true) },
+  { id: 'global.help', keys: 'f1', description: 'shortcuts.items.help', context: 'global', allowInInput: true, run: () => void openCentre() },
   { id: 'global.shortcuts', keys: '?', description: 'shortcuts.items.cheatSheet', context: 'global', run: () => (cheatSheetOpen.value = true) },
   { id: 'global.save', keys: 'mod+s', description: 'shortcuts.items.save', context: 'global', allowInInput: true },
   // navigation
@@ -236,7 +243,7 @@ function onResize(e: PointerEvent) {
       </NuxtLink>
       <template v-if="connectionId && schema">
         <span class="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        <UiButton size="sm" data-new-query @click="newQuery">
+        <UiButton size="sm" data-new-query data-tour="new-query" @click="newQuery">
           <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.new') }}
         </UiButton>
         <UiButton size="sm" data-open-erd @click="openErd">
@@ -247,6 +254,7 @@ function onResize(e: PointerEvent) {
         type="button"
         class="mx-auto hidden h-8 w-full max-w-md items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
         data-open-palette
+        data-tour="palette"
         :aria-label="t('palette.title')"
         @click="paletteOpen = true"
       >
@@ -256,6 +264,7 @@ function onResize(e: PointerEvent) {
       </button>
       <div class="ml-auto flex items-center gap-1">
         <UiIconButton :icon="themeIcon" :label="t('shell.toggleTheme')" data-theme-toggle @click="toggleTheme" />
+        <UiIconButton icon="lucide:circle-help" :label="t('help.open')" data-open-help @click="openCentre()" />
         <UiIconButton icon="lucide:keyboard" :label="t('shortcuts.title')" @click="cheatSheetOpen = true" />
         <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings @click="settingsOpen = true" />
       </div>
@@ -264,6 +273,7 @@ function onResize(e: PointerEvent) {
     <div class="flex min-h-0 flex-1" @pointermove="onResize" @pointerup="dragging = false">
       <aside
         v-if="connectionId && !ui.sidebarCollapsed"
+        data-tour="sidebar"
         class="relative hidden shrink-0 flex-col border-r border-border bg-bg-subtle sm:flex"
         :style="{ width: `${ui.sidebarWidth}px` }"
       >
@@ -322,6 +332,9 @@ function onResize(e: PointerEvent) {
     <ShellGlobalSearch v-if="connectionId && schema" v-model:open="searchOpen" :connection-id="connectionId" :schema="schema" />
     <ShellShortcutsDialog v-model:open="cheatSheetOpen" />
     <ShellSettingsDialog v-model:open="settingsOpen" />
+    <HelpDrawer />
+    <HelpTourOverlay />
+    <HelpTourCard v-if="tour.offered && route.path === '/' && !tour.active" floating />
     <UiToaster />
   </div>
 </template>

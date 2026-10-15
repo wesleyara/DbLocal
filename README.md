@@ -51,10 +51,17 @@ Options: `-p, --port`, `--host`, `--data-dir`, `--readonly`, `--no-open`, `-v, -
 ### Docker
 
 ```bash
+docker compose -f docker/compose.example.yml up -d --build
+```
+
+Then open http://127.0.0.1:5555. The password is optional: to require a login, set `DBLOCAL_PASSWORD`:
+
+```bash
 DBLOCAL_PASSWORD=change-me docker compose -f docker/compose.example.yml up -d --build
 ```
 
-Then open http://127.0.0.1:5555. See the compose file for mounting SQLite files.
+Without it there is no authentication, which is fine while the port stays on `127.0.0.1` (as published by the
+example). See the compose file for mounting SQLite files.
 
 - Data (saved connections, queries, the encryption key) lives in the `dblocal-data` volume mounted at `/data`.
 - To reach a database running on your machine, use the host `host.docker.internal`. The database must accept
@@ -79,7 +86,8 @@ your machine, not like a service.
 
 - It binds to `127.0.0.1` by default. Binding anywhere else without `DBLOCAL_PASSWORD` shows a warning in the app.
 - In Docker the server binds to `0.0.0.0` inside the container so the published port works. Publish it on
-  `127.0.0.1:5555:5555` and set `DBLOCAL_PASSWORD`; do not expose it to a network without a password and TLS.
+  `127.0.0.1:5555:5555`; `DBLOCAL_PASSWORD` is optional there, but set it (and add TLS) before exposing the port
+  to a network.
 - With a password: signed `httpOnly`, `SameSite=Strict` session cookie, login rate limit (5 per minute per IP),
   pages redirect to `/login` and `/api/**` answers 401.
 - Mutating requests whose `Origin` differs from the host are refused (CSRF).

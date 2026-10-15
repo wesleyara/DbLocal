@@ -33,6 +33,8 @@ export interface ConnectionView {
     hasPrivateKey: boolean
     hasPassphrase: boolean
   }
+  /** The built-in demo database (a SQLite copy in the data dir that "Reset demo" restores). */
+  demo: boolean
   lastUsedAt: string | null
   createdAt: string
   updatedAt: string

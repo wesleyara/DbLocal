@@ -81,3 +81,34 @@ test('downloads a binary cell as stored', async ({ request }) => {
   expect(res.ok()).toBeTruthy()
   expect([...(await res.body())]).toEqual([7, 1, 2, 3])
 })
+
+test('a tab keeps its last view; the reload button reads the database again', async ({ page }) => {
+  test.setTimeout(60_000)
+  let rowRequests = 0
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && req.url().endsWith('/tables/items/rows')) rowRequests++
+  })
+  await page.goto(gridUrl('&size=50'))
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+  const firstName = page.getByRole('gridcell').filter({ hasText: /^item / }).first()
+  await expect(firstName).toHaveText('item 01')
+  await expect(page.locator('[data-updated-at]')).toBeVisible()
+  const tabName = (await page.getByRole('tab', { selected: true }).getAttribute('data-tab')) ?? ''
+
+  // The database changes underneath, then the tab is left and come back to: it shows the last view.
+  const db = new Database(file)
+  db.prepare("update items set name = 'item 01 edited' where id = 1").run()
+  db.close()
+  await page.locator('[data-open-erd]').click()
+  // The diagram page is heavy to compile the first time in dev.
+  await expect(page).toHaveURL(/\/erd/, { timeout: 20_000 })
+  const before = rowRequests
+  await page.locator(`[role="tab"][data-tab="${tabName}"]`).click()
+  await expect(firstName).toHaveText('item 01')
+  expect(rowRequests).toBe(before)
+
+  // The button does what ⌘R does.
+  await page.locator('[data-reload]').click()
+  await expect(firstName).toHaveText('item 01 edited')
+  expect(rowRequests).toBeGreaterThan(before)
+})

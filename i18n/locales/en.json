@@ -383,7 +383,11 @@
     "goToPage": "Go to page",
     "selectValue": "Select a value",
     "viewReadOnly": "This is a view, so its rows are read-only.",
-    "historyToggle": "History"
+    "historyToggle": "History",
+    "updated": "Updated {time}",
+    "updatedTitle": "Showing what was loaded {time}. Reload with ⌘R to read it again.",
+    "reload": "Reload data",
+    "reloadTitle": "Read the rows from the database again (⌘R)"
   },
   "relations": {
     "orphan": "No matching record in {target}",
@@ -655,7 +659,8 @@
       "gridFilter": "Filter by the cell value",
       "runStatement": "Run the statement under the cursor",
       "runAll": "Run everything",
-      "format": "Format SQL"
+      "format": "Format SQL",
+      "help": "Open the help"
     }
   },
   "search": {
@@ -695,5 +700,166 @@
     "subtitle": "Postgres, MySQL and SQLite, with relations you can follow.",
     "recent": "Your connections",
     "count": "{count} connection | {count} connections"
+  },
+  "help": {
+    "title": "Help",
+    "open": "Open help",
+    "search": "Search the help…",
+    "clearSearch": "Clear search",
+    "home": {
+      "title": "How can we help?",
+      "subtitle": "Guides for every part of DbLocal. Search, or start with the basics.",
+      "start": "Start here",
+      "browse": "Browse by topic"
+    },
+    "results": "{count} results",
+    "noResults": "No article matches “{query}”.",
+    "noResultsHint": "Try a shorter term, or browse the topics on the left.",
+    "navLabel": "Help topics",
+    "breadcrumb": "Breadcrumb",
+    "onThisPage": "On this page",
+    "related": "Related articles",
+    "notFound": {
+      "title": "Article not found",
+      "description": "This article does not exist (any more)."
+    },
+    "back": "Back to help",
+    "copy": "Copy",
+    "copied": "Copied",
+    "zoom": "Enlarge image",
+    "closeImage": "Close image",
+    "callout": {
+      "info": "Note",
+      "warning": "Warning",
+      "danger": "Careful"
+    },
+    "learnMore": "Learn more",
+    "hintLabel": "Help: {topic}",
+    "openInCentre": "Open in the help centre",
+    "palette": "Help",
+    "shortcut": "Open the help",
+    "hints": {
+      "connection": {
+        "ssl": {
+          "title": "SSL / TLS",
+          "text": "Encrypts the connection. “Require” encrypts without checking the certificate; the verify modes also check it against your CA."
+        },
+        "ssh": {
+          "title": "SSH tunnel",
+          "text": "Reaches a database that is only visible from another machine, going through an SSH server you can log in to."
+        },
+        "environment": {
+          "title": "Environment and read-only",
+          "text": "Prod connections ask for extra confirmation before writes. Read-only blocks every write from DbLocal."
+        }
+      },
+      "relations": {
+        "virtual": {
+          "title": "Virtual relations",
+          "text": "Describe a link the database does not declare as a foreign key. It is stored by DbLocal and never changes your database."
+        },
+        "display": {
+          "title": "Display column",
+          "text": "The column shown in foreign key chips and pickers. It is inferred and can be changed per table."
+        }
+      },
+      "grid": {
+        "filters": {
+          "title": "Filters",
+          "text": "Combine conditions with AND / OR groups. Operators depend on the column type, and the filter is part of the URL."
+        },
+        "pending": {
+          "title": "Pending changes",
+          "text": "Edits are held here until you save. Saving runs them in one transaction, so a failure changes nothing."
+        },
+        "prod": {
+          "title": "Writing to prod",
+          "text": "On a prod connection, saving asks you to type the connection name first."
+        }
+      },
+      "sql": {
+        "limits": {
+          "title": "Row limit and timeout",
+          "text": "Results stop at the row limit and a statement is cancelled at the timeout, so a mistake cannot freeze the app."
+        },
+        "readonly": {
+          "title": "Read-only sessions",
+          "text": "A read-only connection runs queries in a read-only transaction; writes are refused by the database itself."
+        }
+      },
+      "erd": {
+        "layout": {
+          "title": "Diagram layout",
+          "text": "Tables are placed automatically. Drag them to arrange; positions are saved per schema and can be reset."
+        }
+      }
+    }
+  },
+  "demo": {
+    "try": "Try the demo database",
+    "badge": "demo",
+    "reset": "Reset demo",
+    "resetTitle": "Reset the demo database?",
+    "resetBody": "The demo goes back to its original data. Everything you changed in it is lost. Your own databases are not affected.",
+    "resetConfirm": "Reset demo",
+    "resetDone": "Demo database restored."
+  },
+  "tour": {
+    "title": "Take the 2-minute tour",
+    "description": "A guided pass over the main flow, on a safe demo database. Your own databases are never touched.",
+    "start": "Start the tour",
+    "notNow": "Not now",
+    "palette": "Take the guided tour",
+    "progress": "Step {current} of {total}",
+    "skip": "Skip tour",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "steps": {
+      "tables": {
+        "title": "Your tables",
+        "body": "Every table of the schema is listed here. Click one to open it; double-click keeps it as its own tab."
+      },
+      "grid": {
+        "title": "The data grid",
+        "body": "Rows load as you scroll. Sort from a column header, filter from the bar above, and use the arrow keys to move between cells."
+      },
+      "children": {
+        "title": "Children, one click away",
+        "body": "Count columns show the records that point at this row. Click “orders” to see only this user's orders."
+      },
+      "parents": {
+        "title": "Follow a foreign key",
+        "body": "A chip is the related record: click it to open it in the side panel, or hover for a preview."
+      },
+      "related": {
+        "title": "A filtered view",
+        "body": "This chip says the rows are limited to one user's orders. Remove it to see the whole table again; the address bar always reproduces what you see."
+      },
+      "record": {
+        "title": "The record panel",
+        "body": "Every field and every relation of one record. Follow relations from here without leaving the panel."
+      },
+      "trail": {
+        "title": "Your trail",
+        "body": "The breadcrumb remembers where you came from. Use it, or Back and Forward, to retrace your steps."
+      },
+      "edit": {
+        "title": "Edit and save",
+        "body": "Double-click a cell, type a value and press Enter. The change stays pending until you save with the bar at the bottom (Ctrl/⌘ + S), after previewing the SQL. This demo is safe to change."
+      },
+      "sql": {
+        "title": "The SQL editor",
+        "body": "For anything the grid does not cover: autocomplete from your schema, run the statement under the cursor, save queries and see the history."
+      },
+      "palette": {
+        "title": "Everything from the keyboard",
+        "body": "The command palette finds tables, queries and actions, and goes straight to a record with #table id. Press F1 any time for help."
+      }
+    },
+    "language": {
+      "title": "Choose your language",
+      "description": "You can change it any time in the settings."
+    }
   }
 }

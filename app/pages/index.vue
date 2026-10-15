@@ -74,13 +74,17 @@ async function onSaved() {
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-5xl flex-col gap-4 p-4">
-    <header class="flex flex-wrap items-center gap-2">
-      <h1 class="text-lg font-semibold text-fg">{{ t('connections.title') }}</h1>
+  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
+    <header class="flex flex-wrap items-center gap-4">
+      <UiLogo class="size-12" />
+      <div class="min-w-0">
+        <h1 class="text-xl font-semibold tracking-tight text-fg">{{ t('connections.title') }}</h1>
+        <p class="text-sm text-fg-muted">{{ t('home.subtitle') }}</p>
+      </div>
       <div class="ml-auto flex w-full items-center gap-2 sm:w-auto">
         <UiInput
           v-model="search"
-          class="sm:w-64"
+          class="!h-8 sm:w-64"
           :placeholder="t('connections.search')"
           :aria-label="t('connections.search')"
         />
@@ -93,6 +97,7 @@ async function onSaved() {
 
     <UiEmptyState
       v-if="!pending && items.length === 0"
+      class="rounded-lg border border-dashed border-border py-16"
       icon="lucide:database"
       :title="t('connections.empty')"
       :description="t('connections.emptyHint')"
@@ -104,7 +109,7 @@ async function onSaved() {
       {{ t('connections.noMatches') }}
     </p>
 
-    <div v-else class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <ConnectionsConnectionCard
         v-for="c in visible"
         :key="c.id"

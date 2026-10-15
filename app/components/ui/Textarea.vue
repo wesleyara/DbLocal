@@ -8,7 +8,7 @@ defineProps<{ invalid?: boolean; mono?: boolean }>()
   <textarea
     v-model="model"
     v-bind="$attrs"
-    class="min-h-16 w-full rounded-md border bg-bg-subtle px-2 py-1.5 text-sm text-fg placeholder:text-fg-subtle focus:border-accent disabled:opacity-50"
+    class="ui-field min-h-16 w-full rounded-md border bg-bg-subtle px-2 py-1.5 text-sm text-fg placeholder:text-fg-subtle disabled:opacity-50"
     :class="[invalid ? 'border-danger' : 'border-border', mono && 'font-data']"
   />
 </template>

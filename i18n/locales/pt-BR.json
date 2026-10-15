@@ -36,7 +36,8 @@
       "connected": "Conectado a {name}",
       "readonly": "somente leitura"
     },
-    "home": "Voltar para o início"
+    "home": "Voltar para o início",
+    "toggleTheme": "Alternar tema claro / escuro"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -581,6 +582,114 @@
     "dropOnColumn": "Solte sobre uma coluna de outra tabela",
     "linkFailed": "Não foi possível criar a relação",
     "loadFailed": "Não foi possível carregar o schema",
-    "empty": "Este schema não tem tabelas"
+    "empty": "Este schema não tem tabelas",
+    "nullable": "Aceita NULL"
+  },
+  "palette": {
+    "title": "Paleta de comandos",
+    "description": "Busque tabelas, queries salvas, conexões e ações.",
+    "placeholder": "Busque tabelas, queries, ações…  (> ações, #tabela id)",
+    "noResults": "Nada encontrado.",
+    "navigate": "navegar",
+    "select": "abrir",
+    "recordHint": "depois digite a chave primária",
+    "goToRecord": "Abrir {table} #{key}",
+    "compositeKey": "{table} tem chave composta: abra a tabela",
+    "groups": {
+      "recent": "Recentes",
+      "tables": "Tabelas",
+      "queries": "Queries salvas",
+      "connections": "Conexões",
+      "actions": "Ações",
+      "record": "Ir para registro"
+    },
+    "actions": {
+      "newQuery": "Nova query",
+      "openErd": "Abrir diagrama",
+      "search": "Buscar dados no schema",
+      "refreshSchema": "Atualizar schema",
+      "reloadData": "Recarregar dados",
+      "toggleTheme": "Alternar tema claro / escuro",
+      "switchLanguage": "Trocar idioma (EN / PT)",
+      "shortcuts": "Atalhos de teclado",
+      "signOut": "Sair"
+    }
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "description": "Tudo o que o app faz pelo teclado. ⌘ é Ctrl fora do macOS.",
+    "contexts": {
+      "global": "Em todo lugar",
+      "navigation": "Navegação e abas",
+      "grid": "Grid de dados",
+      "editor": "Editor SQL"
+    },
+    "items": {
+      "palette": "Paleta de comandos",
+      "search": "Buscar dados no schema",
+      "cheatSheet": "Mostrar este guia",
+      "save": "Salvar alterações pendentes / salvar query",
+      "back": "Voltar no histórico da aba",
+      "forward": "Avançar no histórico da aba",
+      "prevTab": "Aba anterior",
+      "nextTab": "Próxima aba",
+      "newQuery": "Nova aba de query",
+      "closeTab": "Fechar aba",
+      "sidebar": "Mostrar/ocultar a sidebar",
+      "reload": "Recarregar dados",
+      "gridMove": "Mover o cursor",
+      "gridExtend": "Estender a seleção",
+      "gridHome": "Primeira coluna (⌘ para a primeira linha)",
+      "gridEnd": "Última coluna (⌘ para a última linha)",
+      "gridPageUp": "Página acima",
+      "gridPageDown": "Página abaixo",
+      "gridEdit": "Editar a célula",
+      "gridOpen": "Abrir o registro",
+      "gridCopy": "Copiar a seleção",
+      "gridDelete": "Marcar linhas para exclusão",
+      "gridUndo": "Desfazer as pendências da linha",
+      "gridFilter": "Filtrar pelo valor da célula",
+      "runStatement": "Executar o statement sob o cursor",
+      "runAll": "Executar tudo",
+      "format": "Formatar SQL"
+    }
+  },
+  "search": {
+    "title": "Buscar dados",
+    "scope": "Busca nas colunas de texto, uuid e numéricas do schema {schema}.",
+    "placeholder": "Um id, e-mail, código…",
+    "modeContains": "Contém",
+    "modeExact": "Exato",
+    "run": "Buscar",
+    "cancel": "Cancelar",
+    "searching": "Buscando nas tabelas…",
+    "noResults": "Nenhuma tabela tem esse valor.",
+    "cancelled": "Busca cancelada.",
+    "hint": "Digite um valor e tecle Enter. Cada tabela é consultada sob demanda, até 10 linhas por tabela.",
+    "failed": "A busca falhou.",
+    "tableFailed": "Não foi possível buscar em {table}.",
+    "openTable": "Abrir tabela filtrada",
+    "openRecord": "Abrir o registro (⌘ mantém este diálogo aberto)",
+    "nMatches": "{count} resultado | {count} resultados",
+    "firstN": "primeiros {count} resultados",
+    "summary": "{count} linhas em {tables} tabelas · {searched} tabelas pesquisadas"
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Preferências deste navegador.",
+    "appearance": "Aparência",
+    "theme": "Tema",
+    "language": "Idioma",
+    "statusBar": "Mostrar a barra de status",
+    "queries": "Editor SQL",
+    "rowLimit": "Limite de linhas por statement",
+    "timeout": "Timeout por statement (segundos)",
+    "reset": "Restaurar padrões"
+  },
+  "home": {
+    "tagline": "Navegue pelos seus bancos através das relações.",
+    "subtitle": "Postgres, MySQL e SQLite, com relações que você segue.",
+    "recent": "Suas conexões",
+    "count": "{count} conexão | {count} conexões"
   }
 }

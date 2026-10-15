@@ -120,6 +120,11 @@ async function setup(): Promise<void> {
   editor.addCommand(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.Enter, () => emit('runAll'))
   editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyS, () => emit('save'))
   editor.addCommand(KeyMod.Shift | KeyMod.Alt | KeyCode.KeyF, () => format())
+  // Monaco swallows these keys (⌘K is its chord prefix); hand them to the app's shortcut registry.
+  const toApp = (key: string, shiftKey = false) => () =>
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }))
+  editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyK, toApp('k'))
+  editor.addCommand(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyF, toApp('f', true))
   editor.onDidChangeModelContent(() => {
     if (applying) return
     model.value = editor!.getValue()

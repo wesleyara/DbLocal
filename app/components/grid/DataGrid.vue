@@ -37,6 +37,8 @@ const props = defineProps<{
   sort: SortItem[]
   primaryKey: string[]
   foreignKeys: string[]
+  /** Column lists of the table's unique indexes (primary key excluded), for the header markers. */
+  uniques?: string[][]
   /** Saved widths in px by column name. Columns without one use the default for their kind. */
   widths?: Record<string, number>
   loading?: boolean
@@ -438,6 +440,39 @@ function onKeydown(event: KeyboardEvent): void {
     if (original) emit('openRow', original)
     return
   }
+  // ⌘Z undoes the pending edits of the row under the cursor (one level: the whole row).
+  if (props.editable && (event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z' && cursor.value) {
+    const original = modelRows.value[cursor.value.row]?.original as Record<string, unknown> | undefined
+    const meta = original ? metaOf(original) : null
+    if (original && meta && (meta.state || Object.keys(meta.changed).length)) {
+      event.preventDefault()
+      emit('undoRow', original)
+    }
+    return
+  }
+  // F filters the table by the value of the cell under the cursor.
+  if (event.key.toLowerCase() === 'f' && !event.metaKey && !event.ctrlKey && !event.altKey && cursor.value) {
+    const name = leafColumns.value[cursor.value.col]?.id ?? ''
+    if (filterableName(name, kindByName.value.get(name))) {
+      event.preventDefault()
+      emit('filterByValue', name, valueAt(cursor.value.row, cursor.value.col))
+    }
+    return
+  }
+  // Home / End jump to the first / last column of the row, with ⌘ / Ctrl to the first / last row.
+  if (event.key === 'Home' || event.key === 'End') {
+    event.preventDefault()
+    const first = event.key === 'Home'
+    const mod = event.metaKey || event.ctrlKey
+    moveTo(mod ? (first ? 0 : Infinity) : row, first ? 0 : Infinity, event.shiftKey)
+    return
+  }
+  if (event.key === 'PageDown' || event.key === 'PageUp') {
+    event.preventDefault()
+    const page = Math.max(1, (virtualRows.value.length || 10) - 2)
+    moveTo(event.key === 'PageDown' ? row + page : row - page, col, event.shiftKey)
+    return
+  }
   const target = moves[event.key]
   if (target) {
     event.preventDefault()
@@ -664,6 +699,7 @@ function downloadDialogValue(): void {
                 <Icon name="lucide:pin" class="size-3 shrink-0 text-accent" />
                 <Icon v-if="primaryKey.includes(pc.id)" name="lucide:key-round" class="size-3 shrink-0 text-warning" :aria-label="t('grid.primaryKey')" />
                 <span class="truncate">{{ labelOf(pc.id) }}</span>
+                <GridColumnMarks :column="columns.find((c) => c.name === pc.id)" :primary-key="primaryKey.includes(pc.id)" :uniques="uniques ?? []" />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === pc.id)?.nativeType }}</span>
             </span>
@@ -694,6 +730,11 @@ function downloadDialogValue(): void {
                 <Icon v-else-if="foreignKeys.includes(leafColumns[vc.index]!.id)" name="lucide:link" class="size-3 shrink-0 text-accent" :aria-label="t('grid.foreignKey')" />
                 <Icon v-else-if="isRelationColumn(leafColumns[vc.index]!.id)" name="lucide:git-fork" class="size-3 shrink-0 text-accent" />
                 <span class="truncate">{{ labelOf(leafColumns[vc.index]!.id) }}</span>
+                <GridColumnMarks
+                  :column="columns.find((c) => c.name === leafColumns[vc.index]!.id)"
+                  :primary-key="primaryKey.includes(leafColumns[vc.index]!.id)"
+                  :uniques="uniques ?? []"
+                />
               </span>
               <span class="truncate text-[10px] text-fg-subtle">{{ columns.find((c) => c.name === leafColumns[vc.index]!.id)?.nativeType }}</span>
             </span>

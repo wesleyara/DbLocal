@@ -4,6 +4,14 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-15
+
+### Added
+- **security:** reject non-local Host headers when no password is set
+
+### Fixed
+- **security:** hide the exposed warning for local and allowed host names
+
 ## [0.1.2] - 2026-10-15
 
 ### Added

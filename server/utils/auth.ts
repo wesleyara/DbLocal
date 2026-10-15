@@ -41,6 +41,35 @@ export function isLoopback(host: string): boolean {
   return ['127.0.0.1', 'localhost', '::1', '[::1]'].includes(host)
 }
 
+/**
+ * Without a password, only Host headers that cannot come from DNS rebinding are served: loopback names,
+ * IP literals and the names in `DBLOCAL_ALLOWED_HOSTS` (comma separated). A rebound page carries its own
+ * domain in Host. With a password the session cookie never reaches such a page, so any Host is fine.
+ */
+export function hostAllowed(host: string | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (!host || authEnabled(env)) return true // HTTP/1.0 clients may omit Host; browsers never do
+  const name = hostName(host)
+  if (name === 'localhost' || name.endsWith('.localhost')) return true
+  if (name.startsWith('[') || /^\d{1,3}(\.\d{1,3}){3}$/.test(name)) return true
+  return listedHost(host, env)
+}
+
+/** True when the Host header names an entry of `DBLOCAL_ALLOWED_HOSTS`. */
+export function listedHost(host: string | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (!host) return false
+  const extra = (env.DBLOCAL_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean)
+  return extra.includes(hostName(host))
+}
+
+function hostName(host: string): string {
+  const h = host.trim().toLowerCase()
+  if (h.startsWith('[')) return h.slice(0, h.indexOf(']') + 1)
+  return h.replace(/:\d*$/, '').replace(/\.$/, '')
+}
+
 export function originAllowed(origin: string | undefined, host: string | undefined): boolean {
   if (!origin) return true // non-browser clients (curl) carry no Origin
   try {

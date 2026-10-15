@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authEnabled,
   createSessionToken,
+  hostAllowed,
   isLoopback,
   originAllowed,
   RateLimiter,
@@ -30,6 +31,16 @@ describe('auth utils', () => {
     expect(originAllowed('http://localhost:5555', 'localhost:5555')).toBe(true)
     expect(originAllowed('http://evil.com', 'localhost:5555')).toBe(false)
     expect(originAllowed(undefined, 'localhost:5555')).toBe(true)
+  })
+  it('accepts only rebinding-safe hosts without a password', () => {
+    for (const h of ['localhost:5555', '127.0.0.1:5555', '[::1]:5555', 'app.localhost', '192.168.0.10:5555', undefined]) {
+      expect(hostAllowed(h, {})).toBe(true)
+    }
+    expect(hostAllowed('evil.com:5555', {})).toBe(false)
+    expect(hostAllowed('localhost.evil.com', {})).toBe(false)
+    expect(hostAllowed('1.2.3.4.evil.com', {})).toBe(false)
+    expect(hostAllowed('DB.Lan:5555', { DBLOCAL_ALLOWED_HOSTS: 'db.lan, other' })).toBe(true)
+    expect(hostAllowed('evil.com', { DBLOCAL_PASSWORD: 'x' })).toBe(true)
   })
   it('rate limits', () => {
     const r = new RateLimiter(2, 1000)

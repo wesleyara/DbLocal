@@ -10,6 +10,8 @@ export const useUiStore = defineStore(
     const sidebarCollapsed = ref(false)
     const statusBar = ref(true)
     const recordPanelWidth = ref(420)
+    /** SQL bar under the table grid; hidden until asked for. */
+    const gridSql = ref(false)
 
     function setSidebarWidth(w: number) {
       sidebarWidth.value = Math.min(480, Math.max(200, Math.round(w)))
@@ -19,6 +21,6 @@ export const useUiStore = defineStore(
       recordPanelWidth.value = Math.min(900, Math.max(320, Math.round(w)))
     }
 
-    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, setSidebarWidth, setRecordPanelWidth }
+    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridSql, setSidebarWidth, setRecordPanelWidth }
   },
 )

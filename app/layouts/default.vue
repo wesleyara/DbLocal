@@ -6,8 +6,6 @@ const status = await useFetch('/api/auth/status')
 const connectionId = computed(() => route.params.connectionId as string | undefined)
 const schema = computed(() => route.params.schema as string | undefined)
 
-useHead({ htmlAttrs: { lang: () => locale.value } })
-
 const { data: activeConnection } = await useAsyncData(
   'active-connection',
   () =>
@@ -18,6 +16,12 @@ const { data: activeConnection } = await useAsyncData(
       : Promise.resolve(null),
   { watch: [connectionId] },
 )
+
+// The browser tab always reads "DbLocal - <connection>", whatever page is open.
+useHead({
+  htmlAttrs: { lang: () => locale.value },
+  title: () => (activeConnection.value ? `${t('app.name')} - ${activeConnection.value.name}` : t('app.name')),
+})
 
 const themes = computed(() => [
   { value: 'dark', label: t('theme.dark') },
@@ -47,6 +51,10 @@ function syncWorkspace() {
       title: queries.drafts[qid]?.name || t('query.untitled'),
       icon: 'lucide:terminal',
     })
+    return
+  }
+  if (route.path.endsWith('/erd') && !table) {
+    workspace.sync(id, route.fullPath, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
     return
   }
   const recordOpen = typeof route.query.r === 'string'
@@ -90,6 +98,21 @@ function newQuery() {
   if (!id || !name) return
   const qid = queries.create()
   void navigateTo(`/c/${id}/${encodeURIComponent(name)}/q/${qid}`)
+}
+
+/** The diagram is one tab per schema: an open one is reused. */
+function openErd() {
+  const id = connectionId.value
+  const name = schema.value
+  if (!id || !name) return
+  const path = `/c/${id}/${encodeURIComponent(name)}/erd`
+  const existing = workspace.forConnection(id).find((tab) => tab.type === 'erd' && tab.schema === name)
+  if (existing) {
+    const target = workspace.activate(existing.id)
+    if (target) return void navigateTo(target)
+  }
+  workspace.open(id, path, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
+  void navigateTo(path)
 }
 
 onMounted(() => {
@@ -138,6 +161,9 @@ function onResize(e: PointerEvent) {
       </div>
       <UiButton v-if="connectionId && schema" size="sm" data-new-query @click="newQuery">
         <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.new') }}
+      </UiButton>
+      <UiButton v-if="connectionId && schema" size="sm" data-open-erd @click="openErd">
+        <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
       </UiButton>
       <div class="mx-auto hidden w-full max-w-sm items-center md:flex">
         <UiInput :placeholder="t('shell.search')" :aria-label="t('shell.search')" />
@@ -190,7 +216,7 @@ function onResize(e: PointerEvent) {
 
       <div class="flex min-w-0 flex-1 flex-col">
         <WorkspaceBar v-if="mounted && connectionId" ref="bar" :connection-id="connectionId" />
-        <main class="min-h-0 min-w-0 flex-1 overflow-auto">
+        <main class="min-h-0 min-w-0 flex-1" :class="route.path.endsWith('/erd') ? 'overflow-hidden' : 'overflow-auto'">
           <slot />
         </main>
       </div>

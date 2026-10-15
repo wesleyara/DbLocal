@@ -109,7 +109,7 @@ function displayParameter(value: unknown): unknown {
   return value
 }
 
-function inline(text: string, params: readonly unknown[], dialect: Dialect): string {
+export function inline(text: string, params: readonly unknown[], dialect: Dialect): string {
   if (dialect === 'postgres') return text.replace(/\$(\d+)/g, (_, n: string) => literal(params[Number(n) - 1], dialect))
   let i = 0
   return text.replace(/\?/g, () => literal(params[i++], dialect))

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { ColumnKind, SchemaColumn } from '#shared/types/db'
 import type { ConnectionView } from '#shared/types/connection'
 import type { ExplainResponse } from '#shared/types/explain'
-import type { QueryColumn, QueryResponse, StatementResult } from '#shared/types/query'
+import type { QueryResponse, StatementResult } from '#shared/types/query'
 import type { SavedQuery } from '#shared/types/saved-queries'
+import { resultColumn } from '#shared/result-columns'
 import { formatResult, type ExportFormat } from '#shared/export-format'
 import { useSchemaStore } from '~/stores/schema'
 import { useQueriesStore } from '~/stores/queries'
 import SqlEditor from '~/components/query/SqlEditor.vue'
 import PlanTree from '~/components/query/PlanTree.vue'
 import QuerySidePanel from '~/components/query/QuerySidePanel.vue'
-import DataGrid from '~/components/grid/DataGrid.vue'
+import ResultGrid from '~/components/query/ResultGrid.vue'
 
 const route = useRoute()
 const id = route.params.connectionId as string
@@ -137,29 +137,7 @@ const planTotal = computed(() => {
 })
 
 // ---- results -----------------------------------------------------------------------------------
-function kindOf(type: string): ColumnKind {
-  const v = type.toLowerCase()
-  if (/bool/.test(v)) return 'boolean'
-  if (/json/.test(v)) return 'json'
-  if (/uuid/.test(v)) return 'uuid'
-  if (/timestamp|datetime/.test(v)) return 'datetime'
-  if (/^date$/.test(v)) return 'date'
-  if (/^time/.test(v)) return 'time'
-  if (/bytea|blob|binary/.test(v)) return 'binary'
-  if (/int|num|dec|float|double|real|serial|money|^oid$/.test(v)) return 'number'
-  return 'string'
-}
-const asColumn = (c: QueryColumn): SchemaColumn => ({
-  name: c.name,
-  nativeType: c.type,
-  kind: kindOf(c.type),
-  nullable: true,
-  default: null,
-  isGenerated: false,
-  isPrimaryKey: false,
-  comment: null,
-  enumValues: null,
-})
+const asColumn = resultColumn
 
 const current = computed<StatementResult | null>(() =>
   typeof activeTab.value === 'number' ? (result.value?.statements[activeTab.value] ?? null) : null,
@@ -248,7 +226,6 @@ const timeoutText = computed({
   set: (v) => (queries.timeoutMs = Math.max(1, Math.min(600, Math.floor(Number(v)) || 30)) * 1000),
 })
 
-useHead({ title: () => draft.name || t('query.untitled') })
 </script>
 
 <template>
@@ -360,15 +337,14 @@ useHead({ title: () => draft.name || t('query.untitled') })
         <!-- One result set -->
         <template v-else-if="current">
           <div v-if="current.status === 'ok' && current.columns.length > 0" class="min-h-0 flex-1">
-            <DataGrid
+            <ResultGrid
               :key="`${result?.queryId}-${current.index}`"
+              :connection-id="id"
+              :schema="schemaName"
+              :dialect="dialect"
+              :sql="current.sql"
               :columns="currentColumns"
               :rows="current.rows"
-              :sort="[]"
-              :primary-key="[]"
-              :foreign-keys="[]"
-              :editable="false"
-              :dialect="dialect"
             />
           </div>
           <div v-else-if="current.status === 'ok'" class="p-4 text-sm text-fg-muted" data-write-result>

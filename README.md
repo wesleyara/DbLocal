@@ -73,6 +73,7 @@ example). See the compose file for mounting SQLite files.
 | Variable | Meaning |
 | --- | --- |
 | `DBLOCAL_PASSWORD` | Enables the login page. Unset means no authentication. |
+| `DBLOCAL_ALLOWED_HOSTS` | Extra host names (comma separated) accepted without a password. Loopback names and IP addresses are always accepted. |
 | `DBLOCAL_READONLY` | `1` makes every connection read-only (`--readonly` sets it). |
 | `DBLOCAL_DATA_DIR` | Where `dblocal.db` and `secret.key` live. Default `~/.dblocal`, `/data` in the container. |
 | `DBLOCAL_SECRET` | Encryption key for saved secrets, instead of `<data dir>/secret.key`. |
@@ -85,6 +86,7 @@ DbLocal gives whoever can open it full access to every saved connection. Treat i
 your machine, not like a service.
 
 - It binds to `127.0.0.1` by default. Binding anywhere else without `DBLOCAL_PASSWORD` shows a warning in the app.
+- Without a password it only answers requests addressed to `localhost`, an IP address or a name in `DBLOCAL_ALLOWED_HOSTS` (403 otherwise), so a web page cannot reach it through DNS rebinding.
 - In Docker the server binds to `0.0.0.0` inside the container so the published port works. Publish it on
   `127.0.0.1:5555:5555`; `DBLOCAL_PASSWORD` is optional there, but set it (and add TLS) before exposing the port
   to a network.

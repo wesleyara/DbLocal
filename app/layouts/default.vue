@@ -2,7 +2,7 @@
 import type { PaletteAction } from '~/components/shell/CommandPalette.vue'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
-const { t, locale, locales, setLocale } = useI18n()
+const { t, locale, setLocale } = useI18n()
 const ui = useUiStore()
 const { format } = useShortcuts()
 const route = useRoute()
@@ -26,15 +26,6 @@ useHead({
   htmlAttrs: { lang: () => locale.value },
   title: () => (activeConnection.value ? `${t('app.name')} - ${activeConnection.value.name}` : t('app.name')),
 })
-
-const themes = computed(() => [
-  { value: 'dark', label: t('theme.dark') },
-  { value: 'light', label: t('theme.light') },
-  { value: 'system', label: t('theme.system') },
-])
-const localeOptions = computed(() =>
-  locales.value.map((l) => ({ value: l.code, label: l.name ?? l.code })),
-)
 
 // ---- workspace tabs: the route is the source of truth, the store follows it --------------------
 const workspace = useWorkspaceStore()
@@ -98,7 +89,9 @@ onMounted(() => {
   queries.hydrate()
   mounted.value = true
   syncWorkspace()
+  readResolved()
 })
+watch(() => ui.theme, () => nextTick(readResolved))
 watch(
   () =>
     `${connectionId.value}|${schema.value}|${route.fullPath}|${queries.drafts[route.params.qid as string]?.name ?? ''}`,
@@ -109,12 +102,20 @@ watch(
 const paletteOpen = ref(false)
 const searchOpen = ref(false)
 const cheatSheetOpen = ref(false)
+const settingsOpen = ref(false)
 const pendingStore = usePendingStore()
 const schemaStore = useSchemaStore()
 const hasSchema = computed(() => !!connectionId.value && !!schema.value)
 
+/** What is on screen now, so `system` still toggles to the opposite of what the user sees. */
+const resolvedDark = ref(true)
+function readResolved() {
+  resolvedDark.value = document.documentElement.dataset.theme !== 'light'
+}
+const themeIcon = computed(() => (resolvedDark.value ? 'lucide:sun' : 'lucide:moon'))
 function toggleTheme() {
-  ui.theme = ui.theme === 'dark' ? 'light' : 'dark'
+  ui.theme = resolvedDark.value ? 'light' : 'dark'
+  void nextTick(readResolved)
 }
 function toggleLocale() {
   void setLocale(locale.value === 'en' ? 'pt-BR' : 'en')
@@ -147,6 +148,7 @@ const paletteActions = computed<PaletteAction[]>(() => {
     )
   }
   list.push(
+    { id: 'settings', label: t('settings.title'), icon: 'lucide:settings', run: () => (settingsOpen.value = true) },
     { id: 'theme', label: t('palette.actions.toggleTheme'), icon: 'lucide:sun-moon', keywords: 'dark light', run: toggleTheme },
     { id: 'locale', label: t('palette.actions.switchLanguage'), icon: 'lucide:languages', keywords: 'idioma english português', run: toggleLocale },
     { id: 'sidebar', label: t('shell.toggleSidebar'), icon: 'lucide:panel-left', shortcut: 'nav.sidebar', run: () => (ui.sidebarCollapsed = !ui.sidebarCollapsed) },
@@ -221,25 +223,29 @@ function onResize(e: PointerEvent) {
       {{ t('access.exposedWarning') }}
     </div>
 
-    <header class="flex h-10 shrink-0 items-center gap-2 border-b border-border px-2">
+    <header class="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-bg-subtle px-3">
       <UiIconButton
+        v-if="connectionId"
         icon="lucide:panel-left"
         :label="t('shell.toggleSidebar')"
         @click="ui.sidebarCollapsed = !ui.sidebarCollapsed"
       />
-      <NuxtLink to="/" :title="t('shell.home')" class="text-sm font-semibold hover:text-accent">{{ t('app.name') }}</NuxtLink>
-      <div class="ml-2 flex items-center gap-2">
-        <UiBadge tone="success">{{ t('env.local') }}</UiBadge>
-      </div>
-      <UiButton v-if="connectionId && schema" size="sm" data-new-query @click="newQuery">
-        <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.new') }}
-      </UiButton>
-      <UiButton v-if="connectionId && schema" size="sm" data-open-erd @click="openErd">
-        <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
-      </UiButton>
+      <NuxtLink to="/" :title="t('shell.home')" class="flex items-center gap-2 rounded-md pr-1 text-sm font-semibold hover:text-accent">
+        <UiLogo class="size-6" />
+        <span>{{ t('app.name') }}</span>
+      </NuxtLink>
+      <template v-if="connectionId && schema">
+        <span class="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+        <UiButton size="sm" data-new-query @click="newQuery">
+          <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.new') }}
+        </UiButton>
+        <UiButton size="sm" data-open-erd @click="openErd">
+          <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
+        </UiButton>
+      </template>
       <button
         type="button"
-        class="mx-auto hidden h-7 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-bg-subtle px-2 text-left text-sm text-fg-subtle hover:bg-surface md:flex"
+        class="mx-auto hidden h-8 w-full max-w-md items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
         data-open-palette
         :aria-label="t('palette.title')"
         @click="paletteOpen = true"
@@ -248,23 +254,16 @@ function onResize(e: PointerEvent) {
         <span class="flex-1 truncate">{{ t('shell.search') }}</span>
         <span class="flex gap-0.5"><UiKbd v-for="part in format('mod+k')" :key="part">{{ part }}</UiKbd></span>
       </button>
-      <div class="ml-auto flex items-center gap-2">
-        <UiSelect
-          :model-value="ui.theme"
-          :options="themes"
-          @update:model-value="(v) => v && (ui.theme = v as 'dark' | 'light' | 'system')"
-        />
-        <UiSelect
-          :model-value="locale"
-          :options="localeOptions"
-          @update:model-value="(v) => v && setLocale(v as 'en' | 'pt-BR')"
-        />
+      <div class="ml-auto flex items-center gap-1">
+        <UiIconButton :icon="themeIcon" :label="t('shell.toggleTheme')" data-theme-toggle @click="toggleTheme" />
+        <UiIconButton icon="lucide:keyboard" :label="t('shortcuts.title')" @click="cheatSheetOpen = true" />
+        <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings @click="settingsOpen = true" />
       </div>
     </header>
 
     <div class="flex min-h-0 flex-1" @pointermove="onResize" @pointerup="dragging = false">
       <aside
-        v-if="!ui.sidebarCollapsed"
+        v-if="connectionId && !ui.sidebarCollapsed"
         class="relative hidden shrink-0 flex-col border-r border-border bg-bg-subtle sm:flex"
         :style="{ width: `${ui.sidebarWidth}px` }"
       >
@@ -279,12 +278,6 @@ function onResize(e: PointerEvent) {
           :key="connectionId"
           :connection-id="connectionId"
           :schema="schema"
-        />
-        <UiEmptyState
-          v-else
-          icon="lucide:database"
-          :title="t('shell.noConnection')"
-          :description="t('shell.noConnectionHint')"
         />
         <div
           class="absolute inset-y-0 -right-0.5 w-1 cursor-col-resize hover:bg-accent/50"
@@ -321,6 +314,7 @@ function onResize(e: PointerEvent) {
     />
     <ShellGlobalSearch v-if="connectionId && schema" v-model:open="searchOpen" :connection-id="connectionId" :schema="schema" />
     <ShellShortcutsDialog v-model:open="cheatSheetOpen" />
+    <ShellSettingsDialog v-model:open="settingsOpen" />
     <UiToaster />
   </div>
 </template>

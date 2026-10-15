@@ -35,6 +35,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' }],
       script: [
         {
           // Applies the stored theme before first paint to avoid a flash.

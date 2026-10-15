@@ -36,7 +36,8 @@
       "connected": "Conectado a {name}",
       "readonly": "somente leitura"
     },
-    "home": "Voltar para o início"
+    "home": "Voltar para o início",
+    "toggleTheme": "Alternar tema claro / escuro"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -671,5 +672,23 @@
     "nMatches": "{count} resultado | {count} resultados",
     "firstN": "primeiros {count} resultados",
     "summary": "{count} linhas em {tables} tabelas · {searched} tabelas pesquisadas"
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Preferências deste navegador.",
+    "appearance": "Aparência",
+    "theme": "Tema",
+    "language": "Idioma",
+    "statusBar": "Mostrar a barra de status",
+    "queries": "Editor SQL",
+    "rowLimit": "Limite de linhas por statement",
+    "timeout": "Timeout por statement (segundos)",
+    "reset": "Restaurar padrões"
+  },
+  "home": {
+    "tagline": "Navegue pelos seus bancos através das relações.",
+    "subtitle": "Postgres, MySQL e SQLite, com relações que você segue.",
+    "recent": "Suas conexões",
+    "count": "{count} conexão | {count} conexões"
   }
 }

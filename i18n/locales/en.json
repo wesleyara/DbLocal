@@ -36,7 +36,8 @@
       "connected": "Connected to {name}",
       "readonly": "read-only"
     },
-    "home": "Back to home"
+    "home": "Back to home",
+    "toggleTheme": "Toggle light / dark theme"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -671,5 +672,23 @@
     "nMatches": "{count} match | {count} matches",
     "firstN": "first {count} matches",
     "summary": "{count} rows in {tables} tables · {searched} tables searched"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Preferences for this browser.",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "language": "Language",
+    "statusBar": "Show the status bar",
+    "queries": "SQL editor",
+    "rowLimit": "Row limit per statement",
+    "timeout": "Timeout per statement (seconds)",
+    "reset": "Restore defaults"
+  },
+  "home": {
+    "tagline": "Browse your databases through their relations.",
+    "subtitle": "Postgres, MySQL and SQLite, with relations you can follow.",
+    "recent": "Your connections",
+    "count": "{count} connection | {count} connections"
   }
 }

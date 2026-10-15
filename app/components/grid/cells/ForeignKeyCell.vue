@@ -22,11 +22,14 @@ const props = defineProps<{
 const emit = defineEmits<{ open: [key: RecordKey, newTab: boolean] }>()
 const { t } = useI18n()
 
+/** The key without the `#` prefix `keyLabel` adds. */
+const plainKey = (key: RecordKey): string => keyLabel(key).slice(1)
+
 const isNull = computed(() => props.value === null || props.value === undefined)
 const orphan = computed(() => !isNull.value && props.parent === null)
 const text = computed(() => {
-  if (props.parent) return `${keyLabel(props.parent.key)}${props.parent.label ? ` · ${props.parent.label}` : ''}`
-  return `#${String(props.value)}`
+  if (props.parent) return `${plainKey(props.parent.key)}${props.parent.label ? ` · ${props.parent.label}` : ''}`
+  return String(props.value)
 })
 
 function onClick(event: MouseEvent): void {
@@ -54,7 +57,7 @@ const fields = computed(() =>
   preview.value
     ? Object.entries(preview.value.row)
         .filter(([, v]) => v !== null && typeof v !== 'object')
-        .slice(0, 8)
+        .slice(0, 12)
     : [],
 )
 </script>
@@ -65,9 +68,11 @@ const fields = computed(() =>
     <HoverCardTrigger as-child>
       <button
         type="button"
-        class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-sm border px-1.5 leading-5 hover:bg-accent-soft"
+        class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-sm border px-1.5 leading-5 transition-colors"
         :class="[
-          orphan ? 'border-warning/60 bg-warning-soft text-warning' : 'border-border text-fg',
+          orphan
+            ? 'border-warning/60 bg-warning-soft text-warning'
+            : 'border-accent/40 bg-accent/20 text-fg hover:border-accent/70 hover:bg-accent/35',
           virtual && !orphan && 'border-dashed',
         ]"
         :data-fk-chip="target"
@@ -76,28 +81,31 @@ const fields = computed(() =>
         @mousedown.stop
         @dblclick.stop
       >
-        <Icon :name="orphan ? 'lucide:triangle-alert' : 'lucide:arrow-up-right'" class="size-3 shrink-0" />
+        <Icon v-if="orphan" name="lucide:triangle-alert" class="size-3 shrink-0" />
         <span class="truncate" :class="parent === undefined && 'text-fg-subtle'">{{ text }}</span>
       </button>
     </HoverCardTrigger>
     <HoverCardPortal v-if="parent">
       <HoverCardContent
         :side-offset="6"
-        class="font-data z-50 w-72 rounded-md border border-border bg-surface p-3 text-xs shadow-pop"
+        class="font-data z-50 w-96 max-w-[90vw] overflow-hidden rounded-lg border border-border-strong bg-surface text-xs shadow-pop"
       >
-        <p class="mb-2 flex items-center gap-1 text-fg">
-          <span class="text-fg-subtle">{{ target }}</span>
-          <span>{{ keyLabel(parent.key) }}</span>
-        </p>
-        <p v-if="failed" class="text-danger">{{ t('relations.previewFailed') }}</p>
-        <UiSkeleton v-else-if="!preview" class="h-12" />
-        <dl v-else class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-          <template v-for="[name, v] in fields" :key="name">
-            <dt class="text-fg-subtle">{{ name }}</dt>
-            <dd class="truncate text-fg">{{ v }}</dd>
-          </template>
-        </dl>
-        <p class="mt-2 text-[10px] text-fg-subtle">{{ t('relations.chipHint') }}</p>
+        <header class="flex items-center gap-2 border-b border-border bg-accent/10 px-3 py-2">
+          <Icon name="lucide:table-2" class="size-3.5 shrink-0 text-accent" />
+          <span class="font-medium text-fg">{{ target }}</span>
+          <span class="ml-auto min-w-0 break-all rounded-sm bg-accent/20 px-1.5 py-0.5 text-accent">{{ plainKey(parent.key) }}</span>
+        </header>
+        <div class="max-h-80 overflow-auto px-3 py-2">
+          <p v-if="failed" class="text-danger">{{ t('relations.previewFailed') }}</p>
+          <UiSkeleton v-else-if="!preview" class="h-12" />
+          <dl v-else class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+            <template v-for="[name, v] in fields" :key="name">
+              <dt class="text-fg-subtle">{{ name }}</dt>
+              <dd class="min-w-0 whitespace-pre-wrap break-words text-fg">{{ v }}</dd>
+            </template>
+          </dl>
+        </div>
+        <footer class="border-t border-border bg-bg px-3 py-1.5 text-[10px] text-fg-subtle">{{ t('relations.chipHint') }}</footer>
       </HoverCardContent>
     </HoverCardPortal>
   </HoverCardRoot>

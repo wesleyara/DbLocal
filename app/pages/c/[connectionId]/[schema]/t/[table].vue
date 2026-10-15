@@ -13,6 +13,7 @@ const { t } = useI18n()
 const { number } = useFormat()
 const store = useSchemaStore()
 const structureOpen = ref(false)
+const historyOpen = ref(false)
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, {
   key: `connection-${id}`,
@@ -76,12 +77,13 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
       </div>
 
       <div class="min-h-72 min-w-0 flex-1">
-        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" @structure="structureOpen = true" />
+        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" @structure="structureOpen = true" @history="historyOpen = true" />
       </div>
 
       <UiDialog v-model:open="structureOpen" wide :title="t('tableView.structureTitle', { table: table.name })">
         <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" />
       </UiDialog>
+      <QueryHistoryDialog v-model:open="historyOpen" :connection-id="id" :schema="schemaName" :table="table.name" />
     </section>
   </div>
   <RecordPanel

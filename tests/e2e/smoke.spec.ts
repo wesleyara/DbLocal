@@ -22,21 +22,20 @@ test('locale cookie switches the UI to Portuguese', async ({ page, context }) =>
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
 })
 
-test('language and theme selectors work from the topbar without a reload', async ({ page }) => {
+test('theme and language from the settings dialog apply without a reload', async ({ page }) => {
   await page.goto('/')
-  const [theme, language] = await page.getByRole('combobox').all()
+  await page.locator('[data-open-settings]').click()
+  const settings = page.locator('[data-settings]')
 
-  await theme!.click()
-  await page.getByRole('option', { name: 'Dark' }).click()
+  await settings.getByRole('radio', { name: 'Dark' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(theme!).toHaveText('Dark')
+  await settings.getByRole('radio', { name: 'Light' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 
-  await language!.click()
+  await settings.getByRole('combobox').first().click()
   await page.getByRole('option', { name: 'Português' }).click()
-  await expect(page.getByRole('heading', { name: 'Conexões' })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
-  // The trigger text follows the locale too (it used to keep the old label until a reload).
-  await expect(theme!).toHaveText('Escuro')
+  await expect(settings.getByRole('radio', { name: 'Escuro' })).toBeVisible()
 })
 
 test('the home page hydrates without mismatches', async ({ page }) => {

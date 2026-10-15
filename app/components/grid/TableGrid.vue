@@ -39,7 +39,7 @@ const props = defineProps<{
   /** The saved connection: its read-only flags and environment decide what editing is offered. */
   connection?: Pick<ConnectionView, 'name' | 'environment' | 'readonly' | 'readonlyGlobal'> | null
 }>()
-const emit = defineEmits<{ structure: [] }>()
+const emit = defineEmits<{ structure: []; history: [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const pendingStore = usePendingStore()
@@ -686,6 +686,15 @@ onMounted(() => state.start())
         <template #after-advanced>
           <button
             type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+            data-toggle-structure
+            @click="emit('structure')"
+          >
+            <Icon name="lucide:table-properties" class="size-3" />
+            {{ t('grid.structureToggle') }}
+          </button>
+          <button
+            type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
             :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
             :aria-pressed="ui.gridSql"
@@ -698,11 +707,11 @@ onMounted(() => state.start())
           <button
             type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-            data-toggle-structure
-            @click="emit('structure')"
+            data-toggle-history
+            @click="emit('history')"
           >
-            <Icon name="lucide:table-properties" class="size-3" />
-            {{ t('grid.structureToggle') }}
+            <Icon name="lucide:history" class="size-3" />
+            {{ t('grid.historyToggle') }}
           </button>
         </template>
       </FilterBar>

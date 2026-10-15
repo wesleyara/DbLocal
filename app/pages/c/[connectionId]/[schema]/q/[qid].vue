@@ -199,15 +199,24 @@ async function confirmSave(): Promise<void> {
   void sidePanel.value?.refresh()
 }
 
-async function openFromPanel(p: { sql: string; savedId?: string; name?: string }): Promise<void> {
+async function openFromPanel(p: { sql: string; savedId?: string; name?: string }, run = false): Promise<void> {
   // A saved query or history entry opens in the current tab when it is empty, otherwise in a new one.
+  // With `run`, the statement executes in the tab where it ends up, so its result is the one on screen.
   if (!draft.sql.trim()) {
     Object.assign(draft, { sql: p.sql, savedId: p.savedId ?? null, name: p.name ?? '', savedSql: p.savedId ? p.sql : null })
+    if (run) void runCurrent(p.sql)
     return
   }
   const newId = queries.create({ sql: p.sql, savedId: p.savedId ?? null, name: p.name ?? '', savedSql: p.savedId ? p.sql : null })
-  await navigateTo(`/c/${id}/${encodeURIComponent(schemaName)}/q/${newId}`)
+  await navigateTo({ path: `/c/${id}/${encodeURIComponent(schemaName)}/q/${newId}`, query: run ? { run: '1' } : undefined })
 }
+
+// A tab opened by "Run again" runs its statement once it is mounted, then drops the flag from the URL.
+onMounted(() => {
+  if (route.query.run !== '1') return
+  void navigateTo({ path: route.path, query: {} }, { replace: true })
+  if (draft.sql.trim()) void runCurrent(draft.sql)
+})
 
 // ---- layout: editor / results split ------------------------------------------------------------
 const split = ref(45)
@@ -378,7 +387,7 @@ const timeoutText = computed({
       :connection-id="id"
       :active-saved-id="draft.savedId"
       @open="openFromPanel"
-      @rerun="(sql) => { openFromPanel({ sql }); void runCurrent(sql) }"
+      @rerun="(sql) => openFromPanel({ sql }, true)"
     />
 
     <UiDialog :open="!!pendingConfirm" :title="t('query.confirmTitle')" :description="t('query.confirmProd')" @update:open="(v) => !v && (pendingConfirm = null)">

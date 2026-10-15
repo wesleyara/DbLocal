@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ConnectionStringError, parseConnectionString } from './connection-string'
+import { ConnectionStringError, connectionNameFor, detectDialect, parseConnectionString } from './connection-string'
 
 describe('parseConnectionString', () => {
   it('parses postgres URLs, decoding credentials', () => {
@@ -38,5 +38,28 @@ describe('parseConnectionString', () => {
 
   it('rejects malformed input', () => {
     expect(() => parseConnectionString('postgres', 'not a url')).toThrow(ConnectionStringError)
+  })
+})
+
+describe('detectDialect / connectionNameFor', () => {
+  it('detects the dialect from the scheme', () => {
+    expect(detectDialect('postgres://u@h/db')).toBe('postgres')
+    expect(detectDialect('postgresql://u@h/db')).toBe('postgres')
+    expect(detectDialect('mysql://u@h/db')).toBe('mysql')
+    expect(detectDialect('libsql://db-org.turso.io?authToken=x')).toBe('sqlite')
+    expect(detectDialect('./data/app.sqlite')).toBe('sqlite')
+    expect(detectDialect('sqlite:///tmp/a.db')).toBe('sqlite')
+  })
+
+  it('rejects unknown schemes', () => {
+    expect(() => detectDialect('mongodb://h/db')).toThrow(ConnectionStringError)
+  })
+
+  it('names connections without leaking the password', () => {
+    const parsed = parseConnectionString('postgres', 'postgres://app:secret@db.local:6543/shop')
+    const name = connectionNameFor('postgres', parsed)
+    expect(name).toBe('shop@db.local:6543')
+    expect(name).not.toContain('secret')
+    expect(connectionNameFor('sqlite', { filePath: '/tmp/x/app.sqlite' })).toBe('app.sqlite')
   })
 })

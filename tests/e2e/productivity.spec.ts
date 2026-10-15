@@ -1,7 +1,12 @@
 import Database from 'better-sqlite3'
 import { mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+/** Shortcuts are registered on hydration: pressing a key before that is lost. */
+async function hydrated(page: Page): Promise<void> {
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+}
 
 const dir = join(process.cwd(), '.data', 'e2e-productivity')
 const file = join(dir, 'prod.sqlite')
@@ -34,6 +39,7 @@ const home = () => `/c/${connectionId}/main`
 
 test('⌘K opens a table by typing and Enter', async ({ page }) => {
   await page.goto(home())
+  await hydrated(page)
   await page.keyboard.press('Control+k')
   const input = page.locator('[data-palette-input]')
   await expect(input).toBeFocused()
@@ -44,6 +50,7 @@ test('⌘K opens a table by typing and Enter', async ({ page }) => {
 
 test('#table pk goes straight to the record', async ({ page }) => {
   await page.goto(home())
+  await hydrated(page)
   await page.keyboard.press('Control+k')
   await page.locator('[data-palette-input]').fill('#users 42')
   await page.keyboard.press('Enter')
@@ -53,6 +60,7 @@ test('#table pk goes straight to the record', async ({ page }) => {
 
 test('? shows the cheat sheet and Escape closes it', async ({ page }) => {
   await page.goto(`${home()}/t/users`)
+  await hydrated(page)
   await page.getByRole('columnheader', { name: /email/ }).waitFor()
   await page.keyboard.press('?')
   await expect(page.locator('[data-shortcuts-sheet]')).toBeVisible()
@@ -62,6 +70,7 @@ test('? shows the cheat sheet and Escape closes it', async ({ page }) => {
 
 test('global search finds an e-mail across tables', async ({ page }) => {
   await page.goto(`${home()}/t/users`)
+  await hydrated(page)
   await page.keyboard.press('Control+Shift+f')
   await page.locator('[data-search-input]').fill('zelia@example.com')
   await page.keyboard.press('Enter')

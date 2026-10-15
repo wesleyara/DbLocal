@@ -530,5 +530,33 @@
       "rows": "rows",
       "time": "time"
     }
+  },
+  "erd": {
+    "open": "Diagram",
+    "title": "Diagram",
+    "search": "Find a table…",
+    "focusing": "Around {table}",
+    "hopsOption": "{count} hops",
+    "showAll": "Show all",
+    "showNeighbourhood": "Show only tables near {table}",
+    "stats": "{tables} tables · {relations} relations",
+    "resetLayout": "Reset layout",
+    "layoutReset": "Layout reset",
+    "layoutFailed": "Could not compute the layout",
+    "saveFailed": "Could not save the layout",
+    "exportFailed": "Could not export the diagram",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to screen",
+    "primaryKey": "Primary key",
+    "foreignKey": "Foreign key",
+    "moreColumns": "+{count} more columns",
+    "newRelation": "New virtual relation",
+    "newRelationHint": "Creates a relation that exists only in DbLocal; the database is not changed.",
+    "relationName": "Name (optional)",
+    "dropOnColumn": "Drop on a column of another table",
+    "linkFailed": "Could not create the relation",
+    "loadFailed": "Could not load the schema",
+    "empty": "This schema has no tables"
   }
 }

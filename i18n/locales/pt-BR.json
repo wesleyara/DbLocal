@@ -530,5 +530,33 @@
       "rows": "linhas",
       "time": "tempo"
     }
+  },
+  "erd": {
+    "open": "Diagrama",
+    "title": "Diagrama",
+    "search": "Buscar tabela…",
+    "focusing": "Em torno de {table}",
+    "hopsOption": "{count} saltos",
+    "showAll": "Mostrar tudo",
+    "showNeighbourhood": "Mostrar só as tabelas perto de {table}",
+    "stats": "{tables} tabelas · {relations} relações",
+    "resetLayout": "Resetar layout",
+    "layoutReset": "Layout resetado",
+    "layoutFailed": "Não foi possível calcular o layout",
+    "saveFailed": "Não foi possível salvar o layout",
+    "exportFailed": "Não foi possível exportar o diagrama",
+    "zoomIn": "Aumentar zoom",
+    "zoomOut": "Diminuir zoom",
+    "fit": "Ajustar à tela",
+    "primaryKey": "Chave primária",
+    "foreignKey": "Chave estrangeira",
+    "moreColumns": "+{count} colunas",
+    "newRelation": "Nova relação virtual",
+    "newRelationHint": "Cria uma relação que existe só no DbLocal; o banco não é alterado.",
+    "relationName": "Nome (opcional)",
+    "dropOnColumn": "Solte sobre uma coluna de outra tabela",
+    "linkFailed": "Não foi possível criar a relação",
+    "loadFailed": "Não foi possível carregar o schema",
+    "empty": "Este schema não tem tabelas"
   }
 }

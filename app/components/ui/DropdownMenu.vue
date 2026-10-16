@@ -25,7 +25,7 @@ defineProps<{ items: MenuItem[] }>()
       <DropdownMenuContent
         :side-offset="4"
         align="end"
-        class="z-50 min-w-40 rounded-md border border-border bg-surface p-1 shadow-pop"
+        class="ui-popup-scroll z-50 max-h-[min(24rem,var(--reka-dropdown-menu-content-available-height))] min-w-40 max-w-[min(20rem,var(--reka-dropdown-menu-content-available-width))] rounded-md border border-border bg-surface p-1 shadow-pop"
       >
         <template v-for="(item, i) in items" :key="i">
           <DropdownMenuSeparator v-if="item.separator" class="my-1 h-px bg-border" />
@@ -35,8 +35,8 @@ defineProps<{ items: MenuItem[] }>()
             :class="item.danger ? 'text-danger' : 'text-fg'"
             @select="item.onSelect?.()"
           >
-            <Icon v-if="item.icon" :name="item.icon" class="size-4" />
-            {{ item.label }}
+            <Icon v-if="item.icon" :name="item.icon" class="size-4 shrink-0" />
+            <span class="min-w-0 truncate" :title="item.label">{{ item.label }}</span>
           </DropdownMenuItem>
         </template>
       </DropdownMenuContent>

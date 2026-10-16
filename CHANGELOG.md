@@ -4,6 +4,11 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-16
+
+### Fixed
+- **ui:** keep select, combobox and menu popups inside the viewport
+
 ## [1.0.0] - 2026-10-16
 
 ### Added

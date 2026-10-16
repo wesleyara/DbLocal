@@ -96,15 +96,17 @@ const fields = computed(() =>
           <span class="font-medium text-fg">{{ target }}</span>
           <span class="ml-auto min-w-0 break-all rounded-sm bg-accent/20 px-1.5 py-0.5 text-accent">{{ plainKey(parent.key) }}</span>
         </header>
-        <div class="max-h-80 overflow-auto px-3 py-2">
-          <p v-if="failed" class="text-danger">{{ t('relations.previewFailed') }}</p>
-          <UiSkeleton v-else-if="!preview" class="h-12" />
-          <dl v-else class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
-            <template v-for="[name, v] in fields" :key="name">
-              <dt class="text-fg-subtle">{{ name }}</dt>
-              <dd class="min-w-0 whitespace-pre-wrap break-words text-fg">{{ v }}</dd>
-            </template>
-          </dl>
+        <div class="max-h-80 overflow-auto">
+          <p v-if="failed" class="px-3 py-2 text-danger">{{ t('relations.previewFailed') }}</p>
+          <UiSkeleton v-else-if="!preview" class="m-3 h-12" />
+          <table v-else class="w-full table-fixed border-collapse">
+            <tbody>
+              <tr v-for="[name, v] in fields" :key="name" class="border-b border-border last:border-b-0">
+                <th class="w-2/5 border-r border-border px-3 py-1.5 text-left align-top font-normal text-fg-subtle [overflow-wrap:anywhere]">{{ name }}</th>
+                <td class="px-3 py-1.5 align-top whitespace-pre-wrap text-fg [overflow-wrap:anywhere]">{{ v }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <footer class="border-t border-border bg-bg px-3 py-1.5 text-[10px] text-fg-subtle">{{ t('relations.chipHint') }}</footer>
       </HoverCardContent>

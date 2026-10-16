@@ -391,6 +391,7 @@
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",
+    "noRecord": "—",
     "previewFailed": "Não foi possível carregar a prévia",
     "chipHint": "Clique para abrir. Ctrl/⌘+clique abre em nova aba.",
     "scopeChip": "{target} de {table} {key}",

@@ -32,9 +32,11 @@
     "noTable": "Nenhuma tabela selecionada",
     "noTableHint": "Escolha uma tabela na barra lateral para ver os dados.",
     "status": {
-      "disconnected": "Desconectado",
+      "disconnected": "Nenhuma conexão aberta",
       "connected": "Conectado a {name}",
-      "readonly": "somente leitura"
+      "readonly": "somente leitura",
+      "connecting": "Conectando a {name}…",
+      "failed": "Sem conexão com {name}"
     },
     "home": "Voltar para o início",
     "toggleTheme": "Alternar tema claro / escuro"
@@ -184,7 +186,8 @@
       "choose": "Selecionar",
       "allFiles": "Mostrar todos os arquivos",
       "hidden": "Mostrar ocultos"
-    }
+    },
+    "retry": "Tentar novamente"
   },
   "schema": {
     "label": "Schema",

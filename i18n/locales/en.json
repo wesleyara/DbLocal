@@ -32,9 +32,11 @@
     "noTable": "No table selected",
     "noTableHint": "Pick a table from the sidebar to see its data.",
     "status": {
-      "disconnected": "Not connected",
+      "disconnected": "No connection open",
       "connected": "Connected to {name}",
-      "readonly": "read-only"
+      "readonly": "read-only",
+      "connecting": "Connecting to {name}…",
+      "failed": "Could not connect to {name}"
     },
     "home": "Back to home",
     "toggleTheme": "Toggle light / dark theme"
@@ -184,7 +186,8 @@
       "choose": "Select",
       "allFiles": "Show all files",
       "hidden": "Show hidden"
-    }
+    },
+    "retry": "Try again"
   },
   "schema": {
     "label": "Schema",

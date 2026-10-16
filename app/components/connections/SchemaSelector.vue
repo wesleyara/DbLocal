@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { NamespaceList } from '#shared/types/connection'
 import { isSystemNamespace } from '#shared/system-namespaces'
+import { useSchemaStore } from '~/stores/schema'
 
 const props = defineProps<{ connectionId: string; current?: string }>()
 const { t } = useI18n()
@@ -9,11 +9,14 @@ const toast = useToast()
 
 const showSystem = ref(false)
 
-// Same key as the workspace routes, so the namespace list is fetched once per connection.
-const { data: namespaces, error } = await useFetch<NamespaceList>(
-  `/api/connections/${props.connectionId}/connect`,
-  { method: 'POST', key: `namespaces-${props.connectionId}` },
-)
+const { data: namespaces, error, status, refresh } = await useNamespaces(props.connectionId)
+const store = useSchemaStore()
+
+/** Connects again and, once it works, reloads the table tree that failed with it. */
+async function retry() {
+  await refresh()
+  if (!error.value && props.current) await store.load(props.connectionId, props.current).catch(() => {})
+}
 
 const options = computed(() => {
   const dialect = namespaces.value?.dialect
@@ -45,7 +48,7 @@ const selected = computed({
 
 <template>
   <div class="flex flex-col gap-2 p-2">
-    <p v-if="error" class="text-xs text-danger" role="alert">{{ message(error) }}</p>
+    <ConnectionsConnectError v-if="error" :error="error" :retrying="status === 'pending'" @retry="retry" />
     <template v-else>
       <label class="grid gap-1 text-xs text-fg-muted">
         {{ label }}

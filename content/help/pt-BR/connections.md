@@ -42,6 +42,12 @@ Na aba **Avançado**, marque a conexão como `staging` ou `prod` para ver uma fa
 
 Ao abrir uma conexão, a sidebar lista os schemas (Postgres) ou bancos (MySQL e SQLite). Os schemas do sistema ficam ocultos até você ativar **Mostrar schemas do sistema**. O schema escolhido fica lembrado na conexão.
 
+## Status da conexão {#connection-status}
+
+A barra de status no canto inferior esquerdo mostra a conexão aberta: ponto pulsando enquanto o DbLocal está **conectando**, verde quando está **conectado**, vermelho quando **não conseguiu conectar**. Em seguida vêm o dialeto e a marca *somente leitura*.
+
+Quando a conexão falha, a sidebar mostra o motivo em um único cartão: a causa (usuário ou senha incorretos, servidor inacessível, tempo esgotado...) e, em fonte mono, a mensagem do próprio servidor (por exemplo `connect ECONNREFUSED 127.0.0.1:5432`). Corrija o que ela indica (suba o banco, confira host, porta ou credenciais) e clique em **Tentar novamente**, no cartão ou na barra de status; não é preciso recarregar a página.
+
 ## Turso (libSQL)
 
 Escolha **SQLite / Turso**, defina *Local* como **Turso (remoto)** e informe a URL do banco (`libsql://meu-db-org.turso.io`) e um token de autenticação, ou cole `libsql://...?authToken=...` no campo de connection string. O token é guardado criptografado e nunca é exibido de novo. Um statement em execução não pode ser cancelado no servidor: *Cancelar* apenas para de esperar por ele.

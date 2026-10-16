@@ -10,6 +10,8 @@ const { number: formatNumber } = useFormat()
 const { message } = useConnectionErrors()
 const toast = useToast()
 const store = useSchemaStore()
+// Shared with the schema selector above: when the connection itself fails, that card already says why.
+const { error: connectError } = useNamespaces(props.connectionId)
 
 const query = ref('')
 const expanded = ref(new Set<string>())
@@ -236,7 +238,7 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
       <UiIconButton icon="lucide:link-2" :label="t('schemaTree.addVirtual')" size="sm" @click="addOpen = true" />
     </div>
 
-    <p v-if="store.error" class="px-2 pt-2 text-xs text-danger" role="alert">{{ message(store.error) }}</p>
+    <p v-if="store.error && !connectError" class="px-2 pt-2 text-xs text-danger" role="alert">{{ message(store.error) }}</p>
 
     <div
       role="tree"

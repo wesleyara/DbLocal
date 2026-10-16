@@ -40,7 +40,16 @@ export const useSchemaStore = defineStore('schema', () => {
         `/api/c/${id}/virtual-relations${schemaQuery(res.snapshot.schema)}`,
       )
     } catch (err) {
-      error.value = err
+      // Only the response body: a FetchError instance cannot be serialised into the SSR payload.
+      error.value = { data: (err as { data?: unknown }).data ?? null }
+      // Another connection's or schema's tables must not stay on screen under this one's error.
+      if (connectionId.value !== id || (name !== null && schema.value !== name)) {
+        connectionId.value = id
+        schema.value = name
+        snapshot.value = null
+        graph.value = null
+        virtual.value = []
+      }
       throw err
     } finally {
       loading.value = false

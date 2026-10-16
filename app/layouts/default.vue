@@ -231,7 +231,7 @@ function onResize(e: PointerEvent) {
       {{ t('access.exposedWarning') }}
     </div>
 
-    <header class="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-bg-subtle px-3">
+    <header class="relative flex h-11 shrink-0 items-center gap-2 border-b border-border bg-bg-subtle px-3">
       <UiIconButton
         v-if="connectionId"
         icon="lucide:panel-left"
@@ -253,7 +253,7 @@ function onResize(e: PointerEvent) {
       </template>
       <button
         type="button"
-        class="mx-auto hidden h-8 w-full max-w-md items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
+        class="absolute left-1/2 hidden h-8 w-[min(28rem,34vw)] -translate-x-1/2 items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
         data-open-palette
         data-tour="palette"
         :aria-label="t('palette.title')"
@@ -310,19 +310,18 @@ function onResize(e: PointerEvent) {
       v-if="ui.statusBar"
       class="font-data flex h-6 shrink-0 items-center gap-3 border-t border-border bg-bg-subtle px-3 text-xs text-fg-subtle"
     >
-      <span
-        class="size-2 shrink-0 rounded-full"
-        :class="activeConnection ? 'bg-success' : 'bg-fg-subtle'"
-        role="img"
-        :aria-label="activeConnection ? t('shell.status.connected', { name: activeConnection.name }) : t('shell.status.disconnected')"
-        data-status-dot
+      <ShellConnectionStatus
+        v-if="connectionId && activeConnection"
+        :key="connectionId"
+        :connection-id="connectionId"
+        :name="activeConnection.name"
+        :dialect="activeConnection.dialect"
+        :readonly="activeConnection.readonly"
       />
-      <template v-if="activeConnection">
-        <span>{{ t('shell.status.connected', { name: activeConnection.name }) }}</span>
-        <span>{{ activeConnection.dialect }}</span>
-        <span v-if="activeConnection.readonly" class="text-warning">{{ t('shell.status.readonly') }}</span>
+      <template v-else>
+        <span class="size-2 shrink-0 rounded-full bg-fg-subtle" role="img" :aria-label="t('shell.status.disconnected')" data-status-dot />
+        <span>{{ t('shell.status.disconnected') }}</span>
       </template>
-      <span v-else>{{ t('shell.status.disconnected') }}</span>
     </footer>
     <ShellCommandPalette
       v-model:open="paletteOpen"

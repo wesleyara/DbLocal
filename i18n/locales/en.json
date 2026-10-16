@@ -391,6 +391,7 @@
   },
   "relations": {
     "orphan": "No matching record in {target}",
+    "noRecord": "—",
     "previewFailed": "Could not load the preview",
     "chipHint": "Click to open. Ctrl/⌘+click opens in a new tab.",
     "scopeChip": "{target} of {table} {key}",

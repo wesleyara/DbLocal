@@ -143,6 +143,16 @@ export async function resolveRelations(
       continue
     }
 
+    // Inverse 1:1: at most one related record, so the chip shows it (like the FK side) next to the count.
+    if (ref.cardinality === 'one-to-one' && !ref.via) {
+      const found = await readSummaries(driver, snapshot, graph, ref.target, ref.targetColumns, wanted)
+      req.rows.forEach((_, i) => {
+        const v = values[i]
+        const summary = v ? found.get(tupleId(v)) : undefined
+        if (summary) result[i]!.parents[ref.name] = summary
+      })
+    }
+
     const counts = await readCounts(driver, snapshot, graph, ref, wanted)
     req.rows.forEach((_, i) => {
       const v = values[i]

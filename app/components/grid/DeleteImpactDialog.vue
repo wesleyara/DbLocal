@@ -69,6 +69,12 @@ watch(open, (isOpen) => isOpen && void load())
 
 const blocking = computed(() => impacts.value.some((i) => i.action === 'restrict' || i.action === 'no action'))
 
+const isBlocking = (i: Impact) => i.action === 'restrict' || i.action === 'no action'
+/** Blocking relations first, then the most records. */
+const sorted = computed(() =>
+  [...impacts.value].sort((x, y) => Number(isBlocking(y)) - Number(isBlocking(x)) || y.count - x.count),
+)
+
 const ACTION_KEY: Record<string, string> = {
   cascade: 'cascade',
   restrict: 'restrict',
@@ -91,22 +97,43 @@ const TONE: Record<string, string> = {
     v-model:open="open"
     :title="t('edit.deleteTitle', { count: keys.length })"
     :description="t('edit.deleteBody', { table })"
+    wide
   >
     <UiSkeleton v-if="loading" class="h-10" />
     <p v-else-if="failed" class="text-xs text-warning">{{ t('edit.impactFailed') }}</p>
     <p v-else-if="impacts.length === 0" class="text-sm text-fg-muted" data-impact-none>{{ t('edit.impactNone') }}</p>
-    <ul v-else class="grid gap-1" data-impact-list>
-      <li
-        v-for="impact in impacts"
-        :key="impact.name"
-        class="font-data flex min-w-0 items-center gap-2 rounded-md border border-border px-2 py-1 text-xs"
+    <div v-else class="grid gap-2">
+      <ul class="grid max-h-80 gap-2 overflow-auto" data-impact-list>
+        <li
+          v-for="impact in sorted"
+          :key="impact.name"
+          class="grid gap-1 rounded-md border bg-bg-subtle px-3 py-2"
+          :class="isBlocking(impact) ? 'border-danger/50' : 'border-border'"
+        >
+          <div class="flex min-w-0 items-center justify-between gap-3">
+            <span class="font-data min-w-0 break-all text-sm text-fg">{{ impact.target }}</span>
+            <span class="shrink-0 rounded-full bg-surface px-2 py-0.5 text-xs tabular-nums text-fg">
+              {{ t('edit.impactCount', { count: impact.count }) }}
+            </span>
+          </div>
+          <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <span class="font-data min-w-0 break-all text-xs text-fg-subtle">{{ impact.name }}</span>
+            <span class="inline-flex shrink-0 items-center gap-1 text-xs" :class="TONE[actionKey(impact.action)]">
+              <Icon :name="isBlocking(impact) ? 'lucide:ban' : 'lucide:info'" class="size-3.5" />
+              {{ t(`edit.action.${actionKey(impact.action)}`) }}
+            </span>
+          </div>
+        </li>
+      </ul>
+      <p
+        v-if="blocking"
+        class="flex items-start gap-2 rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-xs text-danger"
+        role="alert"
       >
-        <span class="min-w-0 flex-1 truncate text-fg">{{ impact.name }}</span>
-        <span class="tabular-nums text-fg-muted">{{ t('edit.impactCount', { count: impact.count }) }}</span>
-        <span :class="TONE[actionKey(impact.action)]">{{ t(`edit.action.${actionKey(impact.action)}`) }}</span>
-      </li>
-    </ul>
-    <p v-if="blocking" class="mt-2 text-xs text-danger" role="alert">{{ t('edit.impactBlocks') }}</p>
+        <Icon name="lucide:triangle-alert" class="mt-0.5 size-4 shrink-0" />
+        {{ t('edit.impactBlocks') }}
+      </p>
+    </div>
     <template #footer>
       <UiButton size="sm" variant="secondary" @click="open = false">{{ t('common.cancel') }}</UiButton>
       <UiButton size="sm" variant="danger" data-confirm-delete @click="(open = false), emit('confirm')">{{ t('edit.markDelete') }}</UiButton>

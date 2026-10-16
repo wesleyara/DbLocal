@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ConnectionView, NamespaceList } from '#shared/types/connection'
+import type { ConnectionView } from '#shared/types/connection'
 import { isSystemNamespace } from '#shared/system-namespaces'
 
 const route = useRoute()
@@ -11,10 +11,7 @@ const { message } = useConnectionErrors()
 const { data: view, error: viewError } = await useFetch<ConnectionView>(`/api/connections/${id}`, {
   key: `connection-${id}`,
 })
-const { data: namespaces, error: connectError } = await useFetch<NamespaceList>(
-  `/api/connections/${id}/connect`,
-  { method: 'POST', key: `namespaces-${id}` },
-)
+const { data: namespaces, error: connectError } = await useNamespaces(id)
 
 /** Last schema the user picked, else the first non-system namespace, else the first one. */
 const target = computed(() => {

@@ -42,6 +42,12 @@ In **Advanced**, mark a connection as `staging` or `prod` to get a coloured stri
 
 When you open a connection, the sidebar lists its schemas (Postgres) or databases (MySQL and SQLite). System schemas stay hidden until you turn on **Show system schemas**. The schema you pick is remembered for the connection.
 
+## Connection status {#connection-status}
+
+The status bar at the bottom left shows the open connection: a pulsing dot while DbLocal is **connecting**, green once it is **connected**, red when it **could not connect**. The dialect and a *read-only* tag follow.
+
+When a connection fails, the sidebar shows why in one card: the reason (wrong user or password, server unreachable, timeout...) and, in monospace, the server's own message (for example `connect ECONNREFUSED 127.0.0.1:5432`). Fix what it points at (start the database, check host, port or credentials) and click **Try again**, in the card or in the status bar; there is no need to reload the page.
+
 ## Turso (libSQL)
 
 Choose **SQLite / Turso**, set *Location* to **Turso (remote)** and enter the database URL (`libsql://my-db-org.turso.io`) and an auth token, or paste `libsql://...?authToken=...` in the connection string field. The token is stored encrypted and never shown again. A running statement cannot be cancelled on the server: *Cancel* only stops waiting for it.

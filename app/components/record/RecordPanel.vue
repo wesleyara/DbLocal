@@ -368,16 +368,16 @@ function onKeydown(event: KeyboardEvent): void {
         <!-- Fields. -->
         <section class="mb-4">
           <h3 class="mb-1 text-xs font-medium uppercase tracking-wide text-fg-subtle">{{ t('record.fields') }}</h3>
-          <dl class="font-data grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+          <dl class="font-data grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] overflow-hidden rounded-md border border-border text-xs [&>*:nth-last-child(-n+2)]:border-b-0">
             <template v-for="column in tableInfo?.columns ?? []" :key="column.name">
-              <dt class="min-w-0 truncate pt-1 text-fg-muted" :title="`${column.name}: ${column.nativeType}`">
+              <dt class="min-w-0 border-r border-b border-border px-2 py-1.5 text-fg-muted [overflow-wrap:anywhere]" :title="`${column.name}: ${column.nativeType}`">
                 <Icon v-if="column.isPrimaryKey" name="lucide:key-round" class="mr-0.5 inline size-3 text-warning" />
                 {{ column.name }}
-                <span class="block truncate text-[10px] text-fg-subtle">{{ column.nativeType }}</span>
+                <span class="block text-[10px] text-fg-subtle">{{ column.nativeType }}</span>
               </dt>
               <dd
-                class="group/field flex min-w-0 items-start gap-1 break-words text-fg"
-                :class="[changed(column) && 'border-l-2 border-warning bg-warning-soft pl-1', isDeleted && 'line-through opacity-60']"
+                class="group/field flex min-w-0 items-start gap-1 border-b border-border px-2 py-1.5 text-fg [overflow-wrap:anywhere]"
+                :class="[changed(column) && 'border-l-2 border-l-warning bg-warning-soft', isDeleted && 'line-through opacity-60']"
                 :title="changed(column) ? t('edit.was', { value: String(data.row[column.name] ?? 'NULL') }) : undefined"
                 :data-field="column.name"
               >

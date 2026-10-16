@@ -26,6 +26,8 @@ Uma célula alterada fica destacada, e passar o mouse mostra o valor que ela tin
 
 **Adicionar registro** coloca uma linha nova no topo do grid. Colunas que você não tocar usam o default do banco, mostrado como `DEFAULT`. No painel de registro, **Criar** numa relação *Has many* abre a tabela filha com uma linha nova cuja chave estrangeira já aponta para o registro.
 
+A caixa de seleção da coluna da esquerda marca uma linha; a do cabeçalho marca todas as carregadas. Uma barra mostra quantas estão marcadas, com **Excluir selecionadas** (com a mesma checagem de impacto) e **Limpar**. O número da linha continua abrindo o registro.
+
 Apertar **Delete** (ou *Excluir linha*) nas linhas selecionadas mostra antes o que depende delas: as relações um-para-muitos que apontam para as linhas, quantos registros cada uma tem e o que a chave estrangeira faz (`CASCADE` remove também, `RESTRICT` bloqueia a exclusão). As linhas ficam riscadas até você salvar.
 
 ## Salvando {#saving}

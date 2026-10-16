@@ -32,9 +32,11 @@
     "noTable": "No table selected",
     "noTableHint": "Pick a table from the sidebar to see its data.",
     "status": {
-      "disconnected": "Not connected",
+      "disconnected": "No connection open",
       "connected": "Connected to {name}",
-      "readonly": "read-only"
+      "readonly": "read-only",
+      "connecting": "Connecting to {name}…",
+      "failed": "Could not connect to {name}"
     },
     "home": "Back to home",
     "toggleTheme": "Toggle light / dark theme"
@@ -184,7 +186,8 @@
       "choose": "Select",
       "allFiles": "Show all files",
       "hidden": "Show hidden"
-    }
+    },
+    "retry": "Try again"
   },
   "schema": {
     "label": "Schema",
@@ -285,6 +288,10 @@
     "historyThisTable": "Only {table}"
   },
   "grid": {
+    "selectAll": "Select all rows",
+    "selectRow": "Select row",
+    "checked": "{count} selected",
+    "clearChecked": "Clear",
     "structureToggle": "Structure",
     "sqlToggle": "Show SQL",
     "sqlEdited": "Edited: Run executes your SQL here",
@@ -391,6 +398,7 @@
   },
   "relations": {
     "orphan": "No matching record in {target}",
+    "noRecord": "—",
     "previewFailed": "Could not load the preview",
     "chipHint": "Click to open. Ctrl/⌘+click opens in a new tab.",
     "scopeChip": "{target} of {table} {key}",
@@ -443,6 +451,7 @@
     "setDefault": "Set DEFAULT",
     "undoRow": "Undo changes of this row",
     "duplicateRow": "Duplicate row",
+    "deleteRows": "Delete selected",
     "deleteRow": "Delete row",
     "restoreRow": "Restore row",
     "createRelated": "Create {target}",

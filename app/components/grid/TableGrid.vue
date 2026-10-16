@@ -419,6 +419,19 @@ function openParent(ref: RelationRef, key: Record<string, string | number>, labe
   void nav.openRecord(ref.target, key, label, newTab)
 }
 
+/** The single related record of an inverse 1:1, once resolved. */
+function inverseOneOf(ref: RelationRef, row: unknown) {
+  if (ref.cardinality !== 'one-to-one') return undefined
+  return relations.get(asRow(row))?.parents[ref.name] ?? undefined
+}
+
+/** Inverse 1:1 with a record opens it directly; everything else opens the scoped table. */
+function openChild(ref: RelationRef, row: Record<string, unknown>, count: number | undefined, newTab: boolean): void {
+  const record = inverseOneOf(ref, row)
+  if (record) void nav.openRecord(ref.target, record.key, record.label, newTab)
+  else openChildren(ref, row, count, newTab)
+}
+
 function openChildren(ref: RelationRef, row: Record<string, unknown>, count: number | undefined, newTab: boolean): void {
   const key = rowKey(primaryKey.value, row)
   if (!key) return
@@ -939,8 +952,9 @@ onMounted(() => state.start())
             :count="asCount(value)"
             :noun="childByColumn.get(column)!.target"
             :virtual="childByColumn.get(column)!.virtual"
+            :related="inverseOneOf(childByColumn.get(column)!, row)"
             :preview="previewOf(childByColumn.get(column)!, row)"
-            @open="(newTab) => openChildren(childByColumn.get(column)!, asRow(row), asCount(value), newTab)"
+            @open="(newTab) => openChild(childByColumn.get(column)!, asRow(row), asCount(value), newTab)"
           />
           <CellValue v-else :value="value" :kind="table.columns.find((c) => c.name === column)?.kind ?? 'other'" />
         </template>

@@ -4,6 +4,16 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-16
+
+### Added
+- **grid:** row checkboxes in the gutter and a clearer delete impact dialog
+- **grid:** show the related record on the inverse side of 1:1 relations
+
+### Fixed
+- **connections:** clearer connection errors and a status bar that follows the connect call
+- **shell:** drop the clipped focus ring in the palette and centre the search field
+
 ## [0.1.5] - 2026-10-15
 
 ### Fixed

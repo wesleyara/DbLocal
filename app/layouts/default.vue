@@ -231,7 +231,7 @@ function onResize(e: PointerEvent) {
       {{ t('access.exposedWarning') }}
     </div>
 
-    <header class="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-bg-subtle px-3">
+    <header class="relative flex h-11 shrink-0 items-center gap-2 border-b border-border bg-bg-subtle px-3">
       <UiIconButton
         v-if="connectionId"
         icon="lucide:panel-left"
@@ -253,7 +253,7 @@ function onResize(e: PointerEvent) {
       </template>
       <button
         type="button"
-        class="mx-auto hidden h-8 w-full max-w-md items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
+        class="absolute left-1/2 hidden h-8 w-[min(28rem,34vw)] -translate-x-1/2 items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
         data-open-palette
         data-tour="palette"
         :aria-label="t('palette.title')"

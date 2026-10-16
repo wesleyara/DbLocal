@@ -294,7 +294,7 @@ const optionId = (i: number) => `palette-option-${i}`
           <input
             v-model="input"
             data-palette-input
-            class="h-11 w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-subtle"
+            class="h-11 w-full bg-transparent text-sm text-fg outline-none! placeholder:text-fg-subtle"
             role="combobox"
             aria-expanded="true"
             aria-controls="palette-list"

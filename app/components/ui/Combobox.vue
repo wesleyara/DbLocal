@@ -22,10 +22,10 @@ const selected = computed(() => props.options.find((o) => o.value === model.valu
 <template>
   <ComboboxRoot v-model="model" :display-value="() => selected?.label ?? ''">
     <ComboboxAnchor
-      class="inline-flex h-7 min-w-40 items-center rounded-md border border-border bg-bg-subtle px-2 focus-within:border-accent focus-within:shadow-[inset_0_0_0_1px_var(--accent)] [&_input]:outline-none"
+      class="inline-flex h-7 min-w-40 items-center rounded-md border border-border bg-bg-subtle px-2 focus-within:border-accent focus-within:shadow-[inset_0_0_0_1px_var(--accent)]"
     >
       <ComboboxInput
-        class="w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-subtle"
+        class="w-full bg-transparent text-sm text-fg outline-none! placeholder:text-fg-subtle"
         :placeholder="placeholder"
       />
       <Icon name="lucide:chevrons-up-down" class="size-3.5 shrink-0 text-fg-subtle" />

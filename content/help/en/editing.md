@@ -26,6 +26,8 @@ A changed cell is tinted, and hovering it shows the value it had before. Setting
 
 **Add record** puts a new row at the top of the grid. Columns you leave alone take their database default, shown as `DEFAULT`. From a record panel, **Create** on a *Has many* relation opens the child table with a new row whose foreign key already points at the record.
 
+The checkbox in the left column ticks a row; the one in the header ticks every loaded row. A bar shows how many are ticked, with **Delete selected** (same impact check as above) and **Clear**. The row number still opens the record.
+
 Pressing **Delete** (or *Delete row*) on selected rows first shows what depends on them: the one-to-many relations that point at the rows, how many records each has, and what the foreign key does (`CASCADE` removes them too, `RESTRICT` blocks the delete). The rows are then struck through until you save.
 
 ## Saving {#saving}

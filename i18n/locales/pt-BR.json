@@ -285,6 +285,10 @@
     "historyThisTable": "Só {table}"
   },
   "grid": {
+    "selectAll": "Selecionar todas as linhas",
+    "selectRow": "Selecionar linha",
+    "checked": "{count} selecionada(s)",
+    "clearChecked": "Limpar",
     "structureToggle": "Estrutura",
     "sqlToggle": "Ver SQL",
     "sqlEdited": "Editado: Run executa o seu SQL aqui",
@@ -444,6 +448,7 @@
     "setDefault": "Definir DEFAULT",
     "undoRow": "Desfazer alterações desta linha",
     "duplicateRow": "Duplicar linha",
+    "deleteRows": "Excluir selecionadas",
     "deleteRow": "Excluir linha",
     "restoreRow": "Restaurar linha",
     "createRelated": "Criar {target}",

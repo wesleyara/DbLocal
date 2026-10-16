@@ -285,6 +285,10 @@
     "historyThisTable": "Only {table}"
   },
   "grid": {
+    "selectAll": "Select all rows",
+    "selectRow": "Select row",
+    "checked": "{count} selected",
+    "clearChecked": "Clear",
     "structureToggle": "Structure",
     "sqlToggle": "Show SQL",
     "sqlEdited": "Edited: Run executes your SQL here",
@@ -444,6 +448,7 @@
     "setDefault": "Set DEFAULT",
     "undoRow": "Undo changes of this row",
     "duplicateRow": "Duplicate row",
+    "deleteRows": "Delete selected",
     "deleteRow": "Delete row",
     "restoreRow": "Restore row",
     "createRelated": "Create {target}",

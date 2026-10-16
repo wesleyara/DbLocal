@@ -13,7 +13,7 @@ import { metaOf } from './row-meta'
 
 const ROW_HEIGHT = 28
 const HEADER_HEIGHT = 40
-const GUTTER_WIDTH = 56
+const GUTTER_WIDTH = 64
 const MIN_WIDTH = 60
 const MAX_WIDTH = 2000
 
@@ -267,6 +267,55 @@ function setCellValue(row: number, col: number, value: unknown): void {
   const column = columnAt(col)
   const data = rowAt(row)
   if (column && data && canEditCell(row, col)) emit('edit', data, column.name, value)
+}
+
+// ---- row checkboxes (gutter) -----------------------------------------------------------------
+
+/** Rows ticked in the gutter, by primary key. Dropped with the cell selection when a new page arrives. */
+const checked = ref<Set<string>>(new Set())
+watch(
+  () => props.selectionKey,
+  () => (checked.value = new Set()),
+)
+
+function rowKey(row: Record<string, unknown> | undefined): string | null {
+  if (!row || !props.primaryKey.length) return null
+  const state = metaOf(row)?.state
+  if (state === 'new' || state === 'deleted') return null
+  return JSON.stringify(props.primaryKey.map((k) => row[k] ?? null))
+}
+
+/** Rows that can be ticked: loaded, not new and not already marked for deletion. */
+const checkableRows = computed(() =>
+  props.rows.filter((r) => rowKey(r) !== null),
+)
+const checkedRows = computed(() => checkableRows.value.filter((r) => checked.value.has(rowKey(r)!)))
+const allChecked = computed<boolean | 'indeterminate'>(() =>
+  checkedRows.value.length === 0 ? false : checkedRows.value.length === checkableRows.value.length ? true : 'indeterminate',
+)
+
+function toggleChecked(row: Record<string, unknown> | undefined, on: boolean): void {
+  const key = rowKey(row)
+  if (!key) return
+  const next = new Set(checked.value)
+  if (on) next.add(key)
+  else next.delete(key)
+  checked.value = next
+}
+
+const boxClass = (on: boolean): string =>
+  `flex size-3.5 items-center justify-center rounded-sm border outline-none focus-visible:ring-1 focus-visible:ring-accent ${
+    on ? 'border-accent bg-accent' : 'border-border-strong bg-bg-subtle hover:border-accent'
+  }`
+
+function toggleAll(on: boolean): void {
+  checked.value = on ? new Set(checkableRows.value.map((r) => rowKey(r)!)) : new Set()
+}
+
+function deleteChecked(): void {
+  const rows = checkedRows.value
+  checked.value = new Set()
+  if (rows.length) emit('deleteRows', rows)
 }
 
 function selectedRows(): Record<string, unknown>[] {
@@ -661,9 +710,26 @@ function downloadDialogValue(): void {
         :style="{ height: `${HEADER_HEIGHT}px`, width: `${totalWidth}px` }"
       >
         <div
-          class="sticky left-0 z-30 flex h-full items-center justify-center bg-bg-subtle text-[10px] text-fg-subtle"
+          class="group sticky left-0 z-30 flex h-full items-center justify-center bg-bg-subtle text-[10px] text-fg-subtle"
           :style="{ width: `${GUTTER_WIDTH}px` }"
-        >#</div>
+        >
+          <button
+            v-if="editable && checkableRows.length"
+            type="button"
+            role="checkbox"
+            :aria-checked="allChecked === 'indeterminate' ? 'mixed' : allChecked"
+            :aria-label="t('grid.selectAll')"
+            class="flex size-full items-center justify-center outline-none"
+            data-select-all
+            @click.stop="toggleAll(allChecked !== true)"
+          >
+            <span v-if="allChecked === false" class="group-hover:hidden">#</span>
+            <span :class="[boxClass(allChecked !== false), allChecked === false && 'hidden group-hover:flex']">
+              <Icon v-if="allChecked !== false" :name="allChecked === 'indeterminate' ? 'lucide:minus' : 'lucide:check'" class="size-3 text-accent-fg" />
+            </span>
+          </button>
+          <span v-else>#</span>
+        </div>
 
         <!-- Pinned headers follow the scroll. They are drawn after the others so they sit on top. -->
         <div
@@ -787,12 +853,33 @@ function downloadDialogValue(): void {
         :style="{ top: `${HEADER_HEIGHT + vr.start}px`, height: `${ROW_HEIGHT}px`, width: `${totalWidth}px` }"
       >
         <div
-          class="sticky left-0 z-10 flex h-full cursor-pointer items-center justify-end bg-bg px-2 text-[10px] text-fg-subtle tabular-nums hover:text-accent"
+          class="group sticky left-0 z-10 flex h-full items-center justify-center bg-bg text-xs text-fg-subtle tabular-nums"
           :style="{ width: `${GUTTER_WIDTH}px` }"
-          :title="t('record.open')"
-          data-row-gutter
-          @click="modelRows[vr.index] && emit('openRow', modelRows[vr.index]!.original as Record<string, unknown>)"
-        >{{ gutterLabel(vr.index) }}</div>
+        >
+          <button
+            v-if="editable && rowKey(modelRows[vr.index]?.original as Record<string, unknown>)"
+            type="button"
+            role="checkbox"
+            :aria-checked="checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!)"
+            :aria-label="t('grid.selectRow')"
+            class="flex size-full items-center justify-center outline-none"
+            data-row-check
+            @click.stop="toggleChecked(modelRows[vr.index]?.original as Record<string, unknown>, !checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!))"
+          >
+            <span
+              v-if="!checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!)"
+              class="leading-none group-hover:hidden"
+            >{{ gutterLabel(vr.index) }}</span>
+            <span :class="[boxClass(checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!)), !checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!) && 'hidden group-hover:flex']">
+              <Icon v-if="checked.has(rowKey(modelRows[vr.index]?.original as Record<string, unknown>)!)" name="lucide:check" class="size-3 text-accent-fg" />
+            </span>
+          </button>
+          <span
+            v-else
+            class="leading-none"
+            data-row-gutter
+          >{{ gutterLabel(vr.index) }}</span>
+        </div>
         <div
           v-for="pc in pinnedCols"
           :key="`pinned-${pc.id}`"
@@ -860,6 +947,16 @@ function downloadDialogValue(): void {
           </slot>
         </div>
       </div>
+    </div>
+
+    <div
+      v-if="checkedRows.length"
+      class="sticky bottom-2 left-2 z-40 flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-2 py-1 shadow-md"
+      data-check-bar
+    >
+      <span class="text-fg-muted">{{ t('grid.checked', { count: checkedRows.length }) }}</span>
+      <UiButton size="sm" variant="danger" data-check-delete @click="deleteChecked">{{ t('edit.deleteRows') }}</UiButton>
+      <UiButton size="sm" variant="secondary" @click="toggleAll(false)">{{ t('grid.clearChecked') }}</UiButton>
     </div>
 
     <div v-if="loading" class="pointer-events-none absolute right-2 top-2 z-30 flex items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-fg-muted">

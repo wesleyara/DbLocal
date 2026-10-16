@@ -33,9 +33,9 @@ const selected = computed(() => props.options.find((o) => o.value === model.valu
     <ComboboxPortal>
       <ComboboxContent
         :side-offset="4"
-        class="z-50 w-[var(--reka-combobox-trigger-width)] rounded-md border border-border bg-surface p-1 shadow-pop"
+        class="z-50 w-[var(--reka-combobox-trigger-width)] max-w-[var(--reka-combobox-content-available-width)] rounded-md border border-border bg-surface p-1 shadow-pop"
       >
-        <ComboboxViewport class="max-h-60">
+        <ComboboxViewport class="ui-popup-scroll max-h-[min(15rem,var(--reka-combobox-content-available-height))]">
           <ComboboxEmpty class="px-2 py-1.5 text-sm text-fg-subtle">
             {{ emptyText }}
           </ComboboxEmpty>
@@ -45,8 +45,9 @@ const selected = computed(() => props.options.find((o) => o.value === model.valu
             :value="o.value"
             :text-value="o.label"
             class="flex h-7 cursor-default items-center rounded-sm px-2 text-sm text-fg outline-none data-[highlighted]:bg-surface-hover"
+            :title="o.label"
           >
-            {{ o.label }}
+            <span class="min-w-0 truncate">{{ o.label }}</span>
           </ComboboxItem>
         </ComboboxViewport>
       </ComboboxContent>

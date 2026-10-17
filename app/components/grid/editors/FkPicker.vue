@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SchemaColumn, SchemaTable } from '#shared/types/db'
 import type { FilterNode, RowsResponse } from '#shared/types/rows'
-import { keyLabel } from '#shared/nav-url'
 
 /**
  * Picks the record a foreign key points at: a server-side search over the display column of the
@@ -98,7 +97,7 @@ watch(open, (isOpen) => {
     highlighted.value = null
     void load(true)
   }
-})
+}, { immediate: true })
 onBeforeUnmount(() => clearTimeout(timer))
 
 const keyOf = (row: Record<string, unknown>) =>
@@ -134,7 +133,7 @@ function pick(row: Record<string, unknown> | null): void {
             @focus="highlighted = row"
             @click="pick(row)"
           >
-            <span class="truncate text-fg">{{ keyLabel(keyOf(row)) }}<span v-if="labelOf(row)" class="text-fg-muted"> · {{ labelOf(row) }}</span></span>
+            <span class="truncate text-fg">{{ Object.values(keyOf(row)).join('/') }}<span v-if="labelOf(row)" class="text-fg-muted"> · {{ labelOf(row) }}</span></span>
           </button>
         </li>
         <li v-if="more" class="p-1">

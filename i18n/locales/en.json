@@ -558,6 +558,29 @@
     "confirmTitle": "Confirm changes on a production connection",
     "confirmProd": "This connection is marked as production. The statement changes data or the schema.",
     "runAnyway": "Run anyway",
+    "alert": {
+      "toggle": "Alert before run",
+      "title": "Run these statements?",
+      "description": "{count} statement will run. Check what each one does. | {count} statements will run. Check what each one does.",
+      "kinds": {
+        "read": {
+          "label": "read",
+          "text": "{verb}: reads data, changes nothing."
+        },
+        "write": {
+          "label": "write",
+          "text": "{verb}: changes rows (insert, update or delete)."
+        },
+        "ddl": {
+          "label": "schema",
+          "text": "{verb}: changes the schema or permissions (create, alter, drop, ...)."
+        },
+        "other": {
+          "label": "unknown",
+          "text": "{verb}: the effect is not known; it may change data or settings."
+        }
+      }
+    },
     "explain": {
       "run": "Explain",
       "analyze": "Explain analyze",
@@ -802,6 +825,10 @@
         "readonly": {
           "title": "Read-only sessions",
           "text": "A read-only connection runs queries in a read-only transaction; writes are refused by the database itself."
+        },
+        "alertBeforeRun": {
+          "title": "Alert before run",
+          "text": "When ticked, every run first lists the statements and what each one does, and runs only after you confirm."
         }
       },
       "erd": {

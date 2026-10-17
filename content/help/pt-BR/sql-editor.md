@@ -29,6 +29,12 @@ Tabelas, colunas (depois de `alias.`), funções e palavras-chave são sugeridas
 - Em conexão `prod`, um statement que escreve ou altera o schema pede confirmação antes.
 - Depois de DDL, o schema da barra lateral é atualizado sozinho.
 
+### Alertar antes de executar {#alert-before-run}
+
+Marque **Alertar antes de executar** (na barra do editor ou na barra **Ver SQL** da tabela; é uma configuração só para os dois) e toda execução lista antes os statements que vão rodar, cada um marcado como *leitura*, *escrita*, *schema* ou *desconhecido*, com o que ele faz. Nada roda até você confirmar. Em conexão `prod`, essa confirmação vale também como a de produção.
+
+O SQL de uma visão de tabela (**Ver SQL**) é escrito com as palavras-chave em maiúsculas, como o autocomplete do editor.
+
 ## Queries salvas e histórico
 
 ⌘/Ctrl+S salva a query (pede um nome na primeira vez). O painel lateral tem **Salvas** (abrir, renomear, excluir, copiar, executar) e **Histórico**: cada execução com duração, linhas e status, com busca e filtro. Limpe quando quiser ou escolha quantas entradas manter. O mesmo histórico está em qualquer tabela: o botão **Histórico** ao lado de **Estrutura** o lista, filtrado pela tabela por padrão, e permite executar uma entrada de novo no editor.

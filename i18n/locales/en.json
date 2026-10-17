@@ -600,7 +600,15 @@
     "linkFailed": "Could not create the relation",
     "loadFailed": "Could not load the schema",
     "empty": "This schema has no tables",
-    "nullable": "Nullable"
+    "nullable": "Nullable",
+    "addNote": "Add note",
+    "note": "Note",
+    "notePlaceholder": "Write a comment… (⌘/Ctrl+Enter to save, Esc to cancel)",
+    "editNote": "Edit note",
+    "editNoteHint": "Double click to edit",
+    "deleteNote": "Delete note",
+    "notesSaveFailed": "Could not save the notes",
+    "resizeNote": "Drag to resize"
   },
   "palette": {
     "title": "Command palette",

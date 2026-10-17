@@ -12,6 +12,8 @@ export interface ErdUiState {
   hoverColumns: Set<string>
   /** Table a new relation is being dragged from / over. */
   connecting: boolean
+  /** Note whose text is being edited. */
+  editingNote: string | null
 }
 
 export const ERD_UI: InjectionKey<ErdUiState> = Symbol('erd-ui')

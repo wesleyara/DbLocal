@@ -5,7 +5,6 @@ import type { RecordKey, RecordResponse } from '#shared/types/relations'
 import type { RowsResponse } from '#shared/types/rows'
 import { editableKey } from '#shared/editable'
 import { isFunctionValue } from '#shared/edit-functions'
-import { generatedKeyValues } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
 import { keyId } from '#shared/pending'
 import { recordAsInsert } from '#shared/record-sql'
@@ -135,8 +134,7 @@ function toggleDelete(): void {
 /** "Create related": a new row of the child table, with the foreign key already pointing at this record. */
 async function createRelated(ref: RelationRef): Promise<void> {
   if (!data.value) return
-  const targetTable = schemaStore.tables.find((tb) => tb.name === ref.target)
-  const values: Record<string, unknown> = targetTable ? generatedKeyValues(targetTable.columns) : {}
+  const values: Record<string, unknown> = {}
   ref.columns.forEach((column, i) => {
     const target = ref.targetColumns[i]
     if (target) values[target] = data.value!.row[column]

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildErd, cardinalityShort, clampNoteWidth, edgeSides, markerPath, neighbourhood, noteHeight, noteLines, noteWidth, parseHandle, handleId, usablePositions } from './erd'
+import { buildErd, cardinalityShort, spreadLabels, clampNoteWidth, edgeSides, markerPath, neighbourhood, noteHeight, noteLines, noteWidth, parseHandle, handleId, usablePositions } from './erd'
 import type { RelationGraph, SchemaSnapshot, SchemaTable } from './types/db'
 
 const col = (name: string, pk = false) => ({
@@ -129,5 +129,33 @@ describe('buildErdSvg', () => {
     expect(withNote.svg).toContain('check &lt;this&gt;')
     expect(withNote.svg).not.toContain('>PK<')
     expect(buildErdSvg([], [], {}, colors, [{ id: 'n', x: 0, y: 0, text: 'a', width: 500 }]).svg).toContain('width="500"')
+  })
+})
+
+describe('spreadLabels', () => {
+  const chip = (id: string, x: number, y: number, y1 = y - 200, y2 = y + 200) => ({ id, x, y, width: 34, height: 18, y1, y2 })
+
+  it('leaves chips that do not touch where they are', () => {
+    const out = spreadLabels([chip('a', 0, 0), chip('b', 100, 0), chip('c', 0, 100)])
+    expect([...out.values()]).toEqual([0, 0, 0])
+  })
+
+  it('moves overlapping chips apart along their line, and the result never overlaps', () => {
+    const boxes = [chip('a', 10, 100), chip('b', 10, 104), chip('c', 12, 98)]
+    const out = spreadLabels(boxes)
+    const ys = boxes.map((b) => b.y + out.get(b.id)!).sort((p, q) => p - q)
+    for (let i = 1; i < ys.length; i++) expect(ys[i]! - ys[i - 1]!).toBeGreaterThanOrEqual(18)
+    expect(out.get('a')).toBe(0)
+  })
+
+  it('keeps a chip on its vertical leg when there is room', () => {
+    // b's leg runs only downwards from 100: it must not be pushed above.
+    const out = spreadLabels([chip('a', 0, 100), chip('b', 0, 100, 90, 160)])
+    expect(out.get('b')).toBeGreaterThan(0)
+  })
+
+  it('is stable whatever the input order', () => {
+    const boxes = [chip('a', 0, 0), chip('b', 0, 2), chip('c', 0, 4)]
+    expect(spreadLabels(boxes)).toEqual(spreadLabels([...boxes].reverse()))
   })
 })

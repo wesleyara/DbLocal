@@ -227,6 +227,49 @@ export function cardinalityShort(sourceEnd: EndCardinality, targetEnd: EndCardin
   return `${sourceEnd === 'one' ? '1' : 'N'}:${targetEnd === 'one' ? '1' : 'N'}`
 }
 
+/** Width and height of a cardinality chip (11px monospace text plus padding). */
+export const labelChipWidth = (label: string): number => label.length * 6.8 + 10
+export const LABEL_CHIP_HEIGHT = 18
+
+/** A cardinality chip where its edge would put it: centred on (`x`, `y`), on a vertical leg spanning `y1`..`y2`. */
+export interface LabelBox {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  y1: number
+  y2: number
+}
+
+/**
+ * Vertical shift per chip so no two overlap. Edges that share a channel put their chips at nearly
+ * the same midpoint; each one in turn (left to right, top to bottom, so the result is stable) takes
+ * the nearest free slot up or down its own line, staying on its vertical leg when the leg is long
+ * enough. A chip with no free slot nearby stays where it was.
+ */
+export function spreadLabels(boxes: LabelBox[], gap = 3): Map<string, number> {
+  const order = [...boxes].sort((a, b) => a.x - b.x || a.y - b.y || (a.id < b.id ? -1 : 1))
+  const placed: { x: number; y: number; width: number; height: number }[] = []
+  const offsets = new Map<string, number>()
+  const free = (b: LabelBox, y: number) =>
+    placed.every(
+      (p) => Math.abs(p.x - b.x) * 2 >= p.width + b.width + gap * 2 || Math.abs(p.y - y) * 2 >= p.height + b.height + gap * 2,
+    )
+  for (const b of order) {
+    const step = b.height + gap
+    const lo = Math.min(b.y1, b.y2) + b.height / 2
+    const hi = Math.max(b.y1, b.y2) - b.height / 2
+    const candidates = [0]
+    for (let i = 1; i <= 12; i++) candidates.push(i * step, -i * step)
+    const onLine = candidates.find((dy) => b.y + dy >= lo && b.y + dy <= hi && free(b, b.y + dy))
+    const dy = onLine ?? candidates.find((d) => free(b, b.y + d)) ?? 0
+    offsets.set(b.id, dy)
+    placed.push({ x: b.x, y: b.y + dy, width: b.width, height: b.height })
+  }
+  return offsets
+}
+
 /** A free comment placed on the diagram. */
 export interface ErdNote {
   id: string

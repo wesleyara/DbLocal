@@ -16,6 +16,7 @@ import {
   type ErdNote,
   type ErdTable,
   type Point,
+  spreadLabels,
 } from '#shared/erd'
 import { tablePath } from '#shared/nav-url'
 import type { Cardinality } from '#shared/types/db'
@@ -62,8 +63,11 @@ const ui = reactive<ErdUiState>({
   hoverColumns: new Set<string>(),
   connecting: false,
   editingNote: null,
+  labelBoxes: new Map(),
+  labelOffsets: new Map(),
 })
 provide(ERD_UI, ui)
+watch(() => [...ui.labelBoxes.values()], (boxes) => (ui.labelOffsets = spreadLabels(boxes)), { immediate: true })
 
 function select(table: string | null): void {
   ui.selected = table

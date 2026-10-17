@@ -2,14 +2,18 @@ import {
   ERD_HEADER_HEIGHT,
   ERD_NOTE_TEXT_X,
   ERD_ROW_HEIGHT,
+  LABEL_CHIP_HEIGHT,
   cardinalityShort,
   edgeSides,
+  labelChipWidth,
   markerPath,
   noteHeight,
   noteLines,
   noteWidth,
+  spreadLabels,
   tableHeight,
   type ErdNote,
+  type LabelBox,
   type ErdEdge,
   type ErdTable,
   type Point,
@@ -104,6 +108,7 @@ export function buildErdSvg(
 
   const lines: string[] = []
   const labels: string[] = []
+  const chips: (LabelBox & { label: string; virtual: boolean })[] = []
   for (const e of edges) {
     const s = byId.get(e.source)
     const t = byId.get(e.target)
@@ -127,13 +132,16 @@ export function buildErdSvg(
       `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.4"${dash}/>`,
       `<path d="${markerPath(sx, sy, sdir, e.sourceEnd)}${markerPath(tx, ty, tdir, e.targetEnd)}" fill="none" stroke="${stroke}" stroke-width="1.4"/>`,
     )
-    // Cardinality chip on the vertical leg, like the canvas.
+    // Cardinality chip on the vertical leg, like the canvas; placed after all edges are known.
     const label = cardinalityShort(e.sourceEnd, e.targetEnd)
-    const lw = label.length * 6.8 + 10
-    const ly = (sy + ty) / 2
+    chips.push({ id: String(chips.length), x: xm, y: (sy + ty) / 2, width: labelChipWidth(label), height: LABEL_CHIP_HEIGHT, y1: sy, y2: ty, label, virtual: e.virtual })
+  }
+  const offsets = spreadLabels(chips)
+  for (const c of chips) {
+    const ly = c.y + (offsets.get(c.id) ?? 0)
     labels.push(
-      `<rect x="${xm - lw / 2}" y="${ly - 9}" width="${lw}" height="18" rx="4" fill="${colors.bg}" stroke="${colors.border}"/>`,
-      `<text x="${xm}" y="${ly + 4}" font-size="11" text-anchor="middle" fill="${e.virtual ? colors.accent : colors.muted}">${label}</text>`,
+      `<rect x="${c.x - c.width / 2}" y="${ly - LABEL_CHIP_HEIGHT / 2}" width="${c.width}" height="${LABEL_CHIP_HEIGHT}" rx="4" fill="${colors.bg}" stroke="${colors.border}"/>`,
+      `<text x="${c.x}" y="${ly + 4}" font-size="11" text-anchor="middle" fill="${c.virtual ? colors.accent : colors.muted}">${c.label}</text>`,
     )
   }
 

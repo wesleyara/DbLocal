@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getSmoothStepPath, Position, type EdgeProps } from '@vue-flow/core'
-import { cardinalityShort, markerPath, type EndCardinality } from '#shared/erd'
+import { cardinalityShort, labelChipWidth, LABEL_CHIP_HEIGHT, markerPath, type EndCardinality } from '#shared/erd'
 import { ERD_UI } from './state'
 
 interface EdgeData {
@@ -38,10 +38,26 @@ const geometry = computed(() => {
 })
 
 const shortLabel = computed(() => (props.data ? cardinalityShort(props.data.sourceEnd, props.data.targetEnd) : ''))
-/** Chip around the label, sized for the 11px monospace text. */
+// The chip's spot is reported to the canvas, which moves chips of edges sharing a channel apart.
+watchEffect(() => {
+  if (!shortLabel.value || ui.compact) return void ui.labelBoxes.delete(props.id)
+  ui.labelBoxes.set(props.id, {
+    id: props.id,
+    x: geometry.value.labelX,
+    y: geometry.value.labelY,
+    width: labelChipWidth(shortLabel.value),
+    height: LABEL_CHIP_HEIGHT,
+    y1: props.sourceY,
+    y2: props.targetY,
+  })
+})
+onBeforeUnmount(() => ui.labelBoxes.delete(props.id))
+
+/** Chip around the label, sized for the 11px monospace text, after the canvas's spreading. */
+const labelPos = computed(() => ({ x: geometry.value.labelX, y: geometry.value.labelY + (ui.labelOffsets.get(props.id) ?? 0) }))
 const labelBox = computed(() => {
-  const width = shortLabel.value.length * 6.8 + 10
-  return { x: geometry.value.labelX - width / 2, y: geometry.value.labelY - 9, width, height: 18 }
+  const width = labelChipWidth(shortLabel.value)
+  return { x: labelPos.value.x - width / 2, y: labelPos.value.y - LABEL_CHIP_HEIGHT / 2, width, height: LABEL_CHIP_HEIGHT }
 })
 
 const sourceDir = computed<1 | -1>(() => (props.sourcePosition === Position.Right ? 1 : -1))
@@ -72,7 +88,7 @@ const dimmed = computed(
     <path v-if="markers" :d="markers" class="line" fill="none" />
     <g v-if="shortLabel && !ui.compact" class="label" data-erd-cardinality>
       <rect v-bind="labelBox" rx="4" />
-      <text :x="geometry.labelX" :y="geometry.labelY" text-anchor="middle" dominant-baseline="central">{{ shortLabel }}</text>
+      <text :x="labelPos.x" :y="labelPos.y" text-anchor="middle" dominant-baseline="central">{{ shortLabel }}</text>
     </g>
     <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }} · {{ cardinalityLabel }}</title>
   </g>

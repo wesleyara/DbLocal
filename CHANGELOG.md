@@ -4,6 +4,25 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-17
+
+### Added
+- **drivers:** connect to localhost through host.docker.internal in Docker
+- **erd:** drag relation lines sideways and keep chips above them
+- **ui:** show skeletons and progress while data loads
+- **notes:** add markdown notes and collapsible grid tools
+- **query:** add alert before run and upper-case view SQL
+- **erd:** add cardinality labels and resizable notes
+
+### Fixed
+- **grid:** request relation data again after a remount
+- **schema:** fit long names in the virtual relations dialog
+- **erd:** spread overlapping cardinality labels
+- **help:** wait for the tour target before centring the card
+- **schema:** keep the app shell when the database is down
+- **editing:** load FK picker records on first open
+- **editing:** stop generating key values for new rows
+
 ## [1.0.1] - 2026-10-16
 
 ### Fixed

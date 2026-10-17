@@ -310,7 +310,11 @@ const timeoutText = computed({
         @pointerdown="(e) => { dragging = true; (e.target as HTMLElement).setPointerCapture(e.pointerId) }"
       />
 
-      <section class="flex min-h-0 flex-1 flex-col" data-results>
+      <section class="relative flex min-h-0 flex-1 flex-col" data-results :aria-busy="running">
+        <!-- While a statement runs: a spinner in place of the empty state, or a chip over the previous result. -->
+        <div v-if="running && (result || plan)" class="pointer-events-none absolute right-2 top-9 z-30 flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-0.5 text-xs text-fg-muted" data-running>
+          <UiSpinner class="size-3" />{{ t('query.running') }}
+        </div>
         <div v-if="result || plan" class="flex items-center gap-1 overflow-x-auto border-b border-border px-2">
           <button
             v-for="s in result?.statements ?? []"
@@ -339,7 +343,10 @@ const timeoutText = computed({
           {{ failure }}
         </div>
 
-        <div v-if="!result && !plan && !failure" class="flex flex-1 items-center justify-center p-4">
+        <div v-if="running && !result && !plan" class="flex flex-1 items-center justify-center gap-2 p-4 text-sm text-fg-muted" data-running>
+          <UiSpinner class="size-4" />{{ t('query.running') }}
+        </div>
+        <div v-else-if="!result && !plan && !failure" class="flex flex-1 items-center justify-center p-4">
           <UiEmptyState icon="lucide:terminal" :title="t('query.emptyTitle')" :description="t('query.emptyHint')" />
         </div>
 

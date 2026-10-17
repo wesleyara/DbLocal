@@ -834,8 +834,9 @@ function downloadDialogValue(): void {
       <!-- Skeleton rows while the first page is on its way. -->
       <div
         v-if="loading && rows.length === 0"
-        class="absolute left-0 right-0 space-y-2 p-2"
-        :style="{ top: `${HEADER_HEIGHT}px`, width: `${totalWidth}px` }"
+        class="absolute left-0 space-y-2 p-2"
+        :style="{ top: `${HEADER_HEIGHT}px`, width: `max(100%, ${totalWidth}px)` }"
+        data-grid-skeleton
       >
         <UiSkeleton v-for="i in 8" :key="i" class="h-4" />
       </div>

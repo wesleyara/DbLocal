@@ -312,7 +312,11 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
         </div>
       </template>
 
-      <p v-if="store.tables.length === 0 && !store.loading" class="px-2 py-4 text-xs text-fg-subtle">{{ t('schemaTree.noTables') }}</p>
+      <div v-if="store.tables.length === 0 && store.loading" class="grid gap-2 px-2 py-2" role="status" :aria-label="t('grid.loading')" data-tree-skeleton>
+        <UiSkeleton v-for="i in 8" :key="i" class="h-4" :style="{ width: `${55 + ((i * 37) % 40)}%` }" />
+      </div>
+      <p v-else-if="store.tables.length === 0 && !store.error" class="px-2 py-4 text-xs text-fg-subtle">{{ t('schemaTree.noTables') }}</p>
+      <template v-else-if="store.tables.length === 0" />
       <p v-else-if="matching.length === 0" class="px-2 py-4 text-xs text-fg-subtle">{{ t('schemaTree.noMatches') }}</p>
     </div>
 

@@ -15,7 +15,7 @@ Click **Diagram** in the top bar to open the schema as a diagram. It opens in it
 ## Reading the diagram
 
 - Each box is a table. Keys come first: a key icon marks primary keys and a link icon marks foreign keys. Types are shown on the right. A `?` after a name means the column accepts NULL, `U` marks a unique index and `D` a default value (hover a column for the details: default, referenced column, composite unique indexes).
-- A line links the column that holds a foreign key to the column it points at. The end of the line shows the cardinality: a crow's foot means "many", a bar means "one".
+- A line links the column that holds a foreign key to the column it points at. The end of the line shows the cardinality: a crow's foot means "many", a bar means "one". A label on the line spells it out, read from the foreign key side to the table it points at: `N:1`, `1:1` or `1:N`.
 - **Dashed blue lines** are virtual relations (declared in DbLocal, not in the database).
 - Views have a dashed outline.
 - Tables with more than 40 columns show the keys and the first columns, then "+N more columns".
@@ -37,10 +37,16 @@ Click **Diagram** in the top bar to open the schema as a diagram. It opens in it
 
 The first layout is computed automatically. Drag tables to arrange them; positions are saved for the connection and schema and come back next time. **Reset layout** goes back to the automatic one.
 
+## Notes {#notes}
+
+Click **Add note** to put a comment in the middle of the view and type it; <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> or a click outside saves it, <kbd>Esc</kbd> cancels. Double click a note to edit it, drag it to move it, drag its right edge to make it wider or narrower, and use the trash icon (on hover) to delete it. A note left empty is removed.
+
+Notes are saved for the connection and schema, stay visible when a table filter is on, and are kept by **Reset layout**. They are part of the PNG and SVG export.
+
 ## Create a virtual relation
 
 Drag from a column of one table to a column of another. Pick the cardinality, optionally name it, and save. The relation appears in the grid and in the record panel like any other. The database is not changed.
 
 ## Export
 
-**PNG** and **SVG** export what is on screen (with the filter applied) at full size.
+**PNG** and **SVG** export what is on screen (with the filter applied) at full size, cardinality labels and notes included.

@@ -600,7 +600,15 @@
     "linkFailed": "Não foi possível criar a relação",
     "loadFailed": "Não foi possível carregar o schema",
     "empty": "Este schema não tem tabelas",
-    "nullable": "Aceita NULL"
+    "nullable": "Aceita NULL",
+    "addNote": "Adicionar nota",
+    "note": "Nota",
+    "notePlaceholder": "Escreva um comentário… (⌘/Ctrl+Enter salva, Esc cancela)",
+    "editNote": "Editar nota",
+    "editNoteHint": "Clique duas vezes para editar",
+    "deleteNote": "Excluir nota",
+    "notesSaveFailed": "Não foi possível salvar as notas",
+    "resizeNote": "Arraste para redimensionar"
   },
   "palette": {
     "title": "Paleta de comandos",

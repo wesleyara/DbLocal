@@ -13,6 +13,7 @@ import {
   parseHandle,
   tableHeight,
   usablePositions,
+  type ErdNote,
   type ErdTable,
   type Point,
 } from '#shared/erd'
@@ -25,6 +26,7 @@ import { saveBlob } from '~/composables/useDownload'
 import { autoLayout } from './layout'
 import { ERD_UI, type ErdUiState } from './state'
 import ErdEdge from './ErdEdge.vue'
+import ErdNoteNode from './ErdNoteNode.vue'
 import ErdTableNode from './ErdTableNode.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
@@ -59,6 +61,7 @@ const ui = reactive<ErdUiState>({
   hoverEdge: null,
   hoverColumns: new Set<string>(),
   connecting: false,
+  editingNote: null,
 })
 provide(ERD_UI, ui)
 
@@ -145,13 +148,27 @@ function buildEdges(): Edge[] {
   return out
 }
 
+/** Note nodes get a prefixed id, so they never clash with a table name. */
+const NOTE_PREFIX = 'note:'
+const noteNodeId = (id: string) => `${NOTE_PREFIX}${id}`
+const isNoteNode = (id: string) => id.startsWith(NOTE_PREFIX)
+
 function buildNodes(): Node[] {
-  return visible.value.map((tb) => ({
+  const tables: Node[] = visible.value.map((tb) => ({
     id: tb.id,
     type: 'table',
     position: positions.value[tb.id] ?? { x: 0, y: 0 },
     data: { table: tb },
   }))
+  const comments: Node[] = notes.value.map((note) => ({
+    id: noteNodeId(note.id),
+    type: 'note',
+    position: { x: note.x, y: note.y },
+    data: { note, update: updateNote, resize: resizeNote, remove: removeNote },
+    connectable: false,
+    zIndex: 1,
+  }))
+  return [...tables, ...comments]
 }
 
 let fitNext = true
@@ -189,7 +206,63 @@ async function loadSaved(): Promise<void> {
   loaded.value = true
 }
 
-await loadSaved()
+// ---- notes: free comments on the diagram, saved per connection + schema -------------------------
+const notes = ref<ErdNote[]>([])
+let notesTimer: ReturnType<typeof setTimeout> | null = null
+
+async function loadNotes(): Promise<void> {
+  try {
+    const res = await $fetch<{ notes: ErdNote[] }>(`/api/c/${props.connectionId}/erd-notes`, { query: { schema: props.schema } })
+    notes.value = res.notes
+  } catch {
+    notes.value = []
+  }
+}
+
+function saveNotesSoon(): void {
+  if (notesTimer) clearTimeout(notesTimer)
+  notesTimer = setTimeout(async () => {
+    try {
+      await $fetch(`/api/c/${props.connectionId}/erd-notes`, {
+        method: 'PUT',
+        body: { schema: props.schema, notes: notes.value.filter((n) => n.text.trim()) },
+      })
+    } catch {
+      toast.push({ kind: 'error', title: t('erd.notesSaveFailed') })
+    }
+  }, 400)
+}
+
+function setNotes(next: ErdNote[]): void {
+  notes.value = next
+  flow.setNodes(buildNodes())
+  saveNotesSoon()
+}
+
+function updateNote(id: string, text: string): void {
+  setNotes(notes.value.map((n) => (n.id === id ? { ...n, text } : n)))
+}
+
+function resizeNote(id: string, width: number): void {
+  setNotes(notes.value.map((n) => (n.id === id ? { ...n, width } : n)))
+}
+
+function removeNote(id: string): void {
+  if (ui.editingNote === id) ui.editingNote = null
+  setNotes(notes.value.filter((n) => n.id !== id))
+}
+
+/** A new empty note in the middle of the view, opened for typing (dropped again if left empty). */
+function addNote(): void {
+  const rect = flow.vueFlowRef.value?.getBoundingClientRect()
+  const centre = rect ? flow.project({ x: rect.width / 2, y: rect.height / 2 }) : { x: 0, y: 0 }
+  const note: ErdNote = { id: crypto.randomUUID(), x: Math.round(centre.x - 120), y: Math.round(centre.y - 40), text: '' }
+  notes.value = [...notes.value, note]
+  flow.setNodes(buildNodes())
+  ui.editingNote = note.id
+}
+
+await Promise.all([loadSaved(), loadNotes()])
 onMounted(() => void render())
 watch(
   () => `${visible.value.map((tb) => tb.id).join('|')}#${model.value.edges.length}`,
@@ -227,11 +300,24 @@ function queueSave(): void {
 }
 
 function onNodeDragStop({ nodes }: { nodes: { id: string }[] }): void {
+  const movedNotes = new Map<string, Point>()
+  for (const n of flow.getNodes.value) {
+    if (isNoteNode(n.id)) movedNotes.set(n.id.slice(NOTE_PREFIX.length), { x: Math.round(n.position.x), y: Math.round(n.position.y) })
+  }
+  if (nodes.some((n) => isNoteNode(n.id))) {
+    notes.value = notes.value.map((n) => ({ ...n, ...movedNotes.get(n.id) }))
+    saveNotesSoon()
+  }
+  const tableNodes = nodes.filter((n) => !isNoteNode(n.id))
+  if (!tableNodes.length) return
+
   const next = { ...positions.value }
-  for (const n of flow.getNodes.value) next[n.id] = { x: Math.round(n.position.x), y: Math.round(n.position.y) }
+  for (const n of flow.getNodes.value) {
+    if (!isNoteNode(n.id)) next[n.id] = { x: Math.round(n.position.x), y: Math.round(n.position.y) }
+  }
   positions.value = next
   // With a filter on, every shown table is saved so the subset keeps the arrangement on reload.
-  const ids = props.focus ? visible.value.map((tb) => tb.id) : nodes.map((n) => n.id)
+  const ids = props.focus ? visible.value.map((tb) => tb.id) : tableNodes.map((n) => n.id)
   for (const id of ids) {
     const p = next[id]
     if (p) {
@@ -261,10 +347,12 @@ async function resetLayout(): Promise<void> {
 
 // ---- interactions ------------------------------------------------------------------------------
 function onNodeClick({ node }: { node: { id: string } }): void {
+  if (isNoteNode(node.id)) return
   select(ui.selected === node.id ? null : node.id)
 }
 
 function openNode({ node }: { node: { id: string } }): void {
+  if (isNoteNode(node.id)) return
   const path = tablePath(props.connectionId, props.schema, node.id)
   const target = workspace.openTable(props.connectionId, path, {
     schema: props.schema,
@@ -370,6 +458,7 @@ function tokenColors(): ErdSvgColors {
     subtle: v('--fg-subtle', '#71717a'),
     accent: v('--accent', '#3b5bdb'),
     warning: v('--warning', '#b45309'),
+    note: v('--warning-soft', 'rgb(180 83 9 / 0.12)'),
   }
 }
 
@@ -397,7 +486,7 @@ async function exportImage(format: 'png' | 'svg'): Promise<void> {
   try {
     const set = new Set(visible.value.map((tb) => tb.id))
     const edges = model.value.edges.filter((e) => set.has(e.source) && set.has(e.target))
-    const { svg, width, height } = buildErdSvg(visible.value, edges, positions.value, tokenColors())
+    const { svg, width, height } = buildErdSvg(visible.value, edges, positions.value, tokenColors(), notes.value)
     if (!svg) return
     const blob = format === 'svg' ? new Blob([svg], { type: 'image/svg+xml' }) : await rasterise(svg, width, height, 2)
     saveBlob(blob, `${props.schema}-erd.${format}`)
@@ -449,6 +538,7 @@ const minimapColor = () => 'var(--border-strong)'
 
       <span class="font-data ml-auto text-xs text-fg-subtle">{{ t('erd.stats', stats) }}</span>
       <HelpHint id="erd.layout" />
+      <UiButton size="sm" data-erd-add-note @click="addNote"><Icon name="lucide:sticky-note" class="size-3.5" />{{ t('erd.addNote') }}</UiButton>
       <UiButton size="sm" @click="resetLayout"><Icon name="lucide:rotate-ccw" class="size-3.5" />{{ t('erd.resetLayout') }}</UiButton>
       <UiButton size="sm" :disabled="exporting" @click="exportImage('png')"><Icon name="lucide:image" class="size-3.5" />PNG</UiButton>
       <UiButton size="sm" :disabled="exporting" @click="exportImage('svg')"><Icon name="lucide:file-code" class="size-3.5" />SVG</UiButton>
@@ -472,6 +562,7 @@ const minimapColor = () => 'var(--border-strong)'
         @connect="onConnect"
       >
         <template #node-table="nodeProps"><ErdTableNode v-bind="nodeProps" /></template>
+        <template #node-note="nodeProps"><ErdNoteNode v-bind="nodeProps" /></template>
         <template #edge-erd="edgeProps"><ErdEdge v-bind="edgeProps" /></template>
         <Background :gap="24" pattern-color="var(--border)" />
         <MiniMap class="erd-chrome" pannable zoomable :node-color="minimapColor" mask-color="rgb(0 0 0 / 0.25)" />

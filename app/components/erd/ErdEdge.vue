@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getSmoothStepPath, Position, type EdgeProps } from '@vue-flow/core'
-import { markerPath, type EndCardinality } from '#shared/erd'
+import { cardinalityShort, markerPath, type EndCardinality } from '#shared/erd'
 import { ERD_UI } from './state'
 
 interface EdgeData {
@@ -24,7 +24,7 @@ const cardinalityLabel = computed(() => {
 })
 
 const geometry = computed(() => {
-  const [path] = getSmoothStepPath({
+  const [path, labelX, labelY] = getSmoothStepPath({
     sourceX: props.sourceX,
     sourceY: props.sourceY,
     targetX: props.targetX,
@@ -34,7 +34,14 @@ const geometry = computed(() => {
     borderRadius: 10,
     offset: 22,
   })
-  return path
+  return { path, labelX, labelY }
+})
+
+const shortLabel = computed(() => (props.data ? cardinalityShort(props.data.sourceEnd, props.data.targetEnd) : ''))
+/** Chip around the label, sized for the 11px monospace text. */
+const labelBox = computed(() => {
+  const width = shortLabel.value.length * 6.8 + 10
+  return { x: geometry.value.labelX - width / 2, y: geometry.value.labelY - 9, width, height: 18 }
 })
 
 const sourceDir = computed<1 | -1>(() => (props.sourcePosition === Position.Right ? 1 : -1))
@@ -60,9 +67,13 @@ const dimmed = computed(
     @mouseenter="data?.hover(id)"
     @mouseleave="data?.hover(null)"
   >
-    <path :d="geometry" fill="none" stroke="transparent" stroke-width="14" />
-    <path :d="geometry" class="line" fill="none" />
+    <path :d="geometry.path" fill="none" stroke="transparent" stroke-width="14" />
+    <path :d="geometry.path" class="line" fill="none" />
     <path v-if="markers" :d="markers" class="line" fill="none" />
+    <g v-if="shortLabel && !ui.compact" class="label" data-erd-cardinality>
+      <rect v-bind="labelBox" rx="4" />
+      <text :x="geometry.labelX" :y="geometry.labelY" text-anchor="middle" dominant-baseline="central">{{ shortLabel }}</text>
+    </g>
     <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }} · {{ cardinalityLabel }}</title>
   </g>
 </template>
@@ -81,6 +92,22 @@ const dimmed = computed(
   stroke-width: 2.2;
 }
 .is-virtual.is-active .line {
+  stroke: var(--accent);
+}
+.label rect {
+  fill: var(--bg);
+  stroke: var(--border);
+}
+.label text {
+  fill: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.is-virtual .label text,
+.is-active .label text {
+  fill: var(--accent);
+}
+.is-active .label rect {
   stroke: var(--accent);
 }
 .is-dimmed {

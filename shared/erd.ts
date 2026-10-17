@@ -222,5 +222,60 @@ export function usablePositions(saved: Record<string, Point>, tables: string[]):
   return out
 }
 
+/** Short cardinality of an edge read from the FK side to the referenced side: `N:1`, `1:1`, `1:N`. */
+export function cardinalityShort(sourceEnd: EndCardinality, targetEnd: EndCardinality): string {
+  return `${sourceEnd === 'one' ? '1' : 'N'}:${targetEnd === 'one' ? '1' : 'N'}`
+}
+
+/** A free comment placed on the diagram. */
+export interface ErdNote {
+  id: string
+  x: number
+  y: number
+  text: string
+  /** Set when the user widened or narrowed the note; `ERD_NOTE_WIDTH` otherwise. */
+  width?: number
+}
+
+export const ERD_NOTE_WIDTH = 240
+export const ERD_NOTE_MIN_WIDTH = 160
+export const ERD_NOTE_MAX_WIDTH = 800
+export const ERD_NOTE_MAX_LENGTH = 5000
+const NOTE_LINE_HEIGHT = 16
+const NOTE_PADDING = 10
+/** Left edge of a note's text: the comment icon sits in the gutter before it. */
+export const ERD_NOTE_TEXT_X = 30
+export const clampNoteWidth = (width: number): number =>
+  Math.round(Math.min(ERD_NOTE_MAX_WIDTH, Math.max(ERD_NOTE_MIN_WIDTH, width)))
+export const noteWidth = (note: Pick<ErdNote, 'width'>): number => (note.width ? clampNoteWidth(note.width) : ERD_NOTE_WIDTH)
+
+/** Lines of a note as drawn in the export: hard breaks kept, long lines wrapped on words. */
+export function noteLines(text: string, width = ERD_NOTE_WIDTH): string[] {
+  // Characters that fit on one line (12px monospace between the icon gutter and the right padding).
+  const NOTE_LINE_CHARS = Math.max(1, Math.floor((width - ERD_NOTE_TEXT_X - NOTE_PADDING) / 7.3))
+  const out: string[] = []
+  for (const raw of text.split('\n')) {
+    let line = ''
+    for (const word of raw.split(/(\s+)/)) {
+      if ((line + word).length <= NOTE_LINE_CHARS) {
+        line += word
+        continue
+      }
+      if (line.trim()) out.push(line.trimEnd())
+      let rest = word.trimStart()
+      while (rest.length > NOTE_LINE_CHARS) {
+        out.push(rest.slice(0, NOTE_LINE_CHARS))
+        rest = rest.slice(NOTE_LINE_CHARS)
+      }
+      line = rest
+    }
+    out.push(line.trimEnd())
+  }
+  return out
+}
+
+export const noteHeight = (text: string, width = ERD_NOTE_WIDTH): number =>
+  noteLines(text, width).length * NOTE_LINE_HEIGHT + NOTE_PADDING * 2
+
 /** Zoom below which tables collapse to their name. */
 export const ERD_COMPACT_ZOOM = 0.5

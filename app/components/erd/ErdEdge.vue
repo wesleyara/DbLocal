@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { getSmoothStepPath, Position, type EdgeProps } from '@vue-flow/core'
-import { cardinalityShort, markerPath, type EndCardinality } from '#shared/erd'
+import { EdgeLabelRenderer, Position, useVueFlow, type EdgeProps } from '@vue-flow/core'
+import { cardinalityShort, labelChipWidth, LABEL_CHIP_HEIGHT, markerPath, parseHandle, wirePath, type EndCardinality } from '#shared/erd'
 import { ERD_UI } from './state'
 
 interface EdgeData {
@@ -9,11 +9,14 @@ interface EdgeData {
   virtual: boolean
   name: string
   hover: (id: string | null) => void
+  /** Saves the leg's shift (`null`: back to the automatic spot). */
+  moveWire: (id: string, dx: number | null) => void
 }
 
 const props = defineProps<EdgeProps<EdgeData>>()
 const ui = inject(ERD_UI)!
 const { t } = useI18n()
+const { viewport } = useVueFlow()
 
 /** Cardinality read from the two line ends (source = FK side). */
 const cardinalityLabel = computed(() => {
@@ -23,29 +26,44 @@ const cardinalityLabel = computed(() => {
   return t(`virtualRelations.cardinalityOptions.${key}`)
 })
 
-const geometry = computed(() => {
-  const [path, labelX, labelY] = getSmoothStepPath({
-    sourceX: props.sourceX,
-    sourceY: props.sourceY,
-    targetX: props.targetX,
-    targetY: props.targetY,
-    sourcePosition: props.sourcePosition,
-    targetPosition: props.targetPosition,
-    borderRadius: 10,
-    offset: 22,
-  })
-  return { path, labelX, labelY }
-})
+/**
+ * Which way each end leaves its table. The handle id carries the side (`<column>:r`); Vue Flow's
+ * `sourcePosition` can still be its top/bottom fallback right after a load, which flipped the line.
+ */
+const dirOf = (handle: string | null | undefined, position: Position): 1 | -1 => {
+  const side = parseHandle(handle)?.side
+  return (side ? side === 'r' : position === Position.Right) ? 1 : -1
+}
+const sourceDir = computed(() => dirOf(props.sourceHandleId, props.sourcePosition))
+const targetDir = computed(() => dirOf(props.targetHandleId, props.targetPosition))
+
+/** Same path builder as the export, so a moved line looks the same in the PNG/SVG. */
+const geometry = computed(() =>
+  wirePath(props.sourceX, props.sourceY, sourceDir.value, props.targetX, props.targetY, targetDir.value, ui.wires.get(props.id) ?? 0),
+)
+/** About 14 screen pixels wide at any zoom, so the leg stays easy to grab when zoomed out. */
+const legGrab = computed(() => 14 / (viewport.value.zoom || 1))
+/** The vertical leg alone: the wide, invisible grab area for dragging the line sideways. */
+const legPath = computed(() => `M${geometry.value.x},${props.sourceY} L${geometry.value.x},${props.targetY}`)
 
 const shortLabel = computed(() => (props.data ? cardinalityShort(props.data.sourceEnd, props.data.targetEnd) : ''))
-/** Chip around the label, sized for the 11px monospace text. */
-const labelBox = computed(() => {
-  const width = shortLabel.value.length * 6.8 + 10
-  return { x: geometry.value.labelX - width / 2, y: geometry.value.labelY - 9, width, height: 18 }
-})
 
-const sourceDir = computed<1 | -1>(() => (props.sourcePosition === Position.Right ? 1 : -1))
-const targetDir = computed<1 | -1>(() => (props.targetPosition === Position.Right ? 1 : -1))
+// The chip's spot is reported to the canvas, which moves chips of edges sharing a channel apart.
+watchEffect(() => {
+  if (!shortLabel.value || ui.compact) return void ui.labelBoxes.delete(props.id)
+  ui.labelBoxes.set(props.id, {
+    id: props.id,
+    x: geometry.value.labelX,
+    y: geometry.value.labelY,
+    width: labelChipWidth(shortLabel.value),
+    height: LABEL_CHIP_HEIGHT,
+    y1: props.sourceY,
+    y2: props.targetY,
+  })
+})
+onBeforeUnmount(() => ui.labelBoxes.delete(props.id))
+const labelPos = computed(() => ({ x: geometry.value.labelX, y: geometry.value.labelY + (ui.labelOffsets.get(props.id) ?? 0) }))
+
 const markers = computed(() => {
   if (!props.data || ui.compact) return ''
   return (
@@ -54,28 +72,81 @@ const markers = computed(() => {
   )
 })
 
-const active = computed(() => ui.hoverEdge === props.id)
+// ---- dragging the line sideways (leg or chip); double-click puts it back ----------------------
+const dragging = ref(false)
+let start = { clientX: 0, dx: 0 }
+function onDragStart(event: PointerEvent): void {
+  if (event.button !== 0) return
+  event.stopPropagation()
+  ;(event.currentTarget as Element).setPointerCapture(event.pointerId)
+  dragging.value = true
+  start = { clientX: event.clientX, dx: ui.wires.get(props.id) ?? 0 }
+}
+function onDragMove(event: PointerEvent): void {
+  if (!dragging.value) return
+  const dx = Math.round(start.dx + (event.clientX - start.clientX) / (viewport.value.zoom || 1))
+  ui.wires.set(props.id, dx)
+}
+function onDragEnd(event: PointerEvent): void {
+  if (!dragging.value) return
+  dragging.value = false
+  ;(event.currentTarget as Element).releasePointerCapture(event.pointerId)
+  const dx = ui.wires.get(props.id) ?? 0
+  if (dx !== start.dx) props.data?.moveWire(props.id, dx || null)
+}
+function resetWire(): void {
+  if (!ui.wires.has(props.id)) return
+  ui.wires.delete(props.id)
+  props.data?.moveWire(props.id, null)
+}
+
+const active = computed(() => ui.hoverEdge === props.id || dragging.value)
 const dimmed = computed(
   () => !active.value && ui.selected !== null && !(props.source === ui.selected || props.target === ui.selected),
 )
+const stateClass = computed(() => [props.data?.virtual && 'is-virtual', active.value && 'is-active', dimmed.value && 'is-dimmed'])
 </script>
 
 <template>
-  <g
-    class="erd-edge"
-    :class="[data?.virtual && 'is-virtual', active && 'is-active', dimmed && 'is-dimmed']"
-    @mouseenter="data?.hover(id)"
-    @mouseleave="data?.hover(null)"
-  >
+  <g class="erd-edge" :class="stateClass" @mouseenter="data?.hover(id)" @mouseleave="data?.hover(null)">
     <path :d="geometry.path" fill="none" stroke="transparent" stroke-width="14" />
     <path :d="geometry.path" class="line" fill="none" />
     <path v-if="markers" :d="markers" class="line" fill="none" />
-    <g v-if="shortLabel && !ui.compact" class="label" data-erd-cardinality>
-      <rect v-bind="labelBox" rx="4" />
-      <text :x="geometry.labelX" :y="geometry.labelY" text-anchor="middle" dominant-baseline="central">{{ shortLabel }}</text>
-    </g>
-    <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }} · {{ cardinalityLabel }}</title>
+    <path
+      v-if="!ui.compact"
+      :d="legPath"
+      class="leg nodrag nopan"
+      fill="none"
+      stroke="transparent"
+      :stroke-width="legGrab"
+      data-erd-wire
+      @pointerdown="onDragStart"
+      @pointermove="onDragMove"
+      @pointerup="onDragEnd"
+      @pointercancel="onDragEnd"
+      @dblclick.stop="resetWire"
+    />
+    <title>{{ data?.name }}{{ data?.virtual ? ' (virtual)' : '' }} · {{ cardinalityLabel }} · {{ t('erd.wireHint') }}</title>
   </g>
+  <!-- Chips live in Vue Flow's label layer, above every line: a line drawn later never crosses one. -->
+  <EdgeLabelRenderer v-if="shortLabel && !ui.compact">
+    <div
+      class="erd-chip nodrag nopan"
+      :class="stateClass"
+      :style="{ transform: `translate(-50%, -50%) translate(${labelPos.x}px, ${labelPos.y}px)` }"
+      :title="`${data?.name ?? ''} · ${cardinalityLabel} · ${t('erd.wireHint')}`"
+      data-erd-cardinality
+      @mouseenter="data?.hover(id)"
+      @mouseleave="data?.hover(null)"
+      @pointerdown="onDragStart"
+      @pointermove="onDragMove"
+      @pointerup="onDragEnd"
+      @pointercancel="onDragEnd"
+      @dblclick.stop="resetWire"
+    >
+      {{ shortLabel }}
+    </div>
+  </EdgeLabelRenderer>
 </template>
 
 <style scoped>
@@ -94,26 +165,39 @@ const dimmed = computed(
 .is-virtual.is-active .line {
   stroke: var(--accent);
 }
-.label rect {
-  fill: var(--bg);
-  stroke: var(--border);
-}
-.label text {
-  fill: var(--fg-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-.is-virtual .label text,
-.is-active .label text {
-  fill: var(--accent);
-}
-.is-active .label rect {
-  stroke: var(--accent);
-}
 .is-dimmed {
   opacity: 0.15;
 }
 .erd-edge {
   cursor: pointer;
+}
+.leg {
+  cursor: ew-resize;
+  pointer-events: stroke;
+}
+/* Above the tables too: a line moved under a table keeps a chip that can still be grabbed or double-clicked. */
+.erd-chip {
+  position: absolute;
+  z-index: 1001;
+  height: 18px;
+  padding: 0 5px;
+  line-height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: all;
+  cursor: ew-resize;
+  user-select: none;
+}
+.erd-chip.is-virtual,
+.erd-chip.is-active {
+  color: var(--accent);
+}
+.erd-chip.is-active {
+  border-color: var(--accent);
 }
 </style>

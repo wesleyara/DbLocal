@@ -2,14 +2,19 @@ import {
   ERD_HEADER_HEIGHT,
   ERD_NOTE_TEXT_X,
   ERD_ROW_HEIGHT,
+  LABEL_CHIP_HEIGHT,
   cardinalityShort,
   edgeSides,
+  labelChipWidth,
   markerPath,
   noteHeight,
   noteLines,
   noteWidth,
+  spreadLabels,
+  wirePath,
   tableHeight,
   type ErdNote,
+  type LabelBox,
   type ErdEdge,
   type ErdTable,
   type Point,
@@ -71,6 +76,8 @@ export function buildErdSvg(
   positions: Record<string, Point>,
   colors: ErdSvgColors,
   notes: ErdNote[] = [],
+  /** Lines moved by hand: edge id -> shift of the vertical leg (`wirePath`'s `dx`). */
+  wires: Record<string, number> = {},
 ): ErdSvg {
   const placed = tables.filter((t) => positions[t.id])
   let minX = Infinity
@@ -90,12 +97,32 @@ export function buildErdSvg(
     maxX = Math.max(maxX, n.x + noteWidth(n))
     maxY = Math.max(maxY, n.y + noteHeight(n.text, noteWidth(n)))
   }
+  // A line dragged past the tables widens the picture so it is not cut.
+  const byId = new Map(placed.map((t) => [t.id, t]))
+  const ends = (e: ErdEdge) => {
+    const s = byId.get(e.source)
+    const t = byId.get(e.target)
+    if (!s || !t) return null
+    const sp = positions[s.id]!
+    const tp = positions[t.id]!
+    const sides = edgeSides(sp.x, s.width, tp.x, t.width, s === t)
+    const sdir: 1 | -1 = sides.source === 'r' ? 1 : -1
+    const tdir: 1 | -1 = sides.target === 'r' ? 1 : -1
+    return { s, t, sp, tp, sdir, tdir, sx: sp.x + (sdir === 1 ? s.width : 0), tx: tp.x + (tdir === 1 ? t.width : 0) }
+  }
+  for (const e of edges) {
+    const dx = wires[e.id]
+    const end = dx ? ends(e) : null
+    if (!end) continue
+    const { x } = wirePath(end.sx, 0, end.sdir, end.tx, 0, end.tdir, dx)
+    minX = Math.min(minX, x - 12)
+    maxX = Math.max(maxX, x + 12)
+  }
   if (!placed.length && !notes.length) return { svg: '', width: 0, height: 0 }
   const ox = PAD - minX
   const oy = PAD - minY
   const width = Math.ceil(maxX - minX + PAD * 2)
   const height = Math.ceil(maxY - minY + PAD * 2)
-  const byId = new Map(placed.map((t) => [t.id, t]))
 
   const rowY = (t: ErdTable, column: string): number => {
     const i = t.columns.findIndex((c) => c.name === column)
@@ -104,36 +131,32 @@ export function buildErdSvg(
 
   const lines: string[] = []
   const labels: string[] = []
+  const chips: (LabelBox & { label: string; virtual: boolean })[] = []
   for (const e of edges) {
-    const s = byId.get(e.source)
-    const t = byId.get(e.target)
-    if (!s || !t) continue
-    const sp = positions[s.id]!
-    const tp = positions[t.id]!
-    const sides = edgeSides(sp.x, s.width, tp.x, t.width, s === t)
-    const sdir = sides.source === 'r' ? 1 : -1
-    const tdir = sides.target === 'r' ? 1 : -1
-    const sx = sp.x + ox + (sdir === 1 ? s.width : 0)
+    const end = ends(e)
+    if (!end) continue
+    const { s, t, sp, tp, sdir, tdir } = end
+    const sx = end.sx + ox
     const sy = sp.y + oy + rowY(s, e.sourceColumn)
-    const tx = tp.x + ox + (tdir === 1 ? t.width : 0)
+    const tx = end.tx + ox
     const ty = tp.y + oy + rowY(t, e.targetColumn)
-    const x1 = sx + sdir * 22
-    const x2 = tx + tdir * 22
-    const xm = sdir === tdir ? (sdir === 1 ? Math.max(x1, x2) : Math.min(x1, x2)) : (x1 + x2) / 2
-    const d = `M${sx},${sy} L${x1},${sy} L${xm},${sy} L${xm},${ty} L${x2},${ty} L${tx},${ty}`
+    const { path: d, x: xm } = wirePath(sx, sy, sdir, tx, ty, tdir, wires[e.id] ?? 0)
     const stroke = e.virtual ? colors.accent : colors.subtle
     const dash = e.virtual ? ' stroke-dasharray="6 4"' : ''
     lines.push(
       `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.4"${dash}/>`,
       `<path d="${markerPath(sx, sy, sdir, e.sourceEnd)}${markerPath(tx, ty, tdir, e.targetEnd)}" fill="none" stroke="${stroke}" stroke-width="1.4"/>`,
     )
-    // Cardinality chip on the vertical leg, like the canvas.
+    // Cardinality chip on the vertical leg, like the canvas; placed after all edges are known.
     const label = cardinalityShort(e.sourceEnd, e.targetEnd)
-    const lw = label.length * 6.8 + 10
-    const ly = (sy + ty) / 2
+    chips.push({ id: String(chips.length), x: xm, y: (sy + ty) / 2, width: labelChipWidth(label), height: LABEL_CHIP_HEIGHT, y1: sy, y2: ty, label, virtual: e.virtual })
+  }
+  const offsets = spreadLabels(chips)
+  for (const c of chips) {
+    const ly = c.y + (offsets.get(c.id) ?? 0)
     labels.push(
-      `<rect x="${xm - lw / 2}" y="${ly - 9}" width="${lw}" height="18" rx="4" fill="${colors.bg}" stroke="${colors.border}"/>`,
-      `<text x="${xm}" y="${ly + 4}" font-size="11" text-anchor="middle" fill="${e.virtual ? colors.accent : colors.muted}">${label}</text>`,
+      `<rect x="${c.x - c.width / 2}" y="${ly - LABEL_CHIP_HEIGHT / 2}" width="${c.width}" height="${LABEL_CHIP_HEIGHT}" rx="4" fill="${colors.bg}" stroke="${colors.border}"/>`,
+      `<text x="${c.x}" y="${ly + 4}" font-size="11" text-anchor="middle" fill="${c.virtual ? colors.accent : colors.muted}">${c.label}</text>`,
     )
   }
 

@@ -20,6 +20,10 @@ When something fails, DbLocal shows a short message and keeps the technical deta
 | SSL required / certificate | Pick the SSL mode the server expects; `require` encrypts without checking the certificate. |
 | File not found (SQLite) | The path must exist where DbLocal runs. In Docker, mount the file and use the path inside the container. |
 
+## The database went offline {#offline}
+
+If a database stops answering while you work (server stopped, network down, VPN off), the table or diagram you open shows **Could not connect** with the reason, inside DbLocal: the sidebar, the tabs and your other connections keep working. Start the database again and click **Try again**, or go **Back to connections**.
+
 ## SSH tunnel {#ssh}
 
 The host and port of the database are the ones **seen from the SSH server**, not from your machine. If the session drops, the next action reconnects it by itself.

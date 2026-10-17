@@ -11,7 +11,8 @@ import {
 
 const { t } = useI18n()
 const open = defineModel<boolean>('open', { default: false })
-defineProps<{ title: string; description?: string; closeLabel?: string; wide?: boolean }>()
+/** `wide` for tables and lists of records; `medium` for forms whose fields hold long names. */
+defineProps<{ title: string; description?: string; closeLabel?: string; wide?: boolean; medium?: boolean }>()
 
 /** An element marked `data-autofocus` takes the focus when the dialog opens, instead of the close button. */
 function onOpenAutoFocus(event: Event): void {
@@ -28,7 +29,7 @@ function onOpenAutoFocus(event: Event): void {
       <DialogOverlay class="fixed inset-0 z-40 bg-black/50" />
       <DialogContent
         class="fixed left-1/2 top-1/2 z-50 max-h-[88vh] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-lg border border-border bg-surface p-4 shadow-pop"
-        :class="wide ? 'w-[min(64rem,94vw)]' : 'w-[min(32rem,92vw)]'"
+        :class="wide ? 'w-[min(64rem,94vw)]' : medium ? 'w-[min(44rem,94vw)]' : 'w-[min(32rem,92vw)]'"
         @open-auto-focus="onOpenAutoFocus"
       >
         <div class="mb-3 flex items-start justify-between gap-4">

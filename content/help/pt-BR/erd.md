@@ -37,6 +37,10 @@ Clique em **Diagrama** na barra superior para abrir o schema como diagrama. Ele 
 
 O primeiro layout é calculado automaticamente. Arraste as tabelas para organizá-las; as posições são salvas por conexão e schema e voltam na próxima vez. **Resetar layout** volta ao automático.
 
+## Mover uma linha {#move-line}
+
+Quando as linhas ficam muito juntas, arraste uma para o lado: pegue a parte vertical dela ou o chip `N:1` / `1:1` e mova para a esquerda ou para a direita. O deslocamento é salvo com o layout e mantido quando você move as tabelas. Clique duas vezes na linha ou no chip para devolvê-la ao lugar que o DbLocal escolhe; **Resetar layout** devolve todas. Chips no mesmo canal se afastam sozinhos, e as exportações PNG e SVG desenham as linhas onde você as deixou.
+
 ## Notas {#notes}
 
 Clique em **Adicionar nota** para colocar um comentário no meio da tela e digite; <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> ou um clique fora salva, <kbd>Esc</kbd> cancela. Clique duas vezes numa nota para editar, arraste para mover, arraste a borda direita para alargar ou estreitar e use o ícone de lixeira (ao passar o mouse) para excluir. Uma nota deixada vazia é removida.

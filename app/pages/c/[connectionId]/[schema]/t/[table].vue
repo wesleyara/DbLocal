@@ -14,11 +14,14 @@ const { number } = useFormat()
 const store = useSchemaStore()
 const structureOpen = ref(false)
 const historyOpen = ref(false)
+const notesOpen = ref(false)
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, {
   key: `connection-${id}`,
 })
-await store.ensure(id, schemaName)
+// A database that is down must not take the whole app to the error page: the error stays in the
+// store (`store.error`) and the page shows it with a retry, inside the shell.
+await store.ensure(id, schemaName).catch(() => {})
 
 const envClass: Record<ConnectionView['environment'], string> = {
   local: 'bg-env-local',
@@ -35,6 +38,13 @@ const envText: Record<ConnectionView['environment'], string> = {
 const tableName = computed(() => route.params.table as string)
 const table = computed(() => store.tables.find((tb) => tb.name === tableName.value) ?? null)
 const node = computed(() => (tableName.value ? store.graph?.tables[tableName.value] : undefined))
+
+/** The table's Markdown note, loaded with the page so the toolbar can mark a table that has one. */
+const note = useNote(() =>
+  import.meta.client && tableName.value
+    ? { url: `/api/c/${id}/tables/${encodeURIComponent(tableName.value)}/notes`, schema: schemaName }
+    : null,
+)
 
 /** The record open in the side panel, from `?r=`. It may belong to another table than the page's. */
 const openRecord = computed(() => decodeRecord(typeof route.query.r === 'string' ? route.query.r : null, tableName.value))
@@ -62,6 +72,7 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
       :title="t('shell.noTable')"
       :description="t('shell.noTableHint')"
     />
+    <ConnectionsUnavailable v-else-if="!store.snapshot && store.error" :connection-id="id" :schema="schemaName" :error="store.error" />
     <UiEmptyState v-else-if="!table" icon="lucide:triangle-alert" :title="t('tableView.notFound')" />
 
     <section v-else class="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-4">
@@ -77,13 +88,21 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
       </div>
 
       <div class="min-h-72 min-w-0 flex-1">
-        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" @structure="structureOpen = true" @history="historyOpen = true" />
+        <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" :has-notes="note.hasContent.value" @structure="structureOpen = true" @history="historyOpen = true" @notes="notesOpen = true" />
       </div>
 
       <UiDialog v-model:open="structureOpen" wide :title="t('tableView.structureTitle', { table: table.name })">
         <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" />
       </UiDialog>
       <QueryHistoryDialog v-model:open="historyOpen" :connection-id="id" :schema="schemaName" :table="table.name" />
+      <NotesTableNotesDialog
+        v-model:open="notesOpen"
+        v-model:content="note.content.value"
+        :table="table.name"
+        :status="note.status.value"
+        :updated-at="note.updatedAt.value"
+        @close="note.flush()"
+      />
     </section>
   </div>
   <RecordPanel

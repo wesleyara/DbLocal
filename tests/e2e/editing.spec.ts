@@ -58,7 +58,11 @@ test.afterAll(async ({ request }) => {
 
 test.beforeEach(() => seed())
 
-const open = (page: Page, id: string, table: string) => page.goto(`/c/${id}/main/t/${table}`)
+async function open(page: Page, id: string, table: string): Promise<void> {
+  await page.goto(`/c/${id}/main/t/${table}`)
+  // A click before hydration hits the server-rendered button, which has no listener yet.
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+}
 const cell = (page: Page, row: number, col: number) => page.locator(`[data-r="${row}"][data-c="${col}"]`)
 
 async function editCell(page: Page, row: number, col: number, text: string): Promise<void> {
@@ -114,7 +118,7 @@ test('Add record inserts a row with defaults and shows them as DEFAULT', async (
   // user_id is a foreign key: it is picked by name.
   await cell(page, 0, 1).dblclick()
   await page.locator('[data-fk-search]').fill('carla')
-  await page.locator('[data-fk-option]').first().click()
+  await page.locator('[data-fk-option]', { hasText: 'Carla' }).click()
   await page.locator('[data-save]').click()
   await expect(page.locator('[data-pending-bar]')).toHaveCount(0)
   const all = await rows(request, ids.rw!, 'orders')

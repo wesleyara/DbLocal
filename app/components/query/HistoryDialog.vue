@@ -73,7 +73,10 @@ async function copy(sql: string) {
         <UiCheckbox v-model="onlyTable" :label="t('tableView.historyThisTable', { table })" />
       </div>
 
-      <p v-if="!loading && history.entries.length === 0" class="p-2 text-sm text-fg-subtle">{{ t('query.noHistory') }}</p>
+      <div v-if="loading && history.entries.length === 0" class="grid gap-1.5" aria-busy="true" data-history-skeleton>
+        <UiSkeleton v-for="i in 4" :key="i" class="h-14" />
+      </div>
+      <p v-else-if="history.entries.length === 0" class="p-2 text-sm text-fg-subtle">{{ t('query.noHistory') }}</p>
       <ul class="grid max-h-[60vh] min-w-0 gap-1.5 overflow-y-auto">
         <li v-for="h in history.entries" :key="h.id" class="min-w-0 rounded-md border border-border bg-surface px-3 py-2" data-history-entry>
           <div class="flex items-center gap-2 text-xs text-fg-subtle">

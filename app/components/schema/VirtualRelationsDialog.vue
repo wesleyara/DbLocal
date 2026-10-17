@@ -45,11 +45,8 @@ function issuesOf(err: unknown): Issue[] {
   return (err as { data?: { data?: { issues?: Issue[] } } })?.data?.data?.issues ?? []
 }
 
-function label(rel: VirtualRelationDef): string {
-  const from = `${rel.fromTable}.${rel.fromColumns.join(', ')}`
-  const to = `${rel.toTable}.${rel.toColumns.join(', ')}`
-  return rel.name ?? `${from} → ${to}`
-}
+const path = (rel: VirtualRelationDef): string =>
+  `${rel.fromTable}.${rel.fromColumns.join(', ')} → ${rel.toTable}.${rel.toColumns.join(', ')}`
 
 function cardinalityOf(rel: VirtualRelationDef): string {
   return cardinalities.find((c) => c.value === rel.cardinality)?.label ?? rel.cardinality
@@ -116,20 +113,25 @@ async function remove(rel: VirtualRelationDef) {
 </script>
 
 <template>
-  <UiDialog v-model:open="open" :title="t('virtualRelations.title')" :description="t('virtualRelations.description')">
-    <div class="grid gap-3">
+  <UiDialog v-model:open="open" medium :title="t('virtualRelations.title')" :description="t('virtualRelations.description')">
+    <!-- `grid-cols-1` (minmax(0, 1fr)): an `auto` column would grow to a long name and scroll the dialog sideways. -->
+    <div class="grid grid-cols-1 gap-3" data-virtual-relations>
       <div class="-mb-2 flex justify-end"><HelpHint id="relations.virtual" /></div>
       <p v-if="store.virtual.length === 0 && !formOpen" class="text-sm text-fg-muted">{{ t('virtualRelations.empty') }}</p>
 
-      <ul v-if="!formOpen" class="grid gap-1">
+      <ul v-if="!formOpen" class="grid grid-cols-1 gap-1">
         <li
           v-for="rel in store.virtual"
           :key="rel.id"
-          class="flex items-center gap-2 rounded-md border border-dashed border-accent/50 px-2 py-1.5 text-sm"
+          class="flex items-start gap-2 rounded-md border border-dashed border-accent/50 px-2 py-1.5 text-sm"
         >
-          <Icon name="lucide:link-2" class="size-3.5 shrink-0 text-accent" />
-          <span class="font-data min-w-0 flex-1 truncate text-fg">{{ label(rel) }}</span>
-          <span class="shrink-0 text-xs text-fg-subtle">{{ cardinalityOf(rel) }}</span>
+          <Icon name="lucide:link-2" class="mt-1 size-3.5 shrink-0 text-accent" />
+          <!-- Long table and column names wrap instead of being cut: the whole path stays readable. -->
+          <div class="min-w-0 flex-1">
+            <p class="font-data break-words text-fg">{{ rel.name ?? path(rel) }}</p>
+            <p v-if="rel.name" class="font-data break-all text-xs text-fg-subtle">{{ path(rel) }}</p>
+            <p class="text-xs text-fg-subtle">{{ cardinalityOf(rel) }}</p>
+          </div>
           <UiIconButton icon="lucide:pencil" :label="t('virtualRelations.edit')" size="sm" @click="startEdit(rel)" />
           <UiIconButton icon="lucide:trash-2" :label="t('virtualRelations.remove')" size="sm" @click="remove(rel)" />
         </li>
@@ -142,32 +144,32 @@ async function remove(rel: VirtualRelationDef) {
         </UiButton>
       </div>
 
-      <form v-else class="grid gap-3" @submit.prevent="save">
-        <label class="grid gap-1 text-xs text-fg-muted">
+      <form v-else class="grid grid-cols-1 gap-3" @submit.prevent="save">
+        <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
           {{ t('virtualRelations.name') }}
           <UiInput v-model="form.name" maxlength="120" />
         </label>
 
         <div class="grid grid-cols-2 gap-3">
-          <label class="grid gap-1 text-xs text-fg-muted">
+          <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
             {{ t('virtualRelations.fromTable') }}
             <UiSelect :model-value="form.fromTable" :options="tableOptions" @update:model-value="(v) => { form.fromTable = v ?? ''; form.fromColumn = '' }" />
           </label>
-          <label class="grid gap-1 text-xs text-fg-muted">
+          <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
             {{ t('virtualRelations.fromColumn') }}
             <UiSelect :model-value="form.fromColumn" :options="columnOptions(form.fromTable)" :disabled="!form.fromTable" @update:model-value="(v) => (form.fromColumn = v ?? '')" />
           </label>
-          <label class="grid gap-1 text-xs text-fg-muted">
+          <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
             {{ t('virtualRelations.toTable') }}
             <UiSelect :model-value="form.toTable" :options="tableOptions" @update:model-value="(v) => { form.toTable = v ?? ''; form.toColumn = '' }" />
           </label>
-          <label class="grid gap-1 text-xs text-fg-muted">
+          <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
             {{ t('virtualRelations.toColumn') }}
             <UiSelect :model-value="form.toColumn" :options="columnOptions(form.toTable)" :disabled="!form.toTable" @update:model-value="(v) => (form.toColumn = v ?? '')" />
           </label>
         </div>
 
-        <label class="grid gap-1 text-xs text-fg-muted">
+        <label class="grid min-w-0 gap-1 text-xs text-fg-muted">
           {{ t('virtualRelations.cardinality') }}
           <UiSelect :model-value="form.cardinality" :options="cardinalities" @update:model-value="(v) => v && (form.cardinality = v as Cardinality)" />
         </label>

@@ -202,6 +202,31 @@ export function edgeSides(sourceX: number, sourceWidth: number, targetX: number,
   return { source: 'r' as const, target: 'r' as const }
 }
 
+/** Horizontal stub before a line turns, and the radius of its corners. */
+export const WIRE_STUB = 22
+export const WIRE_RADIUS = 10
+
+/**
+ * Path of a relation line: out of the source side, along a vertical leg, into the target side, with
+ * rounded corners. The leg sits where the automatic layout puts it (between the two stubs, or past
+ * both when the ends face the same way) shifted by `dx`, the user's drag. Canvas and export share it.
+ */
+export function wirePath(sx: number, sy: number, sdir: 1 | -1, tx: number, ty: number, tdir: 1 | -1, dx = 0) {
+  const x1 = sx + sdir * WIRE_STUB
+  const x2 = tx + tdir * WIRE_STUB
+  const auto = sdir === tdir ? (sdir === 1 ? Math.max(x1, x2) : Math.min(x1, x2)) : (x1 + x2) / 2
+  const x = auto + dx
+  const vy = Math.sign(ty - sy)
+  const r = Math.max(0, Math.min(WIRE_RADIUS, Math.abs(ty - sy) / 2, Math.abs(x - sx), Math.abs(tx - x)))
+  const inX = Math.sign(x - sx) || sdir
+  const outX = Math.sign(tx - x) || -tdir
+  const path =
+    r === 0 || vy === 0
+      ? `M${sx},${sy} L${x},${sy} L${x},${ty} L${tx},${ty}`
+      : `M${sx},${sy} L${x - inX * r},${sy} Q${x},${sy} ${x},${sy + vy * r} L${x},${ty - vy * r} Q${x},${ty} ${x + outX * r},${ty} L${tx},${ty}`
+  return { path, x, auto, labelX: x, labelY: (sy + ty) / 2 }
+}
+
 /** Handle id of a column: `<column>:l` / `<column>:r`. The header uses the empty column. */
 export const handleId = (column: string, side: 'l' | 'r'): string => `${column}:${side}`
 export function parseHandle(id: string | null | undefined): { column: string; side: 'l' | 'r' } | null {
@@ -225,6 +250,49 @@ export function usablePositions(saved: Record<string, Point>, tables: string[]):
 /** Short cardinality of an edge read from the FK side to the referenced side: `N:1`, `1:1`, `1:N`. */
 export function cardinalityShort(sourceEnd: EndCardinality, targetEnd: EndCardinality): string {
   return `${sourceEnd === 'one' ? '1' : 'N'}:${targetEnd === 'one' ? '1' : 'N'}`
+}
+
+/** Width and height of a cardinality chip (11px monospace text plus padding). */
+export const labelChipWidth = (label: string): number => label.length * 6.8 + 10
+export const LABEL_CHIP_HEIGHT = 18
+
+/** A cardinality chip where its edge would put it: centred on (`x`, `y`), on a vertical leg spanning `y1`..`y2`. */
+export interface LabelBox {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  y1: number
+  y2: number
+}
+
+/**
+ * Vertical shift per chip so no two overlap. Edges that share a channel put their chips at nearly
+ * the same midpoint; each one in turn (left to right, top to bottom, so the result is stable) takes
+ * the nearest free slot up or down its own line, staying on its vertical leg when the leg is long
+ * enough. A chip with no free slot nearby stays where it was.
+ */
+export function spreadLabels(boxes: LabelBox[], gap = 3): Map<string, number> {
+  const order = [...boxes].sort((a, b) => a.x - b.x || a.y - b.y || (a.id < b.id ? -1 : 1))
+  const placed: { x: number; y: number; width: number; height: number }[] = []
+  const offsets = new Map<string, number>()
+  const free = (b: LabelBox, y: number) =>
+    placed.every(
+      (p) => Math.abs(p.x - b.x) * 2 >= p.width + b.width + gap * 2 || Math.abs(p.y - y) * 2 >= p.height + b.height + gap * 2,
+    )
+  for (const b of order) {
+    const step = b.height + gap
+    const lo = Math.min(b.y1, b.y2) + b.height / 2
+    const hi = Math.max(b.y1, b.y2) - b.height / 2
+    const candidates = [0]
+    for (let i = 1; i <= 12; i++) candidates.push(i * step, -i * step)
+    const onLine = candidates.find((dy) => b.y + dy >= lo && b.y + dy <= hi && free(b, b.y + dy))
+    const dy = onLine ?? candidates.find((d) => free(b, b.y + d)) ?? 0
+    offsets.set(b.id, dy)
+    placed.push({ x: b.x, y: b.y + dy, width: b.width, height: b.height })
+  }
+  return offsets
 }
 
 /** A free comment placed on the diagram. */

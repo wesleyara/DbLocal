@@ -125,15 +125,17 @@ function formatValue(v: unknown): string {
       <FilterEditor :columns="columns" @apply="add" @cancel="addOpen = false" />
     </UiPopover>
 
-    <button
-      type="button"
-      class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-      @click="openTree"
-    >
-      <Icon name="lucide:list-tree" class="size-3" />
-      {{ t('grid.advancedFilters') }}
-    </button>
-    <slot name="after-advanced" />
+    <!-- The grid lays out its own toolbar here; it gets `openAdvanced` to place "Advanced filters" where it wants. -->
+    <slot name="tools" :open-advanced="openTree">
+      <button
+        type="button"
+        class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+        @click="openTree"
+      >
+        <Icon name="lucide:list-tree" class="size-3" />
+        {{ t('grid.advancedFilters') }}
+      </button>
+    </slot>
     <HelpHint id="grid.filters" />
 
     <button v-if="nodes.length" type="button" class="text-xs text-fg-subtle hover:text-fg" @click="commit([])">

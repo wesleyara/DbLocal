@@ -37,6 +37,10 @@ Click **Diagram** in the top bar to open the schema as a diagram. It opens in it
 
 The first layout is computed automatically. Drag tables to arrange them; positions are saved for the connection and schema and come back next time. **Reset layout** goes back to the automatic one.
 
+## Move a line {#move-line}
+
+When lines run too close together, drag one sideways: grab its vertical part or its `N:1` / `1:1` chip and move it left or right. The shift is saved with the layout and kept when you move the tables. Double-click the line or its chip to put it back where DbLocal places it; **Reset layout** puts every line back. Chips sharing a channel are spread apart on their own, and the PNG and SVG exports draw the lines where you left them.
+
 ## Notes {#notes}
 
 Click **Add note** to put a comment in the middle of the view and type it; <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> or a click outside saves it, <kbd>Esc</kbd> cancels. Double click a note to edit it, drag it to move it, drag its right edge to make it wider or narrower, and use the trash icon (on hover) to delete it. A note left empty is removed.

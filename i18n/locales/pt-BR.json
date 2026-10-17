@@ -637,7 +637,8 @@
     "editNoteHint": "Clique duas vezes para editar",
     "deleteNote": "Excluir nota",
     "notesSaveFailed": "Não foi possível salvar as notas",
-    "resizeNote": "Arraste para redimensionar"
+    "resizeNote": "Arraste para redimensionar",
+    "wireHint": "arraste para mover a linha, clique duplo para voltar"
   },
   "palette": {
     "title": "Paleta de comandos",

@@ -202,6 +202,31 @@ export function edgeSides(sourceX: number, sourceWidth: number, targetX: number,
   return { source: 'r' as const, target: 'r' as const }
 }
 
+/** Horizontal stub before a line turns, and the radius of its corners. */
+export const WIRE_STUB = 22
+export const WIRE_RADIUS = 10
+
+/**
+ * Path of a relation line: out of the source side, along a vertical leg, into the target side, with
+ * rounded corners. The leg sits where the automatic layout puts it (between the two stubs, or past
+ * both when the ends face the same way) shifted by `dx`, the user's drag. Canvas and export share it.
+ */
+export function wirePath(sx: number, sy: number, sdir: 1 | -1, tx: number, ty: number, tdir: 1 | -1, dx = 0) {
+  const x1 = sx + sdir * WIRE_STUB
+  const x2 = tx + tdir * WIRE_STUB
+  const auto = sdir === tdir ? (sdir === 1 ? Math.max(x1, x2) : Math.min(x1, x2)) : (x1 + x2) / 2
+  const x = auto + dx
+  const vy = Math.sign(ty - sy)
+  const r = Math.max(0, Math.min(WIRE_RADIUS, Math.abs(ty - sy) / 2, Math.abs(x - sx), Math.abs(tx - x)))
+  const inX = Math.sign(x - sx) || sdir
+  const outX = Math.sign(tx - x) || -tdir
+  const path =
+    r === 0 || vy === 0
+      ? `M${sx},${sy} L${x},${sy} L${x},${ty} L${tx},${ty}`
+      : `M${sx},${sy} L${x - inX * r},${sy} Q${x},${sy} ${x},${sy + vy * r} L${x},${ty - vy * r} Q${x},${ty} ${x + outX * r},${ty} L${tx},${ty}`
+  return { path, x, auto, labelX: x, labelY: (sy + ty) / 2 }
+}
+
 /** Handle id of a column: `<column>:l` / `<column>:r`. The header uses the empty column. */
 export const handleId = (column: string, side: 'l' | 'r'): string => `${column}:${side}`
 export function parseHandle(id: string | null | undefined): { column: string; side: 'l' | 'r' } | null {

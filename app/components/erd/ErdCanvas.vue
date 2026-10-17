@@ -65,6 +65,7 @@ const ui = reactive<ErdUiState>({
   editingNote: null,
   labelBoxes: new Map(),
   labelOffsets: new Map(),
+  wires: new Map(),
 })
 provide(ERD_UI, ui)
 watch(() => [...ui.labelBoxes.values()], (boxes) => (ui.labelOffsets = spreadLabels(boxes)), { immediate: true })
@@ -146,7 +147,7 @@ function buildEdges(): Edge[] {
       target: e.target,
       sourceHandle: handleId(shown(e.source, e.sourceColumn), sides.source),
       targetHandle: handleId(shown(e.target, e.targetColumn), sides.target),
-      data: { sourceEnd: e.sourceEnd, targetEnd: e.targetEnd, virtual: e.virtual, name: e.name, hover: hoverEdge },
+      data: { sourceEnd: e.sourceEnd, targetEnd: e.targetEnd, virtual: e.virtual, name: e.name, hover: hoverEdge, moveWire },
     })
   }
   return out
@@ -204,8 +205,10 @@ async function loadSaved(): Promise<void> {
   try {
     const res = await $fetch<ErdLayout>(`/api/c/${props.connectionId}/erd-layout`, { query: { schema: props.schema } })
     saved.value = res.positions
+    ui.wires = new Map(Object.entries(res.wires ?? {}))
   } catch {
     saved.value = {}
+    ui.wires = new Map()
   }
   loaded.value = true
 }
@@ -286,16 +289,28 @@ watch(
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 const dirty = new Map<string, Point>()
 
+/** Lines dragged sideways since the last save: edge id -> shift, `null` = back to automatic. */
+const dirtyWires = new Map<string, number | null>()
+
+function moveWire(id: string, dx: number | null): void {
+  if (dx === null) ui.wires.delete(id)
+  else ui.wires.set(id, dx)
+  dirtyWires.set(id, dx)
+  queueSave()
+}
+
 function queueSave(): void {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(async () => {
     const batch = Object.fromEntries(dirty)
+    const wires = Object.fromEntries(dirtyWires)
     dirty.clear()
-    if (!Object.keys(batch).length) return
+    dirtyWires.clear()
+    if (!Object.keys(batch).length && !Object.keys(wires).length) return
     try {
       await $fetch(`/api/c/${props.connectionId}/erd-layout`, {
         method: 'PUT',
-        body: { schema: props.schema, positions: batch },
+        body: { schema: props.schema, positions: batch, wires },
       })
     } catch {
       toast.push({ kind: 'error', title: t('erd.saveFailed') })
@@ -336,6 +351,7 @@ function onNodeDragStop({ nodes }: { nodes: { id: string }[] }): void {
 async function resetLayout(): Promise<void> {
   if (saveTimer) clearTimeout(saveTimer)
   dirty.clear()
+  dirtyWires.clear()
   try {
     await $fetch(`/api/c/${props.connectionId}/erd-layout`, { method: 'DELETE', query: { schema: props.schema } })
   } catch {
@@ -343,6 +359,7 @@ async function resetLayout(): Promise<void> {
     return
   }
   saved.value = {}
+  ui.wires = new Map()
   autoCache.clear()
   fitNext = true
   await render()
@@ -490,7 +507,7 @@ async function exportImage(format: 'png' | 'svg'): Promise<void> {
   try {
     const set = new Set(visible.value.map((tb) => tb.id))
     const edges = model.value.edges.filter((e) => set.has(e.source) && set.has(e.target))
-    const { svg, width, height } = buildErdSvg(visible.value, edges, positions.value, tokenColors(), notes.value)
+    const { svg, width, height } = buildErdSvg(visible.value, edges, positions.value, tokenColors(), notes.value, Object.fromEntries(ui.wires))
     if (!svg) return
     const blob = format === 'svg' ? new Blob([svg], { type: 'image/svg+xml' }) : await rasterise(svg, width, height, 2)
     saveBlob(blob, `${props.schema}-erd.${format}`)

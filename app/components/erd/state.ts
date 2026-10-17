@@ -19,6 +19,8 @@ export interface ErdUiState {
   labelBoxes: Map<string, LabelBox>
   /** Vertical shift of each chip, so chips of edges sharing a channel do not overlap. */
   labelOffsets: Map<string, number>
+  /** Lines moved by hand: edge id -> horizontal shift of the vertical leg (saved with the layout). */
+  wires: Map<string, number>
 }
 
 export const ERD_UI: InjectionKey<ErdUiState> = Symbol('erd-ui')

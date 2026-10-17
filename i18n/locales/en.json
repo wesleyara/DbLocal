@@ -637,7 +637,8 @@
     "editNoteHint": "Double click to edit",
     "deleteNote": "Delete note",
     "notesSaveFailed": "Could not save the notes",
-    "resizeNote": "Drag to resize"
+    "resizeNote": "Drag to resize",
+    "wireHint": "drag to move the line, double-click to put it back"
   },
   "palette": {
     "title": "Command palette",

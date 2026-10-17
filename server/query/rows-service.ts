@@ -12,6 +12,7 @@ import type { StoreSchema } from '../store/db'
 import { QueryInputError } from './errors'
 import { compileRows } from './compile'
 import { inline } from './compile-mutations'
+import { upperKeywords } from '#shared/sql-keyword-case'
 import { findTable, planRows } from './plan'
 import { resolveScope, withFilter } from './relations-service'
 import { serializeRow } from './serialize'
@@ -37,7 +38,8 @@ export async function readRowsPage(db: Db, connectionId: string, table: string, 
 
 /**
  * The SELECT the grid runs for a request, with the parameters written into the text. For display
- * and for opening the view in the SQL editor: it is never executed in this form.
+ * and for opening the view in the SQL editor: it is never executed in this form. Keywords are in
+ * upper case, like the editor's autocomplete.
  */
 export async function previewRowsSql(db: Db, connectionId: string, table: string, req: RowsRequest): Promise<{ sql: string }> {
   const { snapshot, graph } = await readSchema(db, connectionId, req.schema)
@@ -52,7 +54,7 @@ export async function previewRowsSql(db: Db, connectionId: string, table: string
   }
   const plan = { ...planRows(snapshot, table, request), junction }
   const compiled = compileRows(plan)
-  return { sql: `${inline(compiled.sql, compiled.parameters, plan.dialect)};` }
+  return { sql: `${inline(upperKeywords(compiled.sql, plan.dialect), compiled.parameters, plan.dialect)};` }
 }
 
 /**

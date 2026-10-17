@@ -28,6 +28,7 @@ import FilterBar from './FilterBar.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
+import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 import ResultGrid from '~/components/query/ResultGrid.vue'
 import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
 import SortBar from './SortBar.vue'
@@ -552,6 +553,7 @@ const exportItems = computed(() => [
 // ---- the SQL behind the view: editable and runnable in place ---------------------------------
 const ui = useUiStore()
 const queries = useQueriesStore()
+queries.hydrate()
 /** What the grid runs for the current view. */
 const viewSql = ref('')
 /** The text in the editor: follows the view until the user types. */
@@ -562,6 +564,8 @@ const queryId = ref<string | null>(null)
 const adhoc = ref<{ statement: StatementResult; sql: string; queryId: string } | null>(null)
 const adhocError = ref<string | null>(null)
 const confirmSql = ref<{ sql: string; kinds: string[] } | null>(null)
+/** SQL waiting for the "Alert before run" confirmation. */
+const alertSql = ref<string | null>(null)
 const sqlEditor = ref<InstanceType<typeof SqlEditor> | null>(null)
 let sqlTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -631,6 +635,14 @@ function resetSql(): void {
   sqlText.value = viewSql.value
   adhoc.value = null
   adhocError.value = null
+}
+
+/** Runs the bar's SQL at once, or first shows what is about to run when "Alert before run" is on. */
+function requestSql(sql?: string): void {
+  const text = (sql ?? sqlText.value).trim()
+  if (!text || running.value) return
+  if (queries.alertBeforeRun) alertSql.value = text
+  else void runSql(text)
 }
 
 async function runSql(sql?: string, confirmWrites = false): Promise<void> {
@@ -835,8 +847,9 @@ onMounted(() => state.start())
         <span class="text-xs font-medium text-fg-muted">{{ t('grid.sqlTitle') }}</span>
         <span class="text-[11px] text-fg-subtle">{{ edited ? t('grid.sqlEdited') : t('grid.sqlHint') }}</span>
         <div class="ml-auto flex items-center gap-1">
+          <UiCheckbox v-model="queries.alertBeforeRun" class="mr-1 text-xs! text-fg-muted" :label="t('query.alert.toggle')" data-alert-before-run />
           <UiButton v-if="running" size="sm" variant="danger" @click="cancelSql">{{ t('query.cancel') }}</UiButton>
-          <UiButton v-else size="sm" variant="primary" :disabled="!sqlText.trim()" data-run-view-sql @click="runSql()">
+          <UiButton v-else size="sm" variant="primary" :disabled="!sqlText.trim()" data-run-view-sql @click="requestSql()">
             <Icon name="lucide:play" class="size-3.5" />{{ t('query.run') }}
           </UiButton>
           <UiButton v-if="edited" size="sm" variant="ghost" @click="resetSql">{{ t('grid.sqlReset') }}</UiButton>
@@ -853,8 +866,8 @@ onMounted(() => state.start())
             :dialect="dialect"
             :snapshot="schemaStore.snapshot"
             :graph="schemaStore.graph"
-            @run="(sql) => runSql(sql)"
-            @run-all="runSql()"
+            @run="(sql) => requestSql(sql)"
+            @run-all="requestSql()"
           />
         </ClientOnly>
       </div>
@@ -984,6 +997,13 @@ onMounted(() => state.start())
       @confirm="confirmDelete"
     />
 
+    <RunConfirmDialog
+      :sql="alertSql"
+      :dialect="dialect"
+      :prod="connection?.environment === 'prod'"
+      @cancel="alertSql = null"
+      @confirm="(sql) => { alertSql = null; void runSql(sql, true) }"
+    />
     <UiDialog :open="!!confirmSql" :title="t('query.confirmTitle')" :description="t('query.confirmProd')" @update:open="(v) => !v && (confirmSql = null)">
       <pre class="font-data max-h-48 overflow-auto rounded-md border border-border bg-bg-subtle p-2 text-xs">{{ confirmSql?.sql }}</pre>
       <template #footer>

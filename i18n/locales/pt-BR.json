@@ -558,6 +558,29 @@
     "confirmTitle": "Confirme alterações numa conexão de produção",
     "confirmProd": "Esta conexão está marcada como produção. O statement altera dados ou o schema.",
     "runAnyway": "Executar mesmo assim",
+    "alert": {
+      "toggle": "Alertar antes de executar",
+      "title": "Executar estes statements?",
+      "description": "{count} statement será executado. Confira o que cada um faz. | {count} statements serão executados. Confira o que cada um faz.",
+      "kinds": {
+        "read": {
+          "label": "leitura",
+          "text": "{verb}: lê dados, não altera nada."
+        },
+        "write": {
+          "label": "escrita",
+          "text": "{verb}: altera linhas (insert, update ou delete)."
+        },
+        "ddl": {
+          "label": "schema",
+          "text": "{verb}: altera o schema ou permissões (create, alter, drop, ...)."
+        },
+        "other": {
+          "label": "desconhecido",
+          "text": "{verb}: o efeito não é conhecido; pode alterar dados ou configurações."
+        }
+      }
+    },
     "explain": {
       "run": "Explain",
       "analyze": "Explain analyze",
@@ -802,6 +825,10 @@
         "readonly": {
           "title": "Sessões somente leitura",
           "text": "Uma conexão somente leitura roda as queries numa transação de leitura; o próprio banco recusa escritas."
+        },
+        "alertBeforeRun": {
+          "title": "Alertar antes de executar",
+          "text": "Marcado, toda execução lista antes os statements e o que cada um faz, e só roda depois que você confirmar."
         }
       },
       "erd": {

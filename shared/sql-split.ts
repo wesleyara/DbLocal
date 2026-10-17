@@ -254,3 +254,18 @@ export function classifyStatement(sql: string, dialect: SqlDialect): StatementKi
   if (DDL_WORDS.has(first)) return 'ddl'
   return 'other'
 }
+
+export interface StatementSummary {
+  sql: string
+  kind: StatementKind
+  /** Leading keyword in upper case (`SELECT`, `UPDATE`, ...), `WITH` bodies included; null when there is none. */
+  verb: string | null
+}
+
+/** The statements of a script with what each one does, for the "Alert before run" confirmation. */
+export function summarizeStatements(text: string, dialect: SqlDialect): StatementSummary[] {
+  return splitStatements(text, dialect).map(({ sql }) => {
+    const verb = /^[A-Za-z_]+/.exec(maskLiterals(stripLeading(sql), dialect).trimStart())?.[0]?.toUpperCase() ?? null
+    return { sql, kind: classifyStatement(sql, dialect), verb }
+  })
+}

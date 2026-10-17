@@ -26,6 +26,8 @@ export const useQueriesStore = defineStore('queries', () => {
   const drafts = ref<Record<string, QueryDraft>>({})
   const limit = ref(DEFAULT_QUERY_LIMIT)
   const timeoutMs = ref(DEFAULT_QUERY_TIMEOUT_MS)
+  /** "Alert before run": every run (editor and the grid's SQL bar) asks for confirmation first. */
+  const alertBeforeRun = ref(false)
   let hydrated = false
 
   function hydrate(): void {
@@ -34,9 +36,10 @@ export const useQueriesStore = defineStore('queries', () => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}')
       if (saved && typeof saved === 'object') drafts.value = saved
-      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as { limit?: number; timeoutMs?: number }
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as { limit?: number; timeoutMs?: number; alertBeforeRun?: boolean }
       if (Number.isInteger(settings.limit) && settings.limit! > 0) limit.value = settings.limit!
       if (Number.isInteger(settings.timeoutMs) && settings.timeoutMs! >= 100) timeoutMs.value = settings.timeoutMs!
+      if (typeof settings.alertBeforeRun === 'boolean') alertBeforeRun.value = settings.alertBeforeRun
     } catch {
       // storage unavailable: drafts live for this page load only
     }
@@ -54,10 +57,10 @@ export const useQueriesStore = defineStore('queries', () => {
     },
     { deep: true },
   )
-  watch([limit, timeoutMs], () => {
+  watch([limit, timeoutMs, alertBeforeRun], () => {
     if (!hydrated) return
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ limit: limit.value, timeoutMs: timeoutMs.value }))
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ limit: limit.value, timeoutMs: timeoutMs.value, alertBeforeRun: alertBeforeRun.value }))
     } catch {
       // ignore
     }
@@ -85,5 +88,5 @@ export const useQueriesStore = defineStore('queries', () => {
 
   const isModified = (d: QueryDraft | undefined): boolean => !!d && d.savedId !== null && d.sql !== d.savedSql
 
-  return { drafts, limit, timeoutMs, hydrate, create, ensure, remove, isModified }
+  return { drafts, limit, timeoutMs, alertBeforeRun, hydrate, create, ensure, remove, isModified }
 })

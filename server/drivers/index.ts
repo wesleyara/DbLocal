@@ -3,6 +3,7 @@ import { createMysqlDriver } from './mysql'
 import { createPostgresDriver } from './postgres'
 import { createSqliteDriver } from './sqlite'
 import { createTursoDriver } from './turso'
+import { resolveConnectHost } from './docker-host'
 import { openSshTunnel, type SshTunnel } from './ssh-tunnel'
 import type { ConnectionTestResult, Driver, DriverConfig, DriverFactory } from './types'
 
@@ -24,7 +25,11 @@ async function createPlainDriver(config: DriverConfig, database?: string): Promi
  * If the tunnel drops, the connection's pools are invalidated so the next use reconnects.
  */
 export const createDriver: DriverFactory = async (config, database) => {
-  if (!config.ssh || config.dialect === 'sqlite') return createPlainDriver(config, database)
+  if (config.dialect === 'sqlite') return createPlainDriver(config, database)
+  // Under SSH the target is resolved on the remote side, so only direct connections are rewritten.
+  if (!config.ssh) {
+    return createPlainDriver({ ...config, host: resolveConnectHost(config.host) ?? undefined }, database)
+  }
 
   const tunnel: SshTunnel = await openSshTunnel(
     config.ssh,

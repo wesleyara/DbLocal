@@ -50,7 +50,7 @@ No hardcoded user-facing text in components: use `t('domain.key')`. Keys are gro
 - Without a password, a `Host` that is not `localhost`/`*.localhost`, an IP literal or listed in `DBLOCAL_ALLOWED_HOSTS` gets 403 (`hostAllowed`, DNS rebinding).
 
 ## Environment variables
-`DBLOCAL_DATA_DIR`, `DBLOCAL_SECRET`, `DBLOCAL_PASSWORD`, `DBLOCAL_ALLOWED_HOSTS`, `DBLOCAL_HOST`, `DBLOCAL_PORT`, `DBLOCAL_READONLY` (`1` makes every connection read-only; the future CLI's `--readonly` sets it).
+`DBLOCAL_IN_DOCKER` (set to `1` by the Dockerfile: `localhost`/`127.0.0.1` hosts are connected through `host.docker.internal`, `server/drivers/docker-host.ts`; the saved host is unchanged), `DBLOCAL_DATA_DIR`, `DBLOCAL_SECRET`, `DBLOCAL_PASSWORD`, `DBLOCAL_ALLOWED_HOSTS`, `DBLOCAL_HOST`, `DBLOCAL_PORT`, `DBLOCAL_READONLY` (`1` makes every connection read-only; the future CLI's `--readonly` sets it).
 
 ## Git and commits (hard rule)
 - Commits, PRs, branch names and history must **never** carry co-authorship, authorship or any trace of Claude/Anthropic: no `Co-Authored-By`, no "Generated with", no emoji robot, no AI mentions. Authorship is only the user's git identity.

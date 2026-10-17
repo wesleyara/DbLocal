@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildErd, edgeSides, markerPath, neighbourhood, parseHandle, handleId, usablePositions } from './erd'
+import { buildErd, cardinalityShort, spreadLabels, wirePath, WIRE_STUB, clampNoteWidth, edgeSides, markerPath, neighbourhood, noteHeight, noteLines, noteWidth, parseHandle, handleId, usablePositions } from './erd'
 import type { RelationGraph, SchemaSnapshot, SchemaTable } from './types/db'
 
 const col = (name: string, pk = false) => ({
@@ -90,6 +90,25 @@ describe('geometry helpers', () => {
     expect(markerPath(0, 0, 1, 'many')).toContain('L0,-6')
     expect(markerPath(0, 0, -1, 'one')).toBe('M-8,-6 L-8,6')
   })
+  it('labels cardinality from the FK side', () => {
+    expect(cardinalityShort('many', 'one')).toBe('N:1')
+    expect(cardinalityShort('one', 'one')).toBe('1:1')
+    expect(cardinalityShort('one', 'many')).toBe('1:N')
+  })
+  it('wraps note text on words and keeps line breaks', () => {
+    expect(noteLines('a\n\nb')).toEqual(['a', '', 'b'])
+    const long = noteLines('word '.repeat(20).trim())
+    expect(long.length).toBeGreaterThan(2)
+    expect(long.every((l) => l.length <= 27 && !l.startsWith(' '))).toBe(true)
+    expect(noteLines('x'.repeat(64))).toEqual(['x'.repeat(27), 'x'.repeat(27), 'x'.repeat(10)])
+    expect(noteHeight('a\nb')).toBe(52)
+  })
+  it('wraps wider notes on longer lines and clamps the width', () => {
+    expect(noteLines('x'.repeat(64), 520)).toEqual(['x'.repeat(64)])
+    expect(noteWidth({})).toBe(240)
+    expect(noteWidth({ width: 5000 })).toBe(800)
+    expect(clampNoteWidth(10)).toBe(160)
+  })
   it('drops stale positions', () => {
     expect(usablePositions({ a: { x: 1, y: 2 }, gone: { x: 0, y: 0 }, b: { x: NaN, y: 0 } }, ['a', 'b'])).toEqual({ a: { x: 1, y: 2 } })
   })
@@ -99,11 +118,70 @@ describe('buildErdSvg', () => {
   it('draws tables and edges, dashed for virtual', async () => {
     const { buildErdSvg } = await import('./erd-svg')
     const erd = buildErd(snapshot, graph)
-    const colors = { bg: '#fff', surface: '#eee', header: '#ddd', border: '#ccc', fg: '#000', muted: '#555', subtle: '#777', accent: '#00f', warning: '#fa0' }
+    const colors = { bg: '#fff', surface: '#eee', header: '#ddd', border: '#ccc', fg: '#000', muted: '#555', subtle: '#777', accent: '#00f', warning: '#fa0', note: '#ffe' }
     const out = buildErdSvg(erd.tables, erd.edges, { users: { x: 0, y: 0 }, orders: { x: 400, y: 0 }, items: { x: 800, y: 0 } }, colors)
     expect(out.svg).toContain('>users<')
     expect(out.svg).toContain('stroke-dasharray')
     expect(out.width).toBeGreaterThan(1000)
+    expect(out.svg).toContain('>N:1<')
     expect(buildErdSvg([], [], {}, colors).svg).toBe('')
+    const withNote = buildErdSvg([], [], {}, colors, [{ id: 'n', x: 10, y: 10, text: 'check <this>' }])
+    expect(withNote.svg).toContain('check &lt;this&gt;')
+    expect(withNote.svg).not.toContain('>PK<')
+    expect(buildErdSvg([], [], {}, colors, [{ id: 'n', x: 0, y: 0, text: 'a', width: 500 }]).svg).toContain('width="500"')
+  })
+})
+
+describe('spreadLabels', () => {
+  const chip = (id: string, x: number, y: number, y1 = y - 200, y2 = y + 200) => ({ id, x, y, width: 34, height: 18, y1, y2 })
+
+  it('leaves chips that do not touch where they are', () => {
+    const out = spreadLabels([chip('a', 0, 0), chip('b', 100, 0), chip('c', 0, 100)])
+    expect([...out.values()]).toEqual([0, 0, 0])
+  })
+
+  it('moves overlapping chips apart along their line, and the result never overlaps', () => {
+    const boxes = [chip('a', 10, 100), chip('b', 10, 104), chip('c', 12, 98)]
+    const out = spreadLabels(boxes)
+    const ys = boxes.map((b) => b.y + out.get(b.id)!).sort((p, q) => p - q)
+    for (let i = 1; i < ys.length; i++) expect(ys[i]! - ys[i - 1]!).toBeGreaterThanOrEqual(18)
+    expect(out.get('a')).toBe(0)
+  })
+
+  it('keeps a chip on its vertical leg when there is room', () => {
+    // b's leg runs only downwards from 100: it must not be pushed above.
+    const out = spreadLabels([chip('a', 0, 100), chip('b', 0, 100, 90, 160)])
+    expect(out.get('b')).toBeGreaterThan(0)
+  })
+
+  it('is stable whatever the input order', () => {
+    const boxes = [chip('a', 0, 0), chip('b', 0, 2), chip('c', 0, 4)]
+    expect(spreadLabels(boxes)).toEqual(spreadLabels([...boxes].reverse()))
+  })
+})
+
+describe('wirePath', () => {
+  it('puts the leg halfway between the stubs when the ends face each other', () => {
+    const w = wirePath(0, 0, 1, 200, 100, -1)
+    expect(w.x).toBe((WIRE_STUB + 200 - WIRE_STUB) / 2)
+    expect(w.labelY).toBe(50)
+    expect(w.path.startsWith('M0,0')).toBe(true)
+    expect(w.path.endsWith('L200,100')).toBe(true)
+  })
+
+  it('goes past both ends when they face the same way', () => {
+    expect(wirePath(100, 0, 1, 50, 80, 1).x).toBe(100 + WIRE_STUB)
+    expect(wirePath(100, 0, -1, 50, 80, -1).x).toBe(50 - WIRE_STUB)
+  })
+
+  it('shifts the leg by the dragged offset and keeps the automatic spot apart', () => {
+    const w = wirePath(0, 0, 1, 200, 100, -1, 30)
+    expect(w.x).toBe(w.auto + 30)
+    expect(w.labelX).toBe(w.x)
+    expect(w.path).toContain(`${w.x},`)
+  })
+
+  it('draws straight corners when the ends are level', () => {
+    expect(wirePath(0, 40, 1, 200, 40, -1).path).not.toContain('Q')
   })
 })

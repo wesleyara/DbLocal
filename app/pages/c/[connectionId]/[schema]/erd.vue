@@ -26,7 +26,8 @@ function setQuery(patch: Record<string, string | undefined>): void {
 
 <template>
   <div class="h-full">
-    <UiEmptyState v-if="error" icon="lucide:network" :title="t('erd.loadFailed')" />
+    <ConnectionsUnavailable v-if="!store.snapshot && store.error" :connection-id="id" :schema="schemaName" :error="store.error" />
+    <UiEmptyState v-else-if="error && !store.snapshot" icon="lucide:network" :title="t('erd.loadFailed')" />
     <UiEmptyState v-else-if="!store.tables.length" icon="lucide:network" :title="t('erd.empty')" />
     <ClientOnly v-else>
     <ErdCanvas

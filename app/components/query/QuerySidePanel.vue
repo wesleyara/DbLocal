@@ -18,10 +18,17 @@ const search = ref('')
 const status = ref('')
 const retention = ref(5000)
 const loading = ref(false)
+/** Until the first answer, the lists show skeletons instead of "nothing here". */
+const savedLoaded = ref(false)
+const historyLoaded = ref(false)
 const PAGE = 50
 
 async function loadSaved() {
-  saved.value = await $fetch<SavedQuery[]>('/api/saved-queries', { query: { connectionId: props.connectionId } })
+  try {
+    saved.value = await $fetch<SavedQuery[]>('/api/saved-queries', { query: { connectionId: props.connectionId } })
+  } finally {
+    savedLoaded.value = true
+  }
 }
 async function loadHistory(append = false) {
   loading.value = true
@@ -39,6 +46,7 @@ async function loadHistory(append = false) {
     history.value = append ? { total: res.total, entries: [...history.value.entries, ...res.entries] } : res
   } finally {
     loading.value = false
+    historyLoaded.value = true
   }
 }
 async function refresh() {
@@ -117,7 +125,10 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
     </div>
 
     <div v-if="tab === 'saved'" class="min-h-0 flex-1 overflow-auto p-2">
-      <p v-if="saved.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noSaved') }}</p>
+      <div v-if="!savedLoaded" class="grid gap-1.5" aria-busy="true" data-saved-skeleton>
+        <UiSkeleton v-for="i in 3" :key="i" class="h-12" />
+      </div>
+      <p v-else-if="saved.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noSaved') }}</p>
       <ul class="grid min-w-0 gap-1.5">
         <li
           v-for="q in saved"
@@ -167,7 +178,10 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
         />
       </div>
       <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
-        <p v-if="history.entries.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noHistory') }}</p>
+        <div v-if="!historyLoaded || (loading && history.entries.length === 0)" class="grid gap-1.5" aria-busy="true" data-history-skeleton>
+          <UiSkeleton v-for="i in 4" :key="i" class="h-12" />
+        </div>
+        <p v-else-if="history.entries.length === 0" class="p-2 text-xs text-fg-subtle">{{ t('query.noHistory') }}</p>
         <ul class="grid min-w-0 gap-1.5">
           <li v-for="h in history.entries" :key="h.id" class="min-w-0 rounded-md border border-border bg-surface px-2 py-1.5" data-history-entry>
             <div class="flex items-center gap-2 text-xs text-fg-subtle">

@@ -29,6 +29,12 @@ Tables, columns (after `alias.`), functions and keywords are suggested for your 
 - On a `prod` connection a statement that writes or changes the schema asks for confirmation first.
 - After DDL the schema in the sidebar refreshes by itself.
 
+### Alert before run {#alert-before-run}
+
+Tick **Alert before run** (in the editor toolbar or in the table's **Show SQL** bar; one setting for both) and every run first lists the statements about to execute, each marked *read*, *write*, *schema* or *unknown* with what it does. Nothing runs until you confirm. On a `prod` connection this confirmation also counts as the production one.
+
+The SQL of a table view (**Show SQL**) is written with keywords in upper case, like the editor's autocomplete.
+
 ## Saved queries and history
 
 ⌘/Ctrl+S saves the query (it asks for a name the first time). The side panel has **Saved** (open, rename, delete, copy, run) and **History**: every execution with duration, rows and status, searchable and filterable. Clear it any time or choose how many entries to keep. The same history is available from any table: the **History** button next to **Structure** lists it, filtered to that table by default, and can run an entry again in the editor.

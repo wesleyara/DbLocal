@@ -20,6 +20,10 @@ Quando algo falha, o DbLocal mostra uma mensagem curta e deixa o detalhe técnic
 | SSL obrigatório / certificado | Escolha o modo de SSL que o servidor espera; `require` criptografa sem verificar o certificado. |
 | Arquivo não encontrado (SQLite) | O caminho precisa existir onde o DbLocal roda. No Docker, monte o arquivo e use o caminho de dentro do container. |
 
+## O banco saiu do ar {#offline}
+
+Se um banco para de responder enquanto você trabalha (servidor parado, rede fora, VPN desligada), a tabela ou o diagrama que você abrir mostra **Não foi possível conectar** com o motivo, dentro do DbLocal: a barra lateral, as abas e as outras conexões continuam funcionando. Suba o banco de novo e clique em **Tentar novamente**, ou em **Voltar às conexões**.
+
 ## Túnel SSH {#ssh}
 
 O host e a porta do banco são os **vistos pelo servidor SSH**, não pela sua máquina. Se a sessão cair, a próxima ação reconecta sozinha.

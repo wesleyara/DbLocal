@@ -4,7 +4,7 @@ import type { ConnectionView } from '#shared/types/connection'
 import type { FilterCondition, FilterNode, GridPrefs } from '#shared/types/rows'
 import { editableKey, readOnlyReason } from '#shared/editable'
 import { isFunctionValue } from '#shared/edit-functions'
-import { generatedKeyValues } from '#shared/edit-values'
+import { needsGeneratedKey } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
 import { resultColumn } from '#shared/result-columns'
 import type { QueryResponse, StatementResult } from '#shared/types/query'
@@ -28,6 +28,7 @@ import FilterBar from './FilterBar.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
+import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 import ResultGrid from '~/components/query/ResultGrid.vue'
 import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
 import SortBar from './SortBar.vue'
@@ -38,8 +39,10 @@ const props = defineProps<{
   table: SchemaTable
   /** The saved connection: its read-only flags and environment decide what editing is offered. */
   connection?: Pick<ConnectionView, 'name' | 'environment' | 'readonly' | 'readonlyGlobal'> | null
+  /** The table has a note: "Notes" (and the collapsed toolbar's toggle) carry a dot. */
+  hasNotes?: boolean
 }>()
-const emit = defineEmits<{ structure: []; history: [] }>()
+const emit = defineEmits<{ structure: []; history: []; notes: [] }>()
 const { t } = useI18n()
 const { minutesAgo } = useFormat()
 const toast = useToast()
@@ -292,19 +295,19 @@ function applyEdit(row: Record<string, unknown>, column: string, value: unknown)
 }
 
 function addRecord(): void {
-  pendingStore.insert(tabId.value, props.table.name, generatedKeyValues(props.table.columns))
+  pendingStore.insert(tabId.value, props.table.name, {})
 }
 
 function duplicateRow(row: Record<string, unknown>): void {
   const values: Record<string, unknown> = {}
   for (const column of props.table.columns) {
     // Generated columns take new values; a binary value on screen is only a preview of the bytes.
-    if (column.isGenerated || column.kind === 'binary') continue
+    // A key the client must fill is left empty, so the copy does not repeat it.
+    if (column.isGenerated || column.kind === 'binary' || needsGeneratedKey(column)) continue
     const v = row[column.name]
     if (v !== undefined) values[column.name] = v
   }
-  // A copy must not repeat a key the client generates.
-  pendingStore.insert(tabId.value, props.table.name, { ...values, ...generatedKeyValues(props.table.columns) })
+  pendingStore.insert(tabId.value, props.table.name, values)
 }
 
 function undoRow(row: Record<string, unknown>): void {
@@ -552,6 +555,7 @@ const exportItems = computed(() => [
 // ---- the SQL behind the view: editable and runnable in place ---------------------------------
 const ui = useUiStore()
 const queries = useQueriesStore()
+queries.hydrate()
 /** What the grid runs for the current view. */
 const viewSql = ref('')
 /** The text in the editor: follows the view until the user types. */
@@ -562,6 +566,8 @@ const queryId = ref<string | null>(null)
 const adhoc = ref<{ statement: StatementResult; sql: string; queryId: string } | null>(null)
 const adhocError = ref<string | null>(null)
 const confirmSql = ref<{ sql: string; kinds: string[] } | null>(null)
+/** SQL waiting for the "Alert before run" confirmation. */
+const alertSql = ref<string | null>(null)
 const sqlEditor = ref<InstanceType<typeof SqlEditor> | null>(null)
 let sqlTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -631,6 +637,14 @@ function resetSql(): void {
   sqlText.value = viewSql.value
   adhoc.value = null
   adhocError.value = null
+}
+
+/** Runs the bar's SQL at once, or first shows what is about to run when "Alert before run" is on. */
+function requestSql(sql?: string): void {
+  const text = (sql ?? sqlText.value).trim()
+  if (!text || running.value) return
+  if (queries.alertBeforeRun) alertSql.value = text
+  else void runSql(text)
 }
 
 async function runSql(sql?: string, confirmWrites = false): Promise<void> {
@@ -721,7 +735,7 @@ onMounted(() => state.start())
         </button>
       </span>
       <FilterBar :columns="table.columns" :filter="state.filter.value" @change="state.setFilter">
-        <template #after-advanced>
+        <template #tools="{ openAdvanced }">
           <button
             type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
@@ -731,26 +745,67 @@ onMounted(() => state.start())
             <Icon name="lucide:table-properties" class="size-3" />
             {{ t('grid.structureToggle') }}
           </button>
+          <!-- Like the devtools overflow: the less used tools stay behind this toggle (remembered in `ui.gridTools`). -->
           <button
             type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
-            :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
-            :aria-pressed="ui.gridSql"
-            data-toggle-sql
-            @click="ui.gridSql = !ui.gridSql"
+            class="relative inline-flex size-6 items-center justify-center rounded-md text-fg-muted hover:bg-surface hover:text-fg"
+            :class="ui.gridTools && 'bg-surface text-fg'"
+            :aria-expanded="ui.gridTools"
+            aria-controls="grid-more-tools"
+            :aria-label="ui.gridTools ? t('grid.lessTools') : t('grid.moreTools')"
+            :title="ui.gridTools ? t('grid.lessTools') : t('grid.moreTools')"
+            data-toggle-tools
+            @click="ui.gridTools = !ui.gridTools"
           >
-            <Icon name="lucide:code-2" class="size-3" />
-            {{ t('grid.sqlToggle') }}
+            <Icon name="lucide:chevrons-right" class="size-3.5 transition-transform" :class="ui.gridTools && 'rotate-180'" />
+            <span
+              v-if="!ui.gridTools && (hasNotes || ui.gridSql)"
+              class="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-accent"
+              aria-hidden="true"
+            />
           </button>
-          <button
-            type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-            data-toggle-history
-            @click="emit('history')"
-          >
-            <Icon name="lucide:history" class="size-3" />
-            {{ t('grid.historyToggle') }}
-          </button>
+          <div v-if="ui.gridTools" id="grid-more-tools" class="flex flex-wrap items-center gap-1.5" data-more-tools>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-advanced-filters
+              @click="openAdvanced"
+            >
+              <Icon name="lucide:list-tree" class="size-3" />
+              {{ t('grid.advancedFilters') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
+              :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
+              :aria-pressed="ui.gridSql"
+              data-toggle-sql
+              @click="ui.gridSql = !ui.gridSql"
+            >
+              <Icon name="lucide:code-2" class="size-3" />
+              {{ t('grid.sqlToggle') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-toggle-history
+              @click="emit('history')"
+            >
+              <Icon name="lucide:history" class="size-3" />
+              {{ t('grid.historyToggle') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-toggle-notes
+              :data-has-notes="hasNotes || undefined"
+              @click="emit('notes')"
+            >
+              <Icon name="lucide:notebook-pen" class="size-3" />
+              {{ t('grid.notesToggle') }}
+              <span v-if="hasNotes" class="size-1.5 rounded-full bg-accent" :aria-label="t('grid.hasNotes')" role="img" />
+            </button>
+          </div>
           <span
             v-if="updatedAgo"
             class="hidden h-6 items-center px-2 text-xs text-fg-subtle md:inline-flex"
@@ -835,8 +890,9 @@ onMounted(() => state.start())
         <span class="text-xs font-medium text-fg-muted">{{ t('grid.sqlTitle') }}</span>
         <span class="text-[11px] text-fg-subtle">{{ edited ? t('grid.sqlEdited') : t('grid.sqlHint') }}</span>
         <div class="ml-auto flex items-center gap-1">
+          <UiCheckbox v-model="queries.alertBeforeRun" class="mr-1 text-xs! text-fg-muted" :label="t('query.alert.toggle')" data-alert-before-run />
           <UiButton v-if="running" size="sm" variant="danger" @click="cancelSql">{{ t('query.cancel') }}</UiButton>
-          <UiButton v-else size="sm" variant="primary" :disabled="!sqlText.trim()" data-run-view-sql @click="runSql()">
+          <UiButton v-else size="sm" variant="primary" :disabled="!sqlText.trim()" data-run-view-sql @click="requestSql()">
             <Icon name="lucide:play" class="size-3.5" />{{ t('query.run') }}
           </UiButton>
           <UiButton v-if="edited" size="sm" variant="ghost" @click="resetSql">{{ t('grid.sqlReset') }}</UiButton>
@@ -853,8 +909,8 @@ onMounted(() => state.start())
             :dialect="dialect"
             :snapshot="schemaStore.snapshot"
             :graph="schemaStore.graph"
-            @run="(sql) => runSql(sql)"
-            @run-all="runSql()"
+            @run="(sql) => requestSql(sql)"
+            @run-all="requestSql()"
           />
         </ClientOnly>
       </div>
@@ -904,7 +960,7 @@ onMounted(() => state.start())
         :uniques="uniques"
         :pickable="pickableColumns"
         :widths="state.prefs.value.widths"
-        :loading="state.loading.value"
+        :loading="state.loading.value || !state.settled.value"
         :editable="editable"
         :dialect="schemaStore.dialect"
         :selection-key="state.rows.value"
@@ -984,6 +1040,13 @@ onMounted(() => state.start())
       @confirm="confirmDelete"
     />
 
+    <RunConfirmDialog
+      :sql="alertSql"
+      :dialect="dialect"
+      :prod="connection?.environment === 'prod'"
+      @cancel="alertSql = null"
+      @confirm="(sql) => { alertSql = null; void runSql(sql, true) }"
+    />
     <UiDialog :open="!!confirmSql" :title="t('query.confirmTitle')" :description="t('query.confirmProd')" @update:open="(v) => !v && (confirmSql = null)">
       <pre class="font-data max-h-48 overflow-auto rounded-md border border-border bg-bg-subtle p-2 text-xs">{{ confirmSql?.sql }}</pre>
       <template #footer>

@@ -14,6 +14,7 @@ function init() {
     if (typeof saved.sidebarCollapsed === 'boolean') ui.sidebarCollapsed = saved.sidebarCollapsed
     if (typeof saved.statusBar === 'boolean') ui.statusBar = saved.statusBar
     if (typeof saved.recordPanelWidth === 'number') ui.setRecordPanelWidth(saved.recordPanelWidth)
+    if (typeof saved.gridTools === 'boolean') ui.gridTools = saved.gridTools
   } catch {
     // corrupted storage: fall back to defaults
   }
@@ -27,11 +28,11 @@ function init() {
   media.addEventListener('change', apply)
 
   watch(
-    () => [ui.theme, ui.sidebarWidth, ui.sidebarCollapsed, ui.statusBar, ui.recordPanelWidth] as const,
-    ([theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth]) => {
+    () => [ui.theme, ui.sidebarWidth, ui.sidebarCollapsed, ui.statusBar, ui.recordPanelWidth, ui.gridTools] as const,
+    ([theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridTools]) => {
       apply()
       try {
-        localStorage.setItem(KEY, JSON.stringify({ theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth }))
+        localStorage.setItem(KEY, JSON.stringify({ theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridTools }))
       } catch {
         // storage unavailable
       }

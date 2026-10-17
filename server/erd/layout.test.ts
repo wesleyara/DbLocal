@@ -21,7 +21,7 @@ afterAll(async () => {
 
 describe('erd layout store', () => {
   it('starts empty and keeps layouts apart per connection and schema', async () => {
-    expect(await getErdLayout(db, 'c1', 'public')).toEqual({ positions: {} })
+    expect(await getErdLayout(db, 'c1', 'public')).toEqual({ positions: {}, wires: {} })
     await saveErdLayout(db, 'c1', 'public', { users: { x: 1, y: 2 } })
     expect((await getErdLayout(db, 'c1', 'public')).positions).toEqual({ users: { x: 1, y: 2 } })
     expect((await getErdLayout(db, 'c1', 'other')).positions).toEqual({})
@@ -36,5 +36,15 @@ describe('erd layout store', () => {
     expect(Object.keys((await getErdLayout(db, 'c3', 's')).positions)).toEqual(['c'])
     await resetErdLayout(db, 'c3', 's')
     expect((await getErdLayout(db, 'c3', 's')).positions).toEqual({})
+  })
+
+  it('keeps moved lines, merges them, removes one with null and resets them with the layout', async () => {
+    await saveErdLayout(db, 'c4', 's', { a: { x: 0, y: 0 } }, false, { 'r1#0': 40.4, 'r2#0': -12 })
+    await saveErdLayout(db, 'c4', 's', {}, false, { 'r2#0': null, 'r3#0': 8 })
+    const layout = await getErdLayout(db, 'c4', 's')
+    expect(layout.wires).toEqual({ 'r1#0': 40, 'r3#0': 8 })
+    expect(layout.positions).toEqual({ a: { x: 0, y: 0 } })
+    await resetErdLayout(db, 'c4', 's')
+    expect((await getErdLayout(db, 'c4', 's')).wires).toEqual({})
   })
 })

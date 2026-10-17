@@ -11,6 +11,7 @@ import SqlEditor from '~/components/query/SqlEditor.vue'
 import PlanTree from '~/components/query/PlanTree.vue'
 import QuerySidePanel from '~/components/query/QuerySidePanel.vue'
 import ResultGrid from '~/components/query/ResultGrid.vue'
+import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 
 const route = useRoute()
 const id = route.params.connectionId as string
@@ -48,6 +49,8 @@ const errorLine = ref<number | null>(null)
 const activeTab = ref<number | 'plan'>(0)
 const lastRun = ref<{ sql: string; limit: number } | null>(null)
 const pendingConfirm = ref<{ sql: string; kinds: string[] } | null>(null)
+/** SQL waiting for the "Alert before run" confirmation. */
+const alertSql = ref<string | null>(null)
 
 const newQueryId = () => `q${Math.random().toString(36).slice(2, 12)}${Date.now().toString(36)}`
 
@@ -104,8 +107,14 @@ async function cancel(): Promise<void> {
   await $fetch(`/api/c/${id}/query/${queryId.value}/cancel`, { method: 'POST' }).catch(() => {})
 }
 
-const runCurrent = (sql?: string) => execute(sql ?? editor.value?.currentSql() ?? draft.sql)
-const runAll = () => execute(draft.sql)
+/** Runs at once, or first shows what is about to run when "Alert before run" is on. */
+function request(sql: string): void {
+  if (!sql.trim() || running.value) return
+  if (queries.alertBeforeRun) alertSql.value = sql
+  else void execute(sql)
+}
+const runCurrent = (sql?: string) => request(sql ?? editor.value?.currentSql() ?? draft.sql)
+const runAll = () => request(draft.sql)
 
 // ---- explain -----------------------------------------------------------------------------------
 const plan = ref<ExplainResponse | null>(null)
@@ -261,6 +270,8 @@ const timeoutText = computed({
             {{ t('query.explain.analyze') }}
           </UiButton>
           <UiButton size="sm" variant="ghost" @click="editor?.format()">{{ t('query.format') }}</UiButton>
+          <UiCheckbox v-model="queries.alertBeforeRun" class="ml-2 text-xs! text-fg-muted" :label="t('query.alert.toggle')" data-alert-before-run />
+          <HelpHint id="sql.alertBeforeRun" />
         </div>
 
         <div class="ml-auto flex items-center gap-1">
@@ -299,7 +310,11 @@ const timeoutText = computed({
         @pointerdown="(e) => { dragging = true; (e.target as HTMLElement).setPointerCapture(e.pointerId) }"
       />
 
-      <section class="flex min-h-0 flex-1 flex-col" data-results>
+      <section class="relative flex min-h-0 flex-1 flex-col" data-results :aria-busy="running">
+        <!-- While a statement runs: a spinner in place of the empty state, or a chip over the previous result. -->
+        <div v-if="running && (result || plan)" class="pointer-events-none absolute right-2 top-9 z-30 flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-0.5 text-xs text-fg-muted" data-running>
+          <UiSpinner class="size-3" />{{ t('query.running') }}
+        </div>
         <div v-if="result || plan" class="flex items-center gap-1 overflow-x-auto border-b border-border px-2">
           <button
             v-for="s in result?.statements ?? []"
@@ -328,7 +343,10 @@ const timeoutText = computed({
           {{ failure }}
         </div>
 
-        <div v-if="!result && !plan && !failure" class="flex flex-1 items-center justify-center p-4">
+        <div v-if="running && !result && !plan" class="flex flex-1 items-center justify-center gap-2 p-4 text-sm text-fg-muted" data-running>
+          <UiSpinner class="size-4" />{{ t('query.running') }}
+        </div>
+        <div v-else-if="!result && !plan && !failure" class="flex flex-1 items-center justify-center p-4">
           <UiEmptyState icon="lucide:terminal" :title="t('query.emptyTitle')" :description="t('query.emptyHint')" />
         </div>
 
@@ -401,6 +419,14 @@ const timeoutText = computed({
         </UiButton>
       </template>
     </UiDialog>
+
+    <RunConfirmDialog
+      :sql="alertSql"
+      :dialect="dialect"
+      :prod="view?.environment === 'prod'"
+      @cancel="alertSql = null"
+      @confirm="(sql) => { alertSql = null; void execute(sql, true) }"
+    />
 
     <UiDialog v-model:open="confirmAnalyze" :title="t('query.explain.analyze')" :description="t('query.explain.analyzeWarning')">
       <template #footer>

@@ -17,6 +17,7 @@ RUN apk add --no-cache libstdc++ \
 COPY --from=build /usr/local/bin/node /usr/local/bin/node
 ENV NODE_ENV=production \
     NITRO_HOST=0.0.0.0 \
+    DBLOCAL_IN_DOCKER=1 \
     NITRO_PORT=5555 \
     DBLOCAL_DATA_DIR=/data
 WORKDIR /app

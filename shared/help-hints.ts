@@ -20,7 +20,9 @@ export const HELP_HINTS = {
   'grid.prod': { slug: 'editing', anchor: 'saving' },
   'sql.limits': { slug: 'sql-editor', anchor: 'running' },
   'sql.readonly': { slug: 'sql-editor', anchor: 'safety' },
+  'sql.alertBeforeRun': { slug: 'sql-editor', anchor: 'alert-before-run' },
   'erd.layout': { slug: 'erd', anchor: 'layout' },
+  'notes.overview': { slug: 'notes', anchor: 'writing' },
 } as const satisfies Record<string, HelpHintDef>
 
 export type HelpHintId = keyof typeof HELP_HINTS

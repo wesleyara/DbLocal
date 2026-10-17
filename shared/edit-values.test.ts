@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SchemaColumn } from './types/db'
-import { generatedKeyValues, nextBoolean, parseInput, toInputText } from './edit-values'
+import { needsGeneratedKey, nextBoolean, parseInput, toInputText } from './edit-values'
 
 const col = (kind: SchemaColumn['kind'], nativeType = kind as string): SchemaColumn => ({
   name: 'c',
@@ -70,9 +70,7 @@ describe('generated keys', () => {
     isPrimaryKey: true, comment: null, enumValues: null, ...over,
   })
 
-  it('fills text and uuid keys without a default, and nothing else', () => {
-    let n = 0
-    const uuid = () => `u${++n}`
+  it('flags text and uuid keys without a default, and nothing else', () => {
     const columns = [
       col({ name: 'id' }),
       col({ name: 'uid', kind: 'uuid', nativeType: 'uuid' }),
@@ -81,6 +79,6 @@ describe('generated keys', () => {
       col({ name: 'identity', isGenerated: true }),
       col({ name: 'name', isPrimaryKey: false }),
     ]
-    expect(generatedKeyValues(columns, uuid)).toEqual({ id: 'u1', uid: 'u2' })
+    expect(columns.filter(needsGeneratedKey).map((c) => c.name)).toEqual(['id', 'uid'])
   })
 })

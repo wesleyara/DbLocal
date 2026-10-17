@@ -4,7 +4,7 @@ import type { ConnectionView } from '#shared/types/connection'
 import type { FilterCondition, FilterNode, GridPrefs } from '#shared/types/rows'
 import { editableKey, readOnlyReason } from '#shared/editable'
 import { isFunctionValue } from '#shared/edit-functions'
-import { generatedKeyValues } from '#shared/edit-values'
+import { needsGeneratedKey } from '#shared/edit-values'
 import { keyLabel } from '#shared/nav-url'
 import { resultColumn } from '#shared/result-columns'
 import type { QueryResponse, StatementResult } from '#shared/types/query'
@@ -292,19 +292,19 @@ function applyEdit(row: Record<string, unknown>, column: string, value: unknown)
 }
 
 function addRecord(): void {
-  pendingStore.insert(tabId.value, props.table.name, generatedKeyValues(props.table.columns))
+  pendingStore.insert(tabId.value, props.table.name, {})
 }
 
 function duplicateRow(row: Record<string, unknown>): void {
   const values: Record<string, unknown> = {}
   for (const column of props.table.columns) {
     // Generated columns take new values; a binary value on screen is only a preview of the bytes.
-    if (column.isGenerated || column.kind === 'binary') continue
+    // A key the client must fill is left empty, so the copy does not repeat it.
+    if (column.isGenerated || column.kind === 'binary' || needsGeneratedKey(column)) continue
     const v = row[column.name]
     if (v !== undefined) values[column.name] = v
   }
-  // A copy must not repeat a key the client generates.
-  pendingStore.insert(tabId.value, props.table.name, { ...values, ...generatedKeyValues(props.table.columns) })
+  pendingStore.insert(tabId.value, props.table.name, values)
 }
 
 function undoRow(row: Record<string, unknown>): void {

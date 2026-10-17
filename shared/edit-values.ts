@@ -133,6 +133,7 @@ const TEXT_TYPE = /char|text|uuid|string/i
  * Whether a new row must be given this primary key by the client: a text or uuid key the database
  * does not fill by itself (no default, not identity). Prisma, for one, generates `cuid()` / `uuid()`
  * ids in its client, so the column has no default and an insert without a value would be NULL.
+ * Nothing fills it automatically: the user types a value or a function (`uuid()`, `cuid()`, ...).
  */
 export function needsGeneratedKey(column: SchemaColumn): boolean {
   return (
@@ -141,11 +142,4 @@ export function needsGeneratedKey(column: SchemaColumn): boolean {
     column.default === null &&
     (column.kind === 'uuid' || (column.kind === 'string' && TEXT_TYPE.test(column.nativeType)))
   )
-}
-
-/** Values for the key columns of a new row that the database will not generate (a random UUID v4 each). */
-export function generatedKeyValues(columns: SchemaColumn[], uuid: () => string = () => crypto.randomUUID()): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const column of columns) if (needsGeneratedKey(column)) out[column.name] = uuid()
-  return out
 }

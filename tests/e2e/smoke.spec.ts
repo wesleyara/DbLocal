@@ -24,6 +24,8 @@ test('locale cookie switches the UI to Portuguese', async ({ page, context }) =>
 
 test('theme and language from the settings dialog apply without a reload', async ({ page }) => {
   await page.goto('/')
+  // A click before hydration hits the server-rendered button, which has no listener yet.
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
   await page.locator('[data-open-settings]').click()
   const settings = page.locator('[data-settings]')
 

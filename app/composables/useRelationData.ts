@@ -46,6 +46,8 @@ export function useRelationData(target: Target, primaryKey: () => string[], tabI
   let timer: ReturnType<typeof setTimeout> | undefined
   let generation = 0
   const queue = new Map<string, { key: RecordKey; names: Set<string> }>()
+  /** Requests on their way, so leaving the page can hand their rows back to the next mount. */
+  const inflight = new Set<{ key: RecordKey; names: Set<string> }[]>()
 
   const url = () => `/api/c/${target.connectionId}/tables/${encodeURIComponent(target.table)}/relations/resolve`
 
@@ -56,6 +58,7 @@ export function useRelationData(target: Target, primaryKey: () => string[], tabI
     if (items.length === 0) return
     // One request asks for the union of relations; rows that did not need all of them just get extra data.
     const names = [...new Set(items.flatMap((i) => [...i.names]))]
+    inflight.add(items)
     try {
       const res = await $fetch<ResolveResponse>(url(), {
         method: 'POST',
@@ -75,6 +78,8 @@ export function useRelationData(target: Target, primaryKey: () => string[], tabI
       failed.value = false
     } catch {
       if (gen === generation) failed.value = true
+    } finally {
+      inflight.delete(items)
     }
   }
 
@@ -115,7 +120,21 @@ export function useRelationData(target: Target, primaryKey: () => string[], tabI
     return id === null ? undefined : resolved.value.get(id)
   }
 
-  onBeforeUnmount(() => clearTimeout(timer))
+  // `asked` outlives this grid (it is cached per tab). Rows still queued or in flight when the grid
+  // goes away would stay "asked" with no answer, so the next mount would never request them.
+  onBeforeUnmount(() => {
+    generation++
+    clearTimeout(timer)
+    const pk = primaryKey()
+    for (const item of [...queue.values(), ...[...inflight].flat()]) {
+      const id = pk.map((c) => String(item.key[c])).join('\u0001')
+      const known = asked.get(id)
+      if (!known) continue
+      item.names.forEach((n) => known.delete(n))
+      if (known.size === 0) asked.delete(id)
+    }
+    queue.clear()
+  })
 
   return { resolved, failed, ensure, reset, get }
 }

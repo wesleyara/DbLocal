@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { join } from 'node:path'
 import { encodeUrlState } from '../../shared/grid-url'
 
@@ -30,6 +30,12 @@ const targets: Target[] = [
     config: { dialect: 'mysql', host: '127.0.0.1', port: 33069, user: 'dblocal', password: 'dblocal', database: 'dblocal_dev' },
   },
 ]
+/** Opens a page and waits for hydration: a click before it hits server-rendered markup with no listener. */
+async function visit(page: Page, url: string): Promise<void> {
+  await page.goto(url)
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+}
+
 const wanted = (process.env.E2E_DIALECTS ?? 'sqlite,postgres,mysql').split(',').map((s) => s.trim())
 
 for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
@@ -68,13 +74,13 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     })
 
     test('creates a connection and lists its tables', async ({ page }) => {
-      await page.goto(`/c/${ids.rw}`)
+      await visit(page, `/c/${ids.rw}`)
       await expect(page).toHaveURL(new RegExp(`/c/${ids.rw}/${target.schema}`))
       await expect(page.getByRole('treeitem', { name: /users/ }).first()).toBeVisible()
     })
 
     test('navigates users → orders → shipments → order_items → product → tags through chips and counts', async ({ page }) => {
-      await page.goto(grid('users'))
+      await visit(page, grid('users'))
       await page.locator('[data-relation-count="orders"]').first().click()
       await expect(page).toHaveURL(/\/t\/orders\?.*rel=/)
       await expect(page.locator('[data-relation-chip]')).toContainText('orders of users #1')
@@ -103,14 +109,14 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     test('filters and sorts from the URL', async ({ page }) => {
       const f = encodeUrlState({ type: 'group', logic: 'and', children: [{ type: 'condition', column: 'id', op: 'lte', value: 5 }] })
       const s = encodeUrlState([{ column: 'id', direction: 'desc' }])
-      await page.goto(grid('users', `?f=${f}&s=${s}`))
+      await visit(page, grid('users', `?f=${f}&s=${s}`))
       await expect(page.getByText(/1–5 (of|de) 5/)).toBeVisible()
       await expect(page.locator('[data-r="0"][data-c="0"]')).toContainText('5')
       await expect(page.locator('[data-r="4"][data-c="0"]')).toContainText('1')
     })
 
     test('creates, edits and deletes a record with save and discard', async ({ page, request }) => {
-      await page.goto(grid('tags'))
+      await visit(page, grid('tags'))
       await page.locator('[data-add-record]').click()
       await expect(page.locator('[data-row-state="new"]')).toHaveCount(1)
       const nameCol = await page.getByRole('columnheader', { name: /name/ }).first().getAttribute('data-c')
@@ -121,7 +127,7 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
       await page.locator('[data-save]').click()
       await expect(page.locator('[data-pending-bar]')).toHaveCount(0)
 
-      await page.goto(grid('tags', `?f=${encodeUrlState({ type: 'group', logic: 'and', children: [{ type: 'condition', column: 'name', op: 'eq', value: tagName }] })}`))
+      await visit(page, grid('tags', `?f=${encodeUrlState({ type: 'group', logic: 'and', children: [{ type: 'condition', column: 'name', op: 'eq', value: tagName }] })}`))
       await expect(page.getByText(/1–1 (of|de) 1/)).toBeVisible()
 
       // Edit and discard: nothing is written.
@@ -153,7 +159,7 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     })
 
     test('runs a query, saves it and runs it again from the history', async ({ page }) => {
-      await page.goto(grid('users'))
+      await visit(page, grid('users'))
       await page.locator('[data-new-query]').click()
       await expect(page).toHaveURL(/\/q\//)
       const sql = 'select id, email from users where id = 1'
@@ -179,7 +185,7 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
 
     test('the table view lists the query history and runs an entry again', async ({ page, request }) => {
       await request.post(`/api/c/${ids.rw}/query`, { data: { sql: 'select count(*) as n from tags', schema: target.schema } })
-      await page.goto(grid('tags'))
+      await visit(page, grid('tags'))
       // History sits behind the toolbar's "more tools" toggle (collapsed by default).
       await page.locator('[data-toggle-tools]').click()
       await page.locator('[data-toggle-history]').click()
@@ -191,7 +197,7 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     })
 
     test('the ERD opens and a table node opens the table', async ({ page }) => {
-      await page.goto(`/c/${ids.rw}/${encodeURIComponent(target.schema)}/erd`)
+      await visit(page, `/c/${ids.rw}/${encodeURIComponent(target.schema)}/erd`)
       const node = page.locator('[data-table="users"]')
       await expect(node).toBeVisible({ timeout: 20_000 })
       // Vue Flow keeps nodes moving while it fits the view, so Playwright never sees them "stable".
@@ -200,7 +206,7 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     })
 
     test('a read-only connection offers no editing and the API refuses writes', async ({ page, request }) => {
-      await page.goto(`/c/${ids.ro}/${encodeURIComponent(target.schema)}/t/users`)
+      await visit(page, `/c/${ids.ro}/${encodeURIComponent(target.schema)}/t/users`)
       await expect(page.locator('[data-r="0"][data-c="0"]')).toBeVisible()
       await expect(page.locator('[data-add-record]')).toHaveCount(0)
       await expect(page.locator('[data-readonly-notice]')).toBeVisible()

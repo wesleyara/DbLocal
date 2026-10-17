@@ -187,7 +187,8 @@
       "allFiles": "Show all files",
       "hidden": "Show hidden"
     },
-    "retry": "Try again"
+    "retry": "Try again",
+    "backToList": "Back to connections"
   },
   "schema": {
     "label": "Schema",
@@ -394,7 +395,11 @@
     "updated": "Updated {time}",
     "updatedTitle": "Showing what was loaded {time}. Reload with ⌘R to read it again.",
     "reload": "Reload data",
-    "reloadTitle": "Read the rows from the database again (⌘R)"
+    "reloadTitle": "Read the rows from the database again (⌘R)",
+    "notesToggle": "Notes",
+    "hasNotes": "This table has notes",
+    "moreTools": "More tools",
+    "lessTools": "Fewer tools"
   },
   "relations": {
     "orphan": "No matching record in {target}",
@@ -591,7 +596,8 @@
       "cost": "cost",
       "rows": "rows",
       "time": "time"
-    }
+    },
+    "running": "Running…"
   },
   "erd": {
     "unique": "Unique",
@@ -660,7 +666,8 @@
       "toggleTheme": "Toggle light / dark theme",
       "switchLanguage": "Switch language (EN / PT)",
       "shortcuts": "Keyboard shortcuts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "openNotes": "Open connection notes"
     }
   },
   "shortcuts": {
@@ -836,6 +843,12 @@
           "title": "Diagram layout",
           "text": "Tables are placed automatically. Drag them to arrange; positions are saved per schema and can be reset."
         }
+      },
+      "notes": {
+        "overview": {
+          "title": "Notes",
+          "text": "Free Markdown notes, one per connection and one per table. They stay in DbLocal's own store, never in your database, and save as you type."
+        }
       }
     }
   },
@@ -904,6 +917,63 @@
     "language": {
       "title": "Choose your language",
       "description": "You can change it any time in the settings."
+    }
+  },
+  "notes": {
+    "open": "Notes",
+    "connectionTitle": "Connection notes",
+    "connectionPlaceholder": "Write anything about this connection: what it is for, who owns it, gotchas, useful queries… Markdown is supported.",
+    "tableTitle": "Notes · {table}",
+    "tableHint": "Markdown notes about this table, saved as you type.",
+    "tablePlaceholder": "What this table holds, how its columns are used, queries worth keeping… Markdown is supported.",
+    "editor": "Editor",
+    "preview": "Preview",
+    "expand": "Expand",
+    "collapse": "Exit full screen",
+    "expandHint": "The note in full screen.",
+    "status": {
+      "loading": "Loading…",
+      "saving": "Saving…",
+      "error": "Could not save the note. Your text is kept; keep typing to retry.",
+      "autosave": "Saved automatically as you type",
+      "savedAt": "Saved {time}"
+    },
+    "toolbar": {
+      "label": "Formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strike": "Strikethrough",
+      "headings": "Headings",
+      "heading": "Heading {level}",
+      "subscript": "Subscript",
+      "superscript": "Superscript",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list",
+      "taskList": "Task list",
+      "insert": "Insert",
+      "quote": "Quote",
+      "codeInline": "Inline code",
+      "codeBlock": "Code block",
+      "sqlBlock": "SQL block",
+      "link": "Link",
+      "image": "Image",
+      "table": "Table",
+      "diagram": "Diagram (mermaid)"
+    },
+    "placeholders": {
+      "bold": "bold text",
+      "italic": "italic text",
+      "text": "text",
+      "heading": "Heading",
+      "item": "list item",
+      "task": "to-do",
+      "quote": "quote",
+      "code": "code",
+      "sql": "select * from users",
+      "link": "link text",
+      "image": "alt text",
+      "column": "Column"
     }
   }
 }

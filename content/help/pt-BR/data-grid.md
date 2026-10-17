@@ -24,10 +24,14 @@ Arraste um cabeçalho sobre outro para mover a coluna. Passe o mouse sobre um ca
 
 A barra de ordenação acima do grid lista cada ordenação. Clique num chip para inverter a direção, arraste para mudar a ordem, ou use o **×** para remover.
 
+## Barra de ferramentas {#toolbar}
+
+Acima do grid, **Filtro** e **Estrutura** ficam sempre visíveis. O botão **»** ao lado mostra as outras ferramentas, como o devtools do navegador esconde o que não cabe: **Filtros avançados**, **Ver SQL**, **Histórico** e **Notas** (veja [Notas](notes)). O DbLocal lembra se você as deixou abertas. Enquanto estão escondidas, um ponto no **»** avisa que a barra de SQL está aberta ou que a tabela tem notas. O "Atualizado" e o botão de recarregar continuam à direita da barra.
+
 ## Filtrar {#filter}
 
 
-Clique em **Filtro** para adicionar uma condição. **Filtros avançados** abre uma árvore para combinar condições com E e OU, aninhadas em até três níveis: escolha a coluna, o operador e o valor. Cada condição vira um chip. Clique no chip para editá-lo, ou use o **×** para removê-lo. **Limpar tudo** remove todas as condições.
+Clique em **Filtro** para adicionar uma condição. **Filtros avançados** (atrás do **»**) abre uma árvore para combinar condições com E e OU, aninhadas em até três níveis: escolha a coluna, o operador e o valor. Cada condição vira um chip. Clique no chip para editá-lo, ou use o **×** para removê-lo. **Limpar tudo** remove todas as condições.
 
 Os operadores oferecidos dependem do tipo da coluna:
 

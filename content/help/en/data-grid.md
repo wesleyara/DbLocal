@@ -24,10 +24,14 @@ Drag a header onto another to move the column. Hover a header and click the pin 
 
 The sort bar above the grid lists each sort. Click a chip to flip its direction, drag it to change the order, or use its **×** to remove it.
 
+## Toolbar {#toolbar}
+
+Above the grid, **Filter** and **Structure** are always visible. The **»** button next to them shows the other tools, the way the browser devtools hide their overflow: **Advanced filters**, **Show SQL**, **History** and **Notes** (see [Notes](notes)). DbLocal remembers whether you left them open. While they are hidden, a dot on **»** tells you the SQL bar is open or the table has notes. The "Updated" label and the reload button stay on the right of the toolbar.
+
 ## Filter {#filter}
 
 
-Click **Filter** to add a condition. **Advanced filters** opens a tree where you combine conditions with AND and OR, nested up to three levels: pick a column, an operator and a value. Each condition becomes a chip. Click a chip to edit it, or use its **×** to remove it. **Clear all** removes every condition.
+Click **Filter** to add a condition. **Advanced filters** (behind **»**) opens a tree where you combine conditions with AND and OR, nested up to three levels: pick a column, an operator and a value. Each condition becomes a chip. Click a chip to edit it, or use its **×** to remove it. **Clear all** removes every condition.
 
 The operators offered depend on the column type:
 

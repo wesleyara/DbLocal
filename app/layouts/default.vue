@@ -54,6 +54,10 @@ function syncWorkspace() {
     workspace.sync(id, route.fullPath, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
     return
   }
+  if (route.path.endsWith('/notes') && !table) {
+    workspace.sync(id, route.fullPath, { schema: name, type: 'notes', title: t('notes.open'), icon: 'lucide:notebook-pen' })
+    return
+  }
   const recordOpen = typeof route.query.r === 'string'
   workspace.sync(id, route.fullPath, {
     schema: name,
@@ -83,6 +87,21 @@ function openErd() {
     if (target) return void navigateTo(target)
   }
   workspace.open(id, path, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
+  void navigateTo(path)
+}
+
+/** Connection notes are one tab per connection (the note is the same in every schema): an open one is reused. */
+function openNotes() {
+  const id = connectionId.value
+  const name = schema.value
+  if (!id || !name) return
+  const existing = workspace.forConnection(id).find((tab) => tab.type === 'notes')
+  if (existing) {
+    const target = workspace.activate(existing.id)
+    if (target) return void navigateTo(target)
+  }
+  const path = `/c/${id}/${encodeURIComponent(name)}/notes`
+  workspace.open(id, path, { schema: name, type: 'notes', title: t('notes.open'), icon: 'lucide:notebook-pen' })
   void navigateTo(path)
 }
 
@@ -147,6 +166,7 @@ const paletteActions = computed<PaletteAction[]>(() => {
     list.push(
       { id: 'new-query', label: t('palette.actions.newQuery'), icon: 'lucide:terminal', shortcut: 'nav.newQuery', run: newQuery },
       { id: 'erd', label: t('palette.actions.openErd'), icon: 'lucide:network', keywords: 'diagram', run: openErd },
+      { id: 'notes', label: t('palette.actions.openNotes'), icon: 'lucide:notebook-pen', keywords: 'notes notas markdown', run: openNotes },
       { id: 'search', label: t('palette.actions.search'), icon: 'lucide:text-search', shortcut: 'global.search', run: () => (searchOpen.value = true) },
       { id: 'refresh', label: t('palette.actions.refreshSchema'), icon: 'lucide:refresh-cw', run: () => void refreshSchema() },
       { id: 'reload', label: t('palette.actions.reloadData'), icon: 'lucide:rotate-cw', shortcut: 'nav.reload', run: () => void pendingStore.version++ },
@@ -250,10 +270,13 @@ function onResize(e: PointerEvent) {
         <UiButton size="sm" data-open-erd @click="openErd">
           <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
         </UiButton>
+        <UiButton size="sm" data-open-notes @click="openNotes">
+          <Icon name="lucide:notebook-pen" class="size-3.5" />{{ t('notes.open') }}
+        </UiButton>
       </template>
       <button
         type="button"
-        class="absolute left-1/2 hidden h-8 w-[min(28rem,34vw)] -translate-x-1/2 items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong md:flex"
+        class="absolute left-1/2 hidden h-8 w-[min(28rem,30vw)] -translate-x-1/2 items-center gap-2 rounded-md border border-border bg-bg px-2.5 text-left text-sm text-fg-subtle hover:border-border-strong lg:flex"
         data-open-palette
         data-tour="palette"
         :aria-label="t('palette.title')"

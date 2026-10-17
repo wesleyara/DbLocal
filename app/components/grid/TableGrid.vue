@@ -39,8 +39,10 @@ const props = defineProps<{
   table: SchemaTable
   /** The saved connection: its read-only flags and environment decide what editing is offered. */
   connection?: Pick<ConnectionView, 'name' | 'environment' | 'readonly' | 'readonlyGlobal'> | null
+  /** The table has a note: "Notes" (and the collapsed toolbar's toggle) carry a dot. */
+  hasNotes?: boolean
 }>()
-const emit = defineEmits<{ structure: []; history: [] }>()
+const emit = defineEmits<{ structure: []; history: []; notes: [] }>()
 const { t } = useI18n()
 const { minutesAgo } = useFormat()
 const toast = useToast()
@@ -733,7 +735,7 @@ onMounted(() => state.start())
         </button>
       </span>
       <FilterBar :columns="table.columns" :filter="state.filter.value" @change="state.setFilter">
-        <template #after-advanced>
+        <template #tools="{ openAdvanced }">
           <button
             type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
@@ -743,26 +745,67 @@ onMounted(() => state.start())
             <Icon name="lucide:table-properties" class="size-3" />
             {{ t('grid.structureToggle') }}
           </button>
+          <!-- Like the devtools overflow: the less used tools stay behind this toggle (remembered in `ui.gridTools`). -->
           <button
             type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
-            :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
-            :aria-pressed="ui.gridSql"
-            data-toggle-sql
-            @click="ui.gridSql = !ui.gridSql"
+            class="relative inline-flex size-6 items-center justify-center rounded-md text-fg-muted hover:bg-surface hover:text-fg"
+            :class="ui.gridTools && 'bg-surface text-fg'"
+            :aria-expanded="ui.gridTools"
+            aria-controls="grid-more-tools"
+            :aria-label="ui.gridTools ? t('grid.lessTools') : t('grid.moreTools')"
+            :title="ui.gridTools ? t('grid.lessTools') : t('grid.moreTools')"
+            data-toggle-tools
+            @click="ui.gridTools = !ui.gridTools"
           >
-            <Icon name="lucide:code-2" class="size-3" />
-            {{ t('grid.sqlToggle') }}
+            <Icon name="lucide:chevrons-right" class="size-3.5 transition-transform" :class="ui.gridTools && 'rotate-180'" />
+            <span
+              v-if="!ui.gridTools && (hasNotes || ui.gridSql)"
+              class="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-accent"
+              aria-hidden="true"
+            />
           </button>
-          <button
-            type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-            data-toggle-history
-            @click="emit('history')"
-          >
-            <Icon name="lucide:history" class="size-3" />
-            {{ t('grid.historyToggle') }}
-          </button>
+          <div v-if="ui.gridTools" id="grid-more-tools" class="flex flex-wrap items-center gap-1.5" data-more-tools>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-advanced-filters
+              @click="openAdvanced"
+            >
+              <Icon name="lucide:list-tree" class="size-3" />
+              {{ t('grid.advancedFilters') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs hover:bg-surface hover:text-fg"
+              :class="ui.gridSql ? 'bg-surface text-fg' : 'text-fg-muted'"
+              :aria-pressed="ui.gridSql"
+              data-toggle-sql
+              @click="ui.gridSql = !ui.gridSql"
+            >
+              <Icon name="lucide:code-2" class="size-3" />
+              {{ t('grid.sqlToggle') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-toggle-history
+              @click="emit('history')"
+            >
+              <Icon name="lucide:history" class="size-3" />
+              {{ t('grid.historyToggle') }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-toggle-notes
+              :data-has-notes="hasNotes || undefined"
+              @click="emit('notes')"
+            >
+              <Icon name="lucide:notebook-pen" class="size-3" />
+              {{ t('grid.notesToggle') }}
+              <span v-if="hasNotes" class="size-1.5 rounded-full bg-accent" :aria-label="t('grid.hasNotes')" role="img" />
+            </button>
+          </div>
           <span
             v-if="updatedAgo"
             class="hidden h-6 items-center px-2 text-xs text-fg-subtle md:inline-flex"
@@ -917,7 +960,7 @@ onMounted(() => state.start())
         :uniques="uniques"
         :pickable="pickableColumns"
         :widths="state.prefs.value.widths"
-        :loading="state.loading.value"
+        :loading="state.loading.value || !state.settled.value"
         :editable="editable"
         :dialect="schemaStore.dialect"
         :selection-key="state.rows.value"

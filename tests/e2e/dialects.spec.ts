@@ -180,6 +180,8 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
     test('the table view lists the query history and runs an entry again', async ({ page, request }) => {
       await request.post(`/api/c/${ids.rw}/query`, { data: { sql: 'select count(*) as n from tags', schema: target.schema } })
       await page.goto(grid('tags'))
+      // History sits behind the toolbar's "more tools" toggle (collapsed by default).
+      await page.locator('[data-toggle-tools]').click()
       await page.locator('[data-toggle-history]').click()
       const entry = page.locator('[data-history-dialog] [data-history-entry]', { hasText: 'from tags' }).first()
       await expect(entry).toBeVisible()

@@ -187,7 +187,8 @@
       "allFiles": "Mostrar todos os arquivos",
       "hidden": "Mostrar ocultos"
     },
-    "retry": "Tentar novamente"
+    "retry": "Tentar novamente",
+    "backToList": "Voltar às conexões"
   },
   "schema": {
     "label": "Schema",
@@ -394,7 +395,11 @@
     "updated": "Atualizado {time}",
     "updatedTitle": "Mostrando o que foi carregado {time}. Recarregue com ⌘R para ler de novo.",
     "reload": "Recarregar dados",
-    "reloadTitle": "Ler as linhas do banco de novo (⌘R)"
+    "reloadTitle": "Ler as linhas do banco de novo (⌘R)",
+    "notesToggle": "Notas",
+    "hasNotes": "Esta tabela tem notas",
+    "moreTools": "Mais ferramentas",
+    "lessTools": "Menos ferramentas"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",
@@ -591,7 +596,8 @@
       "cost": "custo",
       "rows": "linhas",
       "time": "tempo"
-    }
+    },
+    "running": "Executando…"
   },
   "erd": {
     "unique": "Único",
@@ -660,7 +666,8 @@
       "toggleTheme": "Alternar tema claro / escuro",
       "switchLanguage": "Trocar idioma (EN / PT)",
       "shortcuts": "Atalhos de teclado",
-      "signOut": "Sair"
+      "signOut": "Sair",
+      "openNotes": "Abrir notas da conexão"
     }
   },
   "shortcuts": {
@@ -836,6 +843,12 @@
           "title": "Layout do diagrama",
           "text": "As tabelas são posicionadas automaticamente. Arraste para organizar; as posições são salvas por schema e podem ser resetadas."
         }
+      },
+      "notes": {
+        "overview": {
+          "title": "Notas",
+          "text": "Notas livres em Markdown, uma por conexão e uma por tabela. Ficam no armazenamento do próprio DbLocal, nunca no seu banco, e são salvas enquanto você digita."
+        }
       }
     }
   },
@@ -904,6 +917,63 @@
     "language": {
       "title": "Escolha o idioma",
       "description": "Você pode mudar quando quiser nas configurações."
+    }
+  },
+  "notes": {
+    "open": "Notas",
+    "connectionTitle": "Notas da conexão",
+    "connectionPlaceholder": "Escreva o que quiser sobre esta conexão: para que serve, quem cuida, armadilhas, queries úteis… Aceita Markdown.",
+    "tableTitle": "Notas · {table}",
+    "tableHint": "Notas em Markdown sobre esta tabela, salvas enquanto você digita.",
+    "tablePlaceholder": "O que esta tabela guarda, como as colunas são usadas, queries que valem guardar… Aceita Markdown.",
+    "editor": "Editor",
+    "preview": "Visualizar",
+    "expand": "Expandir",
+    "collapse": "Sair da tela cheia",
+    "expandHint": "A nota em tela cheia.",
+    "status": {
+      "loading": "Carregando…",
+      "saving": "Salvando…",
+      "error": "Não foi possível salvar a nota. O texto continua aqui; continue digitando para tentar de novo.",
+      "autosave": "Salvo automaticamente enquanto você digita",
+      "savedAt": "Salvo em {time}"
+    },
+    "toolbar": {
+      "label": "Formatação",
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "underline": "Sublinhado",
+      "strike": "Tachado",
+      "headings": "Títulos",
+      "heading": "Título {level}",
+      "subscript": "Subscrito",
+      "superscript": "Sobrescrito",
+      "bulletList": "Lista com marcadores",
+      "orderedList": "Lista numerada",
+      "taskList": "Lista de tarefas",
+      "insert": "Inserir",
+      "quote": "Citação",
+      "codeInline": "Código em linha",
+      "codeBlock": "Bloco de código",
+      "sqlBlock": "Bloco SQL",
+      "link": "Link",
+      "image": "Imagem",
+      "table": "Tabela",
+      "diagram": "Diagrama (mermaid)"
+    },
+    "placeholders": {
+      "bold": "texto em negrito",
+      "italic": "texto em itálico",
+      "text": "texto",
+      "heading": "Título",
+      "item": "item da lista",
+      "task": "tarefa",
+      "quote": "citação",
+      "code": "código",
+      "sql": "select * from users",
+      "link": "texto do link",
+      "image": "texto alternativo",
+      "column": "Coluna"
     }
   }
 }

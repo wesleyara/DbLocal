@@ -12,6 +12,8 @@ export const useUiStore = defineStore(
     const recordPanelWidth = ref(420)
     /** SQL bar under the table grid; hidden until asked for. */
     const gridSql = ref(false)
+    /** Grid toolbar: Advanced filters, Show SQL, History and Notes sit behind a toggle, collapsed by default. */
+    const gridTools = ref(false)
 
     function setSidebarWidth(w: number) {
       sidebarWidth.value = Math.min(480, Math.max(200, Math.round(w)))
@@ -21,6 +23,6 @@ export const useUiStore = defineStore(
       recordPanelWidth.value = Math.min(900, Math.max(320, Math.round(w)))
     }
 
-    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridSql, setSidebarWidth, setRecordPanelWidth }
+    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridSql, gridTools, setSidebarWidth, setRecordPanelWidth }
   },
 )

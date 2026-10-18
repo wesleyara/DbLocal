@@ -23,6 +23,7 @@ export const HELP_HINTS = {
   'sql.alertBeforeRun': { slug: 'sql-editor', anchor: 'alert-before-run' },
   'erd.layout': { slug: 'erd', anchor: 'layout' },
   'notes.overview': { slug: 'notes', anchor: 'writing' },
+  'routines.overview': { slug: 'routines', anchor: 'safety' },
 } as const satisfies Record<string, HelpHintDef>
 
 export type HelpHintId = keyof typeof HELP_HINTS

@@ -12,6 +12,8 @@ const props = defineProps<{
   graph: RelationGraph | null
   /** 1-based line to mark as the place of the last error. */
   errorLine?: number | null
+  /** Shows the text without letting it be edited (definitions). */
+  readOnly?: boolean
 }>()
 const emit = defineEmits<{
   /** ⌘Enter: the selection, or the statement under the cursor. */
@@ -114,6 +116,8 @@ async function setup(): Promise<void> {
     padding: { top: 8 },
     quickSuggestions: { other: true, comments: false, strings: false },
     suggestOnTriggerCharacters: true,
+    readOnly: props.readOnly,
+    domReadOnly: props.readOnly,
   })
   const { KeyMod, KeyCode } = monaco
   editor.addCommand(KeyMod.CtrlCmd | KeyCode.Enter, () => emit('run', currentSql()))
@@ -192,6 +196,10 @@ function markError(): void {
   if (line) editor.revealLineInCenterIfOutsideViewport(line)
 }
 watch(() => props.errorLine, markError)
+watch(
+  () => props.readOnly,
+  (value) => editor?.updateOptions({ readOnly: value, domReadOnly: value }),
+)
 
 watch(model, (value) => {
   if (!editor || editor.getValue() === value) return

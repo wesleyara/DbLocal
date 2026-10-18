@@ -1,7 +1,9 @@
 import mysql from 'mysql2/promise'
 import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { RoutinesSnapshot } from '#shared/types/routines'
 import { introspectMysql } from './introspect/mysql'
+import { routinesMysql } from './introspect/routines'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
 import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
@@ -98,6 +100,10 @@ class MysqlDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectMysql(<R>(sql: string, params?: unknown[]) => this.rows<R>(sql, params), schema)
+  }
+
+  listRoutines(schema: string): Promise<RoutinesSnapshot> {
+    return routinesMysql(<R>(sql: string, params?: unknown[]) => this.rows<R>(sql, params), schema)
   }
 
   readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {

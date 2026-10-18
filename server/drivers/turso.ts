@@ -6,7 +6,9 @@ import { compileCount, compileGroupCount, compileRows } from '../query/compile'
 import { MutationFailedError } from '../query/errors'
 import { runMutations } from '../query/run-mutations'
 import { DriverError, isDriverError, messageOf } from './errors'
+import type { RoutinesSnapshot } from '#shared/types/routines'
 import { introspectSqlite } from './introspect/sqlite'
+import { routinesSqlite } from './introspect/routines'
 import { mapSqliteError } from './sqlite'
 import type {
   ConnectionTestResult,
@@ -93,6 +95,10 @@ class TursoDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectSqlite(async <R>(sql: string) => toObjects(await this.exec(sql)) as R[], schema)
+  }
+
+  listRoutines(schema: string): Promise<RoutinesSnapshot> {
+    return routinesSqlite(async <R>(sql: string) => toObjects(await this.exec(sql)) as R[], schema)
   }
 
   async readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {

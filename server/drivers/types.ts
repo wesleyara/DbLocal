@@ -1,5 +1,6 @@
 import type { SshAuthMethod, SslMode } from '#shared/types/connection'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { RoutinesSnapshot } from '#shared/types/routines'
 import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
 
@@ -92,6 +93,8 @@ export interface Driver {
   listSchemas(): Promise<string[]>
   /** Reads tables, views, columns, keys and indexes of one schema (Postgres schema, MySQL database, SQLite file). */
   introspect(schema: string): Promise<SchemaSnapshot>
+  /** Reads the functions, procedures and triggers of one schema, with their full definitions. */
+  listRoutines(schema: string): Promise<RoutinesSnapshot>
   /** Reads one page of rows. The plan is already validated against the snapshot. */
   readRows(plan: RowsPlan): Promise<Record<string, unknown>[]>
   /** Counts the rows matching the plan's filter. */

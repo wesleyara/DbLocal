@@ -110,7 +110,7 @@ function coerceValues(
   for (const [name, raw] of Object.entries(values)) {
     const column = columns.get(name)
     if (!column) throw fail(index, `Unknown column: ${name}`)
-    if (column.isGenerated) throw fail(index, `Column ${name} is generated and cannot be set`)
+    if (column.isGenerated && !column.identity) throw fail(index, `Column ${name} is generated and cannot be set`)
     const value = coerceValue(index, column, raw, dialect)
     if (value === DEFAULT_MARK && !allowDefault) throw fail(index, `DEFAULT is not supported on update in ${dialect}`)
     out[name] = value
@@ -152,6 +152,12 @@ export function planMutations(snapshot: SchemaSnapshot, ops: MutationOp[]): Muta
       }
       case 'delete':
         return { index, type: 'delete', table: table.name, keyColumns: key, pk: coerceKey(index, table, key, op.pk, dialect) }
+      case 'upsert': {
+        // The key decides between insert and update, so it has to be given like on an update.
+        const pk = coerceKey(index, table, key, Object.fromEntries(key.filter((k) => k in op.values).map((k) => [k, op.values[k]])), dialect)
+        const values = { ...coerceValues(index, table, op.values, dialect, true), ...pk }
+        return { index, type: 'upsert', table: table.name, keyColumns: key, values }
+      }
     }
   })
   return { dialect, schema: snapshot.schema, ops: planned }

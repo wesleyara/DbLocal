@@ -23,6 +23,8 @@ export type MutationOp =
   | { type: 'insert'; table: string; values: Record<string, MutationValue> }
   | { type: 'update'; table: string; pk: MutationKey; values: Record<string, MutationValue> }
   | { type: 'delete'; table: string; pk: MutationKey }
+  /** Insert, or update the row with the same key (every key column must be in `values`). Used by imports. */
+  | { type: 'upsert'; table: string; values: Record<string, MutationValue> }
 
 export interface MutationRequest {
   schema: string
@@ -76,6 +78,7 @@ export type PlannedOp =
       values: Record<string, unknown>
     }
   | { index: number; type: 'delete'; table: string; keyColumns: string[]; pk: Record<string, unknown> }
+  | { index: number; type: 'upsert'; table: string; keyColumns: string[]; values: Record<string, unknown> }
 
 export interface MutationPlan {
   dialect: SchemaSnapshot['dialect']

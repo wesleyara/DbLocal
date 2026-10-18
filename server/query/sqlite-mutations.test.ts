@@ -183,3 +183,29 @@ describe('increment()', () => {
     expect(() => planMutations(fresh, [{ type: 'update', table: 'counters', pk: { n: { $fn: 'increment' } as never }, values: { label: 'x' } }])).toThrow()
   })
 })
+
+describe('upsert', () => {
+  it('inserts a new key and updates an existing one', async () => {
+    const res = await driver.applyMutations(
+      plan([
+        { type: 'upsert', table: 'pairs', values: { a: 7, b: 8, note: 'first' } },
+        { type: 'upsert', table: 'pairs', values: { a: 7, b: 8, note: 'second' } },
+        { type: 'upsert', table: 'slugs', values: { slug: 'up' } },
+      ]),
+    )
+    expect(res.map((r) => r.row)).toMatchObject([{ note: 'first' }, { note: 'second' }, { slug: 'up', title: null }])
+    expect(raw.prepare('select count(*) as n from pairs where a = 7').get()).toEqual({ n: 1 })
+  })
+
+  it('needs every key column', () => {
+    expect(() => plan([{ type: 'upsert', table: 'pairs', values: { a: 1, note: 'x' } }])).toThrow(/key of pairs/)
+    expect(() => plan([{ type: 'upsert', table: 'people', values: { id: null, name: 'x' } }])).toThrow(/needs a value/)
+  })
+
+  it('compiles to on conflict ... do update', () => {
+    const [statement] = previewStatements(plan([{ type: 'upsert', table: 'people', values: { id: 1, name: 'Ana' } }]))
+    expect(statement!.preview).toBe(
+      `insert into "main"."people" ("id", "name") values (1, 'Ana') on conflict ("id") do update set "name" = excluded."name" returning *`,
+    )
+  })
+})

@@ -49,6 +49,25 @@ export function compileMutation(op: PlannedOp, dialect: Dialect, schema: string)
       }
       break
     }
+    case 'upsert': {
+      const entries = Object.entries(op.values).filter(([, v]) => v !== DEFAULT_MARK)
+      const cols = sql.join(entries.map(([c]) => sql.id(c)))
+      const vals = sql.join(entries.map(([c, v]) => (v === INCREMENT_MARK ? nextValue(table, c) : v)))
+      // With only key columns there is nothing to update: the key is set to itself, so the
+      // statement still reports (and returns) the row instead of doing nothing.
+      const updated = entries.map(([c]) => c).filter((c) => !op.keyColumns.includes(c))
+      const targets = updated.length > 0 ? updated : [op.keyColumns[0]!]
+      if (dialect === 'mysql') {
+        // `values(c)` rather than the 8.0.19 row alias, which MariaDB does not accept.
+        const sets = sql.join(targets.map((c) => sql`${sql.id(c)} = values(${sql.id(c)})`))
+        statement = sql`insert into ${table} (${cols}) values (${vals}) on duplicate key update ${sets}`
+      } else {
+        const sets = sql.join(targets.map((c) => sql`${sql.id(c)} = excluded.${sql.id(c)}`))
+        const conflict = sql.join(op.keyColumns.map((c) => sql.id(c)))
+        statement = sql`insert into ${table} (${cols}) values (${vals}) on conflict (${conflict}) do update set ${sets}`
+      }
+      break
+    }
     case 'update': {
       const sets = Object.entries(op.values).map(([c, v]) =>
         v === DEFAULT_MARK

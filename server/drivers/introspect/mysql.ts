@@ -116,6 +116,7 @@ export async function introspectMysql(query: QueryFn, database: string): Promise
         nullable: c.nullable === 'YES',
         default: c.default_value,
         isGenerated: extra.includes('generated') || extra.includes('auto_increment'),
+        identity: extra.includes('auto_increment') && !extra.includes('generated'),
         isPrimaryKey: pk.includes(c.name),
         comment: c.comment || null,
         enumValues: kind === 'enum' ? parseEnumValues(c.native_type) : null,

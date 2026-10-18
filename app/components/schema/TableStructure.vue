@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { Cardinality, RelationRef, SchemaTable } from '#shared/types/db'
+import type { DbTrigger } from '#shared/types/routines'
 
-const props = defineProps<{ table: SchemaTable; outgoing: RelationRef[]; incoming: RelationRef[] }>()
+const props = defineProps<{ table: SchemaTable; outgoing: RelationRef[]; incoming: RelationRef[]; triggers?: DbTrigger[] }>()
+const emit = defineEmits<{ openTrigger: [trigger: DbTrigger] }>()
 const { t } = useI18n()
 
 const CARDINALITY_KEY = {
@@ -100,6 +102,25 @@ const hasRelations = computed(() => props.outgoing.length + props.incoming.lengt
           </ul>
         </div>
       </div>
+    </div>
+
+    <div v-if="triggers?.length" data-table-triggers>
+      <h3 class="mb-1 text-xs font-medium uppercase tracking-wide text-fg-subtle">{{ t('tableView.triggers') }}</h3>
+      <ul class="grid gap-1">
+        <li v-for="tr in triggers" :key="tr.name">
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-left text-sm hover:bg-surface"
+            :data-trigger="tr.name"
+            @click="emit('openTrigger', tr)"
+          >
+            <Icon name="lucide:zap" class="size-3.5 shrink-0 text-fg-subtle" />
+            <span class="font-data min-w-0 flex-1 truncate text-fg">{{ tr.name }}</span>
+            <UiBadge tone="accent">{{ tr.timing }} {{ tr.events.join(' / ') }}</UiBadge>
+            <UiBadge v-if="!tr.enabled" tone="warning">{{ t('routines.disabled') }}</UiBadge>
+          </button>
+        </li>
+      </ul>
     </div>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaletteAction } from '~/components/shell/CommandPalette.vue'
+import type { MenuItem } from '~/components/ui/DropdownMenu.vue'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
 import { useTourStore } from '~/stores/tour'
@@ -108,6 +109,11 @@ function openRoutines() {
   workspace.open(id, path, { schema: name, type: 'routines', title: t('routines.title'), icon: 'lucide:square-function' })
   void navigateTo(path)
 }
+
+const moreItems = computed<MenuItem[]>(() => [
+  { label: t('routines.open'), icon: 'lucide:square-function', onSelect: () => openRoutines() },
+  { label: t('notes.open'), icon: 'lucide:notebook-pen', onSelect: () => openNotes() },
+])
 
 /** Connection notes are one tab per connection (the note is the same in every schema): an open one is reused. */
 function openNotes() {
@@ -290,12 +296,11 @@ function onResize(e: PointerEvent) {
         <UiButton size="sm" data-open-erd @click="openErd">
           <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
         </UiButton>
-        <UiButton size="sm" data-open-routines @click="openRoutines">
-          <Icon name="lucide:square-function" class="size-3.5" />{{ t('routines.open') }}
-        </UiButton>
-        <UiButton size="sm" data-open-notes @click="openNotes">
-          <Icon name="lucide:notebook-pen" class="size-3.5" />{{ t('notes.open') }}
-        </UiButton>
+        <UiDropdownMenu :items="moreItems">
+          <UiButton size="sm" data-open-more :aria-label="t('shell.more')">
+            {{ t('shell.more') }}<Icon name="lucide:chevron-down" class="size-3.5" />
+          </UiButton>
+        </UiDropdownMenu>
       </template>
       <button
         type="button"

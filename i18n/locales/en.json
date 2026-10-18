@@ -39,7 +39,8 @@
       "failed": "Could not connect to {name}"
     },
     "home": "Back to home",
-    "toggleTheme": "Toggle light / dark theme"
+    "toggleTheme": "Toggle light / dark theme",
+    "more": "More"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Query history",
     "historyHint": "Everything run on this connection, newest first.",
-    "historyThisTable": "Only {table}"
+    "historyThisTable": "Only {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Select all rows",

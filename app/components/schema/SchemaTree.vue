@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { SchemaTable } from '#shared/types/db'
+import type { DbRoutine, DbTrigger } from '#shared/types/routines'
+import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
 import { useWorkspaceStore } from '~/stores/workspace'
 import type { MenuItem } from '../ui/DropdownMenu.vue'
@@ -13,7 +15,9 @@ const store = useSchemaStore()
 // Shared with the schema selector above: when the connection itself fails, that card already says why.
 const { error: connectError } = useNamespaces(props.connectionId)
 
+const routinesStore = useRoutinesStore()
 const query = ref('')
+const openedGroups = ref(new Set<string>())
 const expanded = ref(new Set<string>())
 const active = ref<string | null>(null)
 const addOpen = ref(false)
@@ -46,6 +50,47 @@ function fuzzy(name: string, q: string): boolean {
 const matching = computed(() => store.tables.filter((tb) => !query.value || fuzzy(tb.name, query.value)))
 const tableRows = computed(() => matching.value.filter((tb) => tb.kind === 'table'))
 const viewRows = computed(() => matching.value.filter((tb) => tb.kind !== 'table'))
+const schemaOf = () => props.schema ?? store.schema ?? ''
+onMounted(() => void routinesStore.ensure(props.connectionId, schemaOf()))
+watch(
+  () => [props.connectionId, props.schema, store.schema] as const,
+  () => void routinesStore.ensure(props.connectionId, schemaOf()),
+)
+
+interface RoutineRow {
+  key: string
+  name: string
+  hint: string
+  icon: string
+}
+const routineGroups = computed(() => {
+  const data = routinesStore.data
+  if (!data) return []
+  const match = (name: string) => !query.value || fuzzy(name, query.value)
+  const fromRoutines = (kind: DbRoutine['kind']): RoutineRow[] =>
+    data.routines
+      .filter((r) => r.kind === kind && match(r.name))
+      .map((r) => ({ key: r.signature, name: r.name, hint: `(${r.args})`, icon: kind === 'function' ? 'lucide:square-function' : 'lucide:square-terminal' }))
+  const triggers: RoutineRow[] = data.triggers
+    .filter((tr: DbTrigger) => match(tr.name) || match(tr.table))
+    .map((tr) => ({ key: `${tr.table}.${tr.name}`, name: tr.name, hint: tr.table, icon: 'lucide:zap' }))
+  return [
+    { key: 'function', rows: fromRoutines('function') },
+    { key: 'procedure', rows: fromRoutines('procedure') },
+    { key: 'trigger', rows: triggers },
+  ].filter((g) => g.rows.length)
+})
+const groupOpen = (key: string) => !!query.value || openedGroups.value.has(key)
+function toggleGroup(key: string) {
+  const next = new Set(openedGroups.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  openedGroups.value = next
+}
+function openRoutine(sel: string) {
+  void navigateTo(routinesPath(props.connectionId, schemaOf(), sel))
+}
+
 /** Keyboard order: the rows as they are on screen. */
 const visibleOrder = computed(() => [...tableRows.value, ...viewRows.value].map((tb) => tb.name))
 
@@ -118,6 +163,7 @@ async function refresh() {
   requested.clear()
   try {
     await store.load(props.connectionId, props.schema ?? null, true)
+    void routinesStore.load(props.connectionId, schemaOf())
     toast.push({ kind: 'success', title: t('schemaTree.refreshed') })
   } catch (err) {
     toast.push({ kind: 'error', title: message(err) })
@@ -311,6 +357,33 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
           </div>
         </div>
       </template>
+
+      <section v-for="g in routineGroups" :key="g.key" :data-routine-group="g.key">
+        <button
+          type="button"
+          class="flex w-full items-center gap-1 px-1.5 pt-2 pb-1 text-left text-[11px] font-medium uppercase tracking-wide text-fg-subtle hover:text-fg"
+          :aria-expanded="groupOpen(g.key)"
+          @click="toggleGroup(g.key)"
+        >
+          <Icon name="lucide:chevron-right" class="size-3 transition-transform" :class="groupOpen(g.key) && 'rotate-90'" />
+          {{ t(`routines.filters.${g.key}`) }} <span class="font-data">{{ g.rows.length }}</span>
+        </button>
+        <template v-if="groupOpen(g.key)">
+          <button
+            v-for="row in g.rows"
+            :key="row.key"
+            type="button"
+            class="flex h-7 w-full items-center gap-1.5 rounded-sm px-1 pl-4 text-left text-sm text-fg hover:bg-surface"
+            :data-routine-row="row.key"
+            :title="`${row.name} ${row.hint}`"
+            @click="openRoutine(row.key)"
+          >
+            <Icon :name="row.icon" class="size-3.5 shrink-0 text-fg-subtle" />
+            <span class="font-data min-w-0 flex-1 truncate">{{ row.name }}</span>
+            <span class="font-data max-w-[45%] shrink-0 truncate text-xs text-fg-subtle">{{ row.hint }}</span>
+          </button>
+        </template>
+      </section>
 
       <div v-if="store.tables.length === 0 && store.loading" class="grid gap-2 px-2 py-2" role="status" :aria-label="t('grid.loading')" data-tree-skeleton>
         <UiSkeleton v-for="i in 8" :key="i" class="h-4" :style="{ width: `${55 + ((i * 37) % 40)}%` }" />

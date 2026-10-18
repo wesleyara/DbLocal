@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
 import type { QueryResponse } from '#shared/types/query'
-import type { DbRoutine, DbTrigger, RoutinesResponse } from '#shared/types/routines'
+import type { DbRoutine, DbTrigger } from '#shared/types/routines'
 import { createTemplate, dropSql, editScript, supportedKinds, toggleTriggerSql, type NewKind } from '#shared/routine-sql'
 import { useQueriesStore } from '~/stores/queries'
+import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
 import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
@@ -17,19 +18,19 @@ const { t } = useI18n()
 const toast = useToast()
 const queries = useQueriesStore()
 const schemaStore = useSchemaStore()
+const routinesStore = useRoutinesStore()
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, { key: `connection-${id}` })
-const {
-  data,
-  status,
-  error,
-  refresh,
-} = useLazyFetch<RoutinesResponse>(`/api/c/${id}/routines`, { query: { schema: schemaName }, key: `routines-${id}-${schemaName}` })
+const data = computed(() => routinesStore.data)
+const error = computed(() => routinesStore.error)
+const status = computed(() => (routinesStore.loading ? 'pending' : 'success'))
+const refresh = () => routinesStore.load(id, schemaName)
+onMounted(() => void routinesStore.ensure(id, schemaName))
 void schemaStore.ensure(id, schemaName).catch(() => {})
 
 const dialect = computed(() => data.value?.dialect ?? view.value?.dialect ?? 'postgres')
 const readonly = computed(() => !!view.value && (view.value.readonly || view.value.readonlyGlobal))
-const loaded = computed(() => status.value === 'success' || status.value === 'error')
+const loaded = computed(() => routinesStore.loaded)
 
 type Item = { key: string; type: 'function' | 'procedure' | 'trigger'; name: string; routine?: DbRoutine; trigger?: DbTrigger }
 const items = computed<Item[]>(() => [
@@ -240,7 +241,7 @@ watch(dirty, (value) => {
           <div v-if="!loaded" class="flex flex-col gap-1 p-1" data-routines-skeleton>
             <UiSkeleton v-for="n in 6" :key="n" class="h-9 w-full" />
           </div>
-          <p v-else-if="error" class="p-3 text-sm text-danger">{{ (error.data as { message?: string } | undefined)?.message ?? error.message }}</p>
+          <p v-else-if="error" class="p-3 text-sm text-danger">{{ error.message }}</p>
           <UiEmptyState
             v-else-if="!items.length"
             icon="lucide:square-function"

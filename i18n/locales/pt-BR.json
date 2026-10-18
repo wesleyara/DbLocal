@@ -39,7 +39,8 @@
       "failed": "Sem conexão com {name}"
     },
     "home": "Voltar para o início",
-    "toggleTheme": "Alternar tema claro / escuro"
+    "toggleTheme": "Alternar tema claro / escuro",
+    "more": "Mais"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Histórico de queries",
     "historyHint": "Tudo que foi executado nesta conexão, do mais recente ao mais antigo.",
-    "historyThisTable": "Só {table}"
+    "historyThisTable": "Só {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Selecionar todas as linhas",

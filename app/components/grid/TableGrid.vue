@@ -25,6 +25,7 @@ import RelationCountCell from './cells/RelationCountCell.vue'
 import DeleteImpactDialog from './DeleteImpactDialog.vue'
 import FkPicker from './editors/FkPicker.vue'
 import FilterBar from './FilterBar.vue'
+import ImportDialog from './ImportDialog.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
@@ -547,6 +548,7 @@ async function exportTable(format: 'csv' | 'json'): Promise<void> {
     toast.push({ kind: 'error', title: t('query.exportFailed') })
   }
 }
+const importOpen = ref(false)
 const exportItems = computed(() => [
   { label: t('query.exportCsv'), icon: 'lucide:file-spreadsheet', onSelect: () => void exportTable('csv') },
   { label: t('query.exportJson'), icon: 'lucide:file-json', onSelect: () => void exportTable('json') },
@@ -840,6 +842,16 @@ onMounted(() => state.start())
           <Icon name="lucide:plus" class="size-3" />
           {{ t('edit.addRecord') }}
         </button>
+        <button
+          v-if="editable && connection"
+          type="button"
+          class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+          data-import
+          @click="importOpen = true"
+        >
+          <Icon name="lucide:upload" class="size-3" />
+          {{ t('import.button') }}
+        </button>
         <UiDropdownMenu :items="exportItems">
           <button
             type="button"
@@ -1032,6 +1044,17 @@ onMounted(() => state.start())
       :tab-id="tabId"
       :connection-name="connection.name"
       :environment="connection.environment"
+    />
+
+    <ImportDialog
+      v-if="editable && connection"
+      v-model:open="importOpen"
+      :connection-id="connectionId"
+      :schema="schema"
+      :table="table"
+      :connection-name="connection.name"
+      :environment="connection.environment"
+      @imported="reloadData"
     />
 
     <DeleteImpactDialog

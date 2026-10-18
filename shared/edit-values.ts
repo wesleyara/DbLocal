@@ -52,7 +52,8 @@ export function parseInput(column: SchemaColumn, text: string): ParsedInput {
   return parsePlain(column, text)
 }
 
-function parsePlain(column: SchemaColumn, text: string): ParsedInput {
+/** Like `parseInput`, without the value functions: the text is taken literally (imports, for one). */
+export function parsePlain(column: SchemaColumn, text: string): ParsedInput {
   switch (column.kind) {
     case 'number': {
       const t = text.trim()

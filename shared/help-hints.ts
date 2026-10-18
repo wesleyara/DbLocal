@@ -18,6 +18,7 @@ export const HELP_HINTS = {
   'grid.filters': { slug: 'data-grid', anchor: 'filter' },
   'grid.pending': { slug: 'editing', anchor: 'saving' },
   'grid.prod': { slug: 'editing', anchor: 'saving' },
+  'grid.import': { slug: 'editing', anchor: 'import' },
   'sql.limits': { slug: 'sql-editor', anchor: 'running' },
   'sql.readonly': { slug: 'sql-editor', anchor: 'safety' },
   'sql.alertBeforeRun': { slug: 'sql-editor', anchor: 'alert-before-run' },

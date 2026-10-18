@@ -35,3 +35,17 @@ Pressing **Delete** (or *Delete row*) on selected rows first shows what depends 
 The bar at the bottom of the grid shows **N pending changes**. **Preview SQL** shows the statements that will run; values go to the database as parameters and are shown inline only so you can read them. **Save** (or **Ctrl/⌘+S**) applies the batch. On a `prod` connection you are asked to type the connection's name first.
 
 If the database rejects something, such as a duplicate key, the row that caused it is outlined in red with the database's message, and every pending change is kept so you can fix it and save again. **Discard** drops all pending changes. Closing a tab that has pending changes asks first.
+
+## Importing a file {#import}
+
+**Import** next to Export reads a CSV or JSON file into the table. CSV needs a header row; the delimiter (comma, semicolon, tab or pipe) is detected and can be changed. JSON is an array of objects, or one object per line, as DbLocal exports it.
+
+File columns are matched to table columns by name (case, spaces, `_` and `-` ignored); change any match or set it to *Do not import*. Computed and binary columns cannot be filled; identity and auto-increment columns can, so the file keeps its ids. Every cell is checked like a value typed in the grid: numbers, dates (`YYYY-MM-DD`), booleans (`true`/`false`, `1`/`0`, `yes`/`no`), JSON and UUIDs. Text such as `now()` is stored as written. With **Empty cells are NULL**, an empty cell is NULL, or the column default when the column is NOT NULL and has one.
+
+- **Insert new rows** adds every record. A key that already exists fails.
+- **Insert or update** uses the table's key (the primary key, or a unique NOT NULL index): a record whose key exists updates that row, the others are inserted. The key columns must be mapped. On MySQL any unique index that matches also counts as an existing row.
+
+Invalid records are listed before anything runs; fix the file, or tick **Skip invalid records**. Then the records are sent in batches of 1000: all batches are checked by the server first, and nothing is written if one fails. Each batch is then written in its own transaction, so a failure while writing (a duplicate key, a foreign key) keeps the batches already written and says how many. On a `prod` connection you type the connection's name first; a read-only connection offers no import.
+
+> [!NOTE]
+> On Postgres, importing ids into a `serial` or identity column does not move its sequence. Run `SELECT setval(pg_get_serial_sequence('table', 'id'), max(id)) FROM table` afterwards, or new rows will collide with the imported ones.

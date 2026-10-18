@@ -35,3 +35,17 @@ Apertar **Delete** (ou *Excluir linha*) nas linhas selecionadas mostra antes o q
 A barra no fim do grid mostra **N alterações pendentes**. **Ver SQL** mostra os comandos que vão rodar; os valores vão ao banco como parâmetros e aparecem inline só para leitura. **Salvar** (ou **Ctrl/⌘+S**) aplica o lote. Em uma conexão `prod`, você precisa digitar o nome da conexão antes.
 
 Se o banco recusar algo, como uma chave duplicada, a linha responsável fica contornada em vermelho com a mensagem do banco, e todas as alterações pendentes são mantidas para você corrigir e salvar de novo. **Descartar** remove todas as pendências. Fechar uma aba com alterações pendentes pergunta antes.
+
+## Importando um arquivo {#import}
+
+**Importar**, ao lado de Exportar, lê um arquivo CSV ou JSON para a tabela. O CSV precisa de uma linha de cabeçalho; o separador (vírgula, ponto e vírgula, tab ou barra vertical) é detectado e pode ser trocado. O JSON é uma lista de objetos, ou um objeto por linha, como o DbLocal exporta.
+
+As colunas do arquivo são ligadas às da tabela pelo nome (sem diferenciar maiúsculas, espaços, `_` e `-`); troque qualquer ligação ou marque *Não importar*. Colunas calculadas e binárias não podem ser preenchidas; colunas identity e auto-increment podem, então o arquivo mantém seus ids. Cada célula é verificada como um valor digitado no grid: números, datas (`AAAA-MM-DD`), booleanos (`true`/`false`, `1`/`0`, `sim`/`não`), JSON e UUIDs. Um texto como `now()` é gravado como está. Com **Células vazias são NULL**, uma célula vazia vira NULL, ou o default da coluna quando ela é NOT NULL e tem um.
+
+- **Inserir novas linhas** adiciona todos os registros. Uma chave que já existe falha.
+- **Inserir ou atualizar** usa a chave da tabela (a chave primária, ou um índice único NOT NULL): um registro cuja chave existe atualiza essa linha, os outros são inseridos. As colunas da chave precisam estar mapeadas. No MySQL, qualquer índice único que coincida também conta como linha existente.
+
+Registros inválidos são listados antes de qualquer coisa rodar; corrija o arquivo ou marque **Pular registros inválidos**. Depois os registros são enviados em lotes de 1000: todos os lotes são verificados pelo servidor primeiro, e nada é gravado se um falhar. Cada lote é então gravado em uma transação própria, então uma falha durante a gravação (chave duplicada, chave estrangeira) mantém os lotes já gravados e informa quantos. Em uma conexão `prod` você digita o nome da conexão antes; uma conexão somente leitura não oferece importação.
+
+> [!NOTE]
+> No Postgres, importar ids numa coluna `serial` ou identity não avança a sequence. Rode `SELECT setval(pg_get_serial_sequence('tabela', 'id'), max(id)) FROM tabela` depois, ou as novas linhas vão colidir com as importadas.

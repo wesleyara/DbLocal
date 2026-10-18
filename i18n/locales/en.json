@@ -510,6 +510,59 @@
     "generate": "Generate {fn}",
     "undoCell": "Undo this cell"
   },
+  "import": {
+    "button": "Import",
+    "title": "Import into {table}",
+    "description": "Rows from a CSV or JSON file are added to the table. Nothing is written until every row passes the checks.",
+    "choose": "Choose file",
+    "drop": "or drop a CSV or JSON file here",
+    "records": "{count} record | {count} records",
+    "format": "Format",
+    "delimiter": "Delimiter",
+    "delimiters": {
+      "comma": "Comma (,)",
+      "semicolon": "Semicolon (;)",
+      "tab": "Tab",
+      "pipe": "Pipe"
+    },
+    "parseErrors": {
+      "empty": "The file has no records.",
+      "json": "The file is not valid JSON.",
+      "jsonShape": "The JSON must be an array of objects, or one object per line.",
+      "csvQuote": "A quoted CSV value is never closed.",
+      "tooBig": "The file is larger than 50 MB.",
+      "read": "The file could not be read."
+    },
+    "mapping": "Columns",
+    "fileColumn": "File column",
+    "sample": "Sample",
+    "tableColumn": "Table column",
+    "skipColumn": "Do not import",
+    "mode": "Mode",
+    "modes": {
+      "insert": "Insert new rows",
+      "upsert": "Insert or update by {key}"
+    },
+    "emptyAsNull": "Empty cells are NULL",
+    "skipInvalid": "Skip invalid records",
+    "noMapping": "Map at least one column.",
+    "missing": "These columns need a value and are not mapped: {columns}",
+    "invalid": "{count} record has invalid values | {count} records have invalid values",
+    "cellError": "Record {row}, {column}: {message}",
+    "moreErrors": "and {count} more",
+    "cellErrors": {
+      "boolean": "Use true or false.",
+      "text": "Expects a single value, not an object."
+    },
+    "checking": "Checking {done} of {total}…",
+    "writing": "Importing {done} of {total}…",
+    "rowFailed": "Record {row}: {message}",
+    "partial": "{count} records were imported before the failure.",
+    "run": "Import {count} record | Import {count} records",
+    "done": "{count} record imported | {count} records imported",
+    "skipped": "{count} invalid record skipped | {count} invalid records skipped",
+    "prodBody": "{count} record will be written to {name}. | {count} records will be written to {name}."
+  },
   "query": {
     "new": "New query",
     "untitled": "Untitled query",
@@ -857,6 +910,10 @@
         "prod": {
           "title": "Writing to prod",
           "text": "On a prod connection, saving asks you to type the connection name first."
+        },
+        "import": {
+          "title": "Importing a file",
+          "text": "Columns are matched by name. Each record is checked like a typed value; with “Insert or update” a record whose key already exists updates that row."
         }
       },
       "sql": {

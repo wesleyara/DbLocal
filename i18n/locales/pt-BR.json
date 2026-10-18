@@ -510,6 +510,59 @@
     "generate": "Gerar {fn}",
     "undoCell": "Desfazer esta célula"
   },
+  "import": {
+    "button": "Importar",
+    "title": "Importar em {table}",
+    "description": "As linhas de um arquivo CSV ou JSON são adicionadas à tabela. Nada é gravado até todas as linhas passarem nas verificações.",
+    "choose": "Escolher arquivo",
+    "drop": "ou solte aqui um arquivo CSV ou JSON",
+    "records": "{count} registro | {count} registros",
+    "format": "Formato",
+    "delimiter": "Separador",
+    "delimiters": {
+      "comma": "Vírgula (,)",
+      "semicolon": "Ponto e vírgula (;)",
+      "tab": "Tab",
+      "pipe": "Barra vertical"
+    },
+    "parseErrors": {
+      "empty": "O arquivo não tem registros.",
+      "json": "O arquivo não é um JSON válido.",
+      "jsonShape": "O JSON precisa ser uma lista de objetos, ou um objeto por linha.",
+      "csvQuote": "Um valor entre aspas do CSV nunca é fechado.",
+      "tooBig": "O arquivo tem mais de 50 MB.",
+      "read": "Não foi possível ler o arquivo."
+    },
+    "mapping": "Colunas",
+    "fileColumn": "Coluna do arquivo",
+    "sample": "Exemplo",
+    "tableColumn": "Coluna da tabela",
+    "skipColumn": "Não importar",
+    "mode": "Modo",
+    "modes": {
+      "insert": "Inserir novas linhas",
+      "upsert": "Inserir ou atualizar por {key}"
+    },
+    "emptyAsNull": "Células vazias são NULL",
+    "skipInvalid": "Pular registros inválidos",
+    "noMapping": "Mapeie ao menos uma coluna.",
+    "missing": "Estas colunas precisam de valor e não estão mapeadas: {columns}",
+    "invalid": "{count} registro tem valores inválidos | {count} registros têm valores inválidos",
+    "cellError": "Registro {row}, {column}: {message}",
+    "moreErrors": "e mais {count}",
+    "cellErrors": {
+      "boolean": "Use true ou false.",
+      "text": "Espera um valor simples, não um objeto."
+    },
+    "checking": "Verificando {done} de {total}…",
+    "writing": "Importando {done} de {total}…",
+    "rowFailed": "Registro {row}: {message}",
+    "partial": "{count} registros foram importados antes da falha.",
+    "run": "Importar {count} registro | Importar {count} registros",
+    "done": "{count} registro importado | {count} registros importados",
+    "skipped": "{count} registro inválido pulado | {count} registros inválidos pulados",
+    "prodBody": "{count} registro será gravado em {name}. | {count} registros serão gravados em {name}."
+  },
   "query": {
     "new": "Nova query",
     "untitled": "Query sem nome",
@@ -857,6 +910,10 @@
         "prod": {
           "title": "Escrever em prod",
           "text": "Numa conexão prod, salvar pede que você digite o nome da conexão antes."
+        },
+        "import": {
+          "title": "Importar um arquivo",
+          "text": "As colunas são ligadas pelo nome. Cada registro é verificado como um valor digitado; com “Inserir ou atualizar”, um registro cuja chave já existe atualiza essa linha."
         }
       },
       "sql": {

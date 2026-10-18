@@ -72,7 +72,8 @@ test('a table note is saved as you type and marks the table', async ({ page, req
 test('connection notes open in their own tab from the top bar', async ({ page, request }) => {
   await page.goto(`/c/${connectionId}/main/t/items`)
   await hydrated(page)
-  await page.locator('[data-open-notes]').click()
+  await page.locator('[data-open-more]').click()
+  await page.getByRole('menuitem', { name: 'Notes' }).click()
   await expect(page).toHaveURL(new RegExp(`/c/${connectionId}/main/notes$`))
   const editor = page.locator('[data-connection-notes] .cm-content')
   await expect(editor).toBeVisible()
@@ -85,6 +86,7 @@ test('connection notes open in their own tab from the top bar', async ({ page, r
   // One tab per connection: the button reuses it.
   await page.goto(`/c/${connectionId}/main/t/items`)
   await hydrated(page)
-  await page.locator('[data-open-notes]').click()
+  await page.locator('[data-open-more]').click()
+  await page.getByRole('menuitem', { name: 'Notes' }).click()
   await expect(page.locator('[data-connection-notes] .cm-content')).toContainText('Staging copy')
 })

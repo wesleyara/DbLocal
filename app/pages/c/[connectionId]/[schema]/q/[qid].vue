@@ -24,6 +24,7 @@ const store = useSchemaStore()
 const queries = useQueriesStore()
 queries.hydrate()
 const draft = queries.ensure(qid)
+const sqlHistory = useSqlHistory(id)
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, { key: `connection-${id}` })
 await store.ensure(id, schemaName).catch(() => {})
@@ -99,6 +100,7 @@ async function execute(sql: string, confirmWrites = false): Promise<void> {
     running.value = false
     queryId.value = null
     void sidePanel.value?.refresh()
+    void sqlHistory.refresh()
   }
 }
 
@@ -282,6 +284,10 @@ const timeoutText = computed({
               <div class="flex items-center justify-between text-xs font-medium text-fg"><span>{{ t('query.settings') }}</span><HelpHint id="sql.limits" /></div>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.rowLimit') }}<UiInput v-model="limitText" type="number" mono /></label>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.timeoutSeconds') }}<UiInput v-model="timeoutText" type="number" mono /></label>
+              <div class="flex items-center justify-between">
+                <UiCheckbox v-model="queries.historySuggestions" class="text-xs! text-fg-muted" :label="t('query.historySuggestions')" data-history-suggestions />
+                <HelpHint id="sql.historySuggestions" />
+              </div>
             </div>
           </UiPopover>
           <UiIconButton icon="lucide:panel-right" :label="t('query.togglePanel')" size="sm" @click="showPanel = !showPanel" />
@@ -297,6 +303,7 @@ const timeoutText = computed({
             :snapshot="store.snapshot"
             :graph="store.graph"
             :error-line="errorLine"
+            :history="queries.historySuggestions ? sqlHistory.entries.value : []"
             @run="runCurrent"
             @run-all="runAll"
             @save="save"

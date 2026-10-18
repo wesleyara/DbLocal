@@ -21,8 +21,10 @@ export const HELP_HINTS = {
   'sql.limits': { slug: 'sql-editor', anchor: 'running' },
   'sql.readonly': { slug: 'sql-editor', anchor: 'safety' },
   'sql.alertBeforeRun': { slug: 'sql-editor', anchor: 'alert-before-run' },
+  'sql.historySuggestions': { slug: 'sql-editor', anchor: 'history-suggestions' },
   'erd.layout': { slug: 'erd', anchor: 'layout' },
   'notes.overview': { slug: 'notes', anchor: 'writing' },
+  'routines.overview': { slug: 'routines', anchor: 'safety' },
 } as const satisfies Record<string, HelpHintDef>
 
 export type HelpHintId = keyof typeof HELP_HINTS

@@ -59,6 +59,7 @@ function withTunnel(driver: Driver, tunnel: SshTunnel): Driver {
     listDatabases: () => driver.listDatabases(),
     listSchemas: () => driver.listSchemas(),
     introspect: (schema) => driver.introspect(schema),
+    listRoutines: (schema) => driver.listRoutines(schema),
     readRows: (plan) => driver.readRows(plan),
     countRows: (plan) => driver.countRows(plan),
     countGroups: (plan) => driver.countGroups(plan),

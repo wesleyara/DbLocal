@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyStatement, splitStatements, statementAt } from './sql-split'
+import { classifyStatement, splitStatements, statementAt, statementPrefix } from './sql-split'
 
 const texts = (sql: string, d: Parameters<typeof splitStatements>[1] = 'postgres') =>
   splitStatements(sql, d).map((s) => s.sql)
@@ -94,5 +94,14 @@ describe('classifyStatement', () => {
     expect(k('set search_path to x')).toBe('other')
     expect(k('begin')).toBe('other')
     expect(k('')).toBe('other')
+  })
+})
+
+describe('statementPrefix', () => {
+  it('returns the statement being typed up to the cursor', () => {
+    expect(statementPrefix('select 1;\nselect * fr', 'postgres')).toBe('select * fr')
+    expect(statementPrefix('select 1; ', 'postgres')).toBe('')
+    expect(statementPrefix("select ';' from t ", 'postgres')).toBe("select ';' from t ")
+    expect(statementPrefix('', 'postgres')).toBe('')
   })
 })

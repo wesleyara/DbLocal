@@ -39,7 +39,8 @@
       "failed": "Sem conexão com {name}"
     },
     "home": "Voltar para o início",
-    "toggleTheme": "Alternar tema claro / escuro"
+    "toggleTheme": "Alternar tema claro / escuro",
+    "more": "Mais"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Histórico de queries",
     "historyHint": "Tudo que foi executado nesta conexão, do mais recente ao mais antigo.",
-    "historyThisTable": "Só {table}"
+    "historyThisTable": "Só {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Selecionar todas as linhas",
@@ -597,7 +599,36 @@
       "rows": "linhas",
       "time": "tempo"
     },
-    "running": "Executando…"
+    "running": "Executando…",
+    "snippets": {
+      "createTable": "Tabela com id e timestamps",
+      "createTableFk": "Tabela com chave estrangeira para outra tabela",
+      "createJunction": "Tabela de junção para relação N:N",
+      "createIndex": "Índice em uma coluna",
+      "createUniqueIndex": "Índice único em uma coluna",
+      "createView": "View a partir de uma consulta",
+      "createEnum": "Tipo enum",
+      "addColumn": "Adicionar coluna",
+      "addForeignKey": "Adicionar chave estrangeira (relação)",
+      "addUnique": "Adicionar restrição única",
+      "renameColumn": "Renomear coluna",
+      "dropColumn": "Remover coluna",
+      "dropTable": "Remover tabela se existir",
+      "insert": "Inserir linha",
+      "update": "Atualizar linhas pela chave",
+      "delete": "Excluir linhas pela chave",
+      "upsert": "Inserir ou atualizar em conflito",
+      "selectJoin": "Select com join",
+      "cte": "Common table expression (CTE)",
+      "transaction": "Bloco de transação",
+      "idColumn": "Coluna de chave primária auto-incremento",
+      "timestamps": "Colunas created_at e updated_at",
+      "references": "Coluna de chave estrangeira",
+      "foreignKeyConstraint": "Restrição de chave estrangeira",
+      "primaryKeyConstraint": "Chave primária composta",
+      "fkTo": "Coluna FK com o tipo da chave do alvo"
+    },
+    "historySuggestions": "Sugestões do histórico"
   },
   "erd": {
     "unique": "Único",
@@ -668,7 +699,8 @@
       "switchLanguage": "Trocar idioma (EN / PT)",
       "shortcuts": "Atalhos de teclado",
       "signOut": "Sair",
-      "openNotes": "Abrir notas da conexão"
+      "openNotes": "Abrir notas da conexão",
+      "openRoutines": "Abrir funções e triggers"
     }
   },
   "shortcuts": {
@@ -708,7 +740,9 @@
       "runStatement": "Executar o statement sob o cursor",
       "runAll": "Executar tudo",
       "format": "Formatar SQL",
-      "help": "Abrir a ajuda"
+      "help": "Abrir a ajuda",
+      "acceptSuggestion": "Aceitar a sugestão do histórico",
+      "acceptSuggestionWord": "Aceitar a próxima palavra da sugestão"
     }
   },
   "search": {
@@ -837,6 +871,10 @@
         "alertBeforeRun": {
           "title": "Alertar antes de executar",
           "text": "Marcado, toda execução lista antes os statements e o que cada um faz, e só roda depois que você confirmar."
+        },
+        "historySuggestions": {
+          "title": "Sugestões do histórico",
+          "text": "Enquanto você digita, o resto de uma query já executada aparece em cinza. → ou Tab aceita, ⌥→ pega uma palavra."
         }
       },
       "erd": {
@@ -849,6 +887,12 @@
         "overview": {
           "title": "Notas",
           "text": "Notas livres em Markdown, uma por conexão e uma por tabela. Ficam no armazenamento do próprio DbLocal, nunca no seu banco, e são salvas enquanto você digita."
+        }
+      },
+      "routines": {
+        "overview": {
+          "title": "Funções e triggers",
+          "text": "Veja, crie, edite e apague a lógica guardada no banco. Toda alteração mostra o SQL exato e pergunta antes de rodar."
         }
       }
     }
@@ -976,5 +1020,48 @@
       "image": "texto alternativo",
       "column": "Coluna"
     }
+  },
+  "routines": {
+    "open": "Funções e triggers",
+    "title": "Funções e triggers",
+    "refresh": "Atualizar",
+    "search": "Buscar por nome ou tabela…",
+    "filters": {
+      "all": "Todos",
+      "function": "Funções",
+      "procedure": "Procedures",
+      "trigger": "Triggers"
+    },
+    "new": {
+      "function": "Nova função",
+      "procedure": "Nova procedure",
+      "trigger": "Novo trigger"
+    },
+    "empty": {
+      "title": "Nada por aqui ainda",
+      "description": "Este schema não tem funções, procedures nem triggers. Crie uma com os botões acima.",
+      "sqlite": "O SQLite não tem funções nem procedures armazenadas, só triggers. Crie um com “Novo trigger”."
+    },
+    "noMatches": "Nenhuma função ou trigger encontrada.",
+    "pick": {
+      "title": "Selecione um item",
+      "description": "Escolha uma função, procedure ou trigger à esquerda para ler a definição."
+    },
+    "disabled": "Desativado",
+    "forEachRow": "para cada linha",
+    "forEachStatement": "para cada comando",
+    "calls": "chama",
+    "returns": "retorna",
+    "onTable": "Na tabela",
+    "pickTable": "Escolha uma tabela",
+    "copy": "Copiar",
+    "openInEditor": "Abrir no editor SQL",
+    "edit": "Editar",
+    "disable": "Desativar",
+    "enable": "Ativar",
+    "copied": "Copiado",
+    "saved": "Pronto",
+    "discardConfirm": "Descartar as alterações não salvas?",
+    "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido."
   }
 }

@@ -23,6 +23,16 @@ related: [data-grid, editing]
 
 Tables, columns (after `alias.`), functions and keywords are suggested for your dialect. After `JOIN` the editor offers the joins your relations describe, virtual ones included. **Format** (⇧⌥F) tidies the script.
 
+### Snippets {#snippets}
+
+Type the start of a statement (`create`, `alter table`, `insert`, …) and pick a snippet: create table, table with a foreign key, junction table for N:N, index, unique index, view, add column, add foreign key, rename or drop a column, insert, update, delete, upsert, CTE, transaction (and `create type … as enum` on Postgres). Tab moves through the fields; table fields offer the tables of the schema and `ON DELETE` offers its actions. The SQL follows your dialect (identity on Postgres, `AUTO_INCREMENT` on MySQL, `AUTOINCREMENT` on SQLite; SQLite adds a foreign key as a new column with `REFERENCES`).
+
+After `alter table users ` the snippets fill in the table, and inside `create table … (` you get `id`, `timestamps`, `references` and one `fk → table` per table, typed like that table's key.
+
+### History suggestions {#history-suggestions}
+
+While you type, the rest of the newest query of this connection that starts the same way (from the history of successful runs and the saved queries) shows in grey, like zsh-autosuggestions. <kbd>→</kbd> or <kbd>Tab</kbd> accepts it, <kbd>⌥→</kbd> takes one word, keep typing to ignore it. It only shows at the end of a line. Turn it off in the query settings.
+
 ## Safety {#safety}
 
 - On a read-only connection only reads run; the database enforces it as well.

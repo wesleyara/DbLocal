@@ -77,3 +77,23 @@ test('global search finds an e-mail across tables', async ({ page }) => {
   await expect(page.locator('[data-search-table="users"]')).toBeVisible()
   await expect(page.locator('[data-search-table="orders"]')).toBeVisible()
 })
+
+test('the SQL editor suggests a past query as ghost text and offers snippets', async ({ page, request }) => {
+  const ran = await request.post(`/api/c/${connectionId}/query`, { data: { sql: 'select id, email from users where id = 42', schema: 'main' } })
+  expect(ran.ok()).toBeTruthy()
+  await page.goto(`${home()}/q/e2e-autosuggest`)
+  await hydrated(page)
+  const lines = page.locator('[data-sql-editor] .view-lines')
+  await lines.click()
+  await page.keyboard.type('select id, em')
+  await expect(page.locator('[data-sql-editor] .ghost-text-decoration').first()).toBeVisible()
+  await page.keyboard.press('ArrowRight')
+  await expect(lines).toHaveText('select id, email from users where id = 42')
+
+  await page.keyboard.press('Control+a')
+  await page.keyboard.press('Delete')
+  await page.keyboard.type('create ta')
+  await expect(page.locator('.suggest-widget .monaco-list-row').first()).toContainText('create table')
+  await page.keyboard.press('Enter')
+  await expect(lines).toContainText('id integer PRIMARY KEY AUTOINCREMENT')
+})

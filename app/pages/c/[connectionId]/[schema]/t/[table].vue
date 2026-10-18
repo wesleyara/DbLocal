@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
+import type { DbTrigger } from '#shared/types/routines'
+import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
 import TableStructure from '~/components/schema/TableStructure.vue'
 import TableGrid from '~/components/grid/TableGrid.vue'
@@ -12,6 +14,13 @@ const schemaName = route.params.schema as string
 const { t } = useI18n()
 const { number } = useFormat()
 const store = useSchemaStore()
+const routinesStore = useRoutinesStore()
+onMounted(() => void routinesStore.ensure(id, schemaName))
+const tableTriggers = computed(() => (routinesStore.data?.triggers ?? []).filter((tr) => tr.table === table.value?.name))
+function openTrigger(tr: DbTrigger) {
+  structureOpen.value = false
+  void navigateTo(routinesPath(id, schemaName, `${tr.table}.${tr.name}`))
+}
 const structureOpen = ref(false)
 const historyOpen = ref(false)
 const notesOpen = ref(false)
@@ -92,7 +101,7 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
       </div>
 
       <UiDialog v-model:open="structureOpen" wide :title="t('tableView.structureTitle', { table: table.name })">
-        <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" />
+        <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" :triggers="tableTriggers" @open-trigger="openTrigger" />
       </UiDialog>
       <QueryHistoryDialog v-model:open="historyOpen" :connection-id="id" :schema="schemaName" :table="table.name" />
       <NotesTableNotesDialog

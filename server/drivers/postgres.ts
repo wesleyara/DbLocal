@@ -2,7 +2,9 @@ import pg from 'pg'
 import Cursor from 'pg-cursor'
 import { DriverError, NETWORK_ERROR_CODES, isDriverError, isTimeoutError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { RoutinesSnapshot } from '#shared/types/routines'
 import { introspectPostgres } from './introspect/postgres'
+import { routinesPostgres } from './introspect/routines'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
 import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
@@ -95,6 +97,10 @@ class PostgresDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectPostgres(<R>(sql: string, params?: unknown[]) => this.rows<R>(sql, params), schema)
+  }
+
+  listRoutines(schema: string): Promise<RoutinesSnapshot> {
+    return routinesPostgres(<R>(sql: string, params?: unknown[]) => this.rows<R>(sql, params), schema)
   }
 
   readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {

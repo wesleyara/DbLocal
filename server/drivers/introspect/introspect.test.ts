@@ -6,6 +6,7 @@ import { buildRelationGraph } from '../../schema/relation-graph'
 import { parseEnumValues, referentialAction, type QueryFn } from './common'
 import { mysqlKind } from './mysql'
 import { pgKind } from './postgres'
+import { pgTriggerKind, routinesSqlite } from './routines'
 import { introspectSqlite, sqliteKind } from './sqlite'
 
 const SEED = fileURLToPath(new URL('../../../fixtures/seed/sqlite.sql', import.meta.url))
@@ -97,5 +98,29 @@ describe('helpers', () => {
     expect(referentialAction('SET NULL')).toBe('set null')
     expect(referentialAction('NO ACTION')).toBe('no action')
     expect(referentialAction(undefined)).toBe('no action')
+  })
+})
+
+describe('routinesSqlite', () => {
+  it('lists triggers with timing and event', async () => {
+    const db = new Database(':memory:')
+    db.exec(
+      'CREATE TABLE t (id INTEGER PRIMARY KEY, n INT); CREATE TABLE log (x INT); CREATE TRIGGER "t_ai" AFTER INSERT ON t BEGIN INSERT INTO log VALUES (NEW.id); END; CREATE TRIGGER t_bu BEFORE UPDATE OF n ON t BEGIN SELECT 1; END;',
+    )
+    const { routines, triggers } = await routinesSqlite(
+      <R>(sql: string) => Promise.resolve(db.prepare(sql).all() as R[]),
+      'main',
+    )
+    expect(routines).toEqual([])
+    expect(triggers.map((t) => [t.name, t.table, t.timing, t.events])).toEqual([
+      ['t_ai', 't', 'AFTER', ['INSERT']],
+      ['t_bu', 't', 'BEFORE', ['UPDATE']],
+    ])
+    db.close()
+  })
+
+  it('decodes Postgres trigger bits', () => {
+    expect(pgTriggerKind(1 | 2 | 4 | 16)).toEqual({ timing: 'BEFORE', events: ['INSERT', 'UPDATE'], orientation: 'row' })
+    expect(pgTriggerKind(64 | 1 | 8).timing).toBe('INSTEAD OF')
   })
 })

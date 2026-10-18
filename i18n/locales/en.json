@@ -39,7 +39,8 @@
       "failed": "Could not connect to {name}"
     },
     "home": "Back to home",
-    "toggleTheme": "Toggle light / dark theme"
+    "toggleTheme": "Toggle light / dark theme",
+    "more": "More"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Query history",
     "historyHint": "Everything run on this connection, newest first.",
-    "historyThisTable": "Only {table}"
+    "historyThisTable": "Only {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Select all rows",
@@ -597,7 +599,36 @@
       "rows": "rows",
       "time": "time"
     },
-    "running": "Running…"
+    "running": "Running…",
+    "snippets": {
+      "createTable": "Table with id and timestamps",
+      "createTableFk": "Table with a foreign key to another table",
+      "createJunction": "Junction table for a many-to-many relation",
+      "createIndex": "Index on a column",
+      "createUniqueIndex": "Unique index on a column",
+      "createView": "View from a query",
+      "createEnum": "Enum type",
+      "addColumn": "Add a column",
+      "addForeignKey": "Add a foreign key (relation)",
+      "addUnique": "Add a unique constraint",
+      "renameColumn": "Rename a column",
+      "dropColumn": "Drop a column",
+      "dropTable": "Drop a table if it exists",
+      "insert": "Insert a row",
+      "update": "Update rows by key",
+      "delete": "Delete rows by key",
+      "upsert": "Insert or update on conflict",
+      "selectJoin": "Select with a join",
+      "cte": "Common table expression",
+      "transaction": "Transaction block",
+      "idColumn": "Auto-increment primary key column",
+      "timestamps": "created_at and updated_at columns",
+      "references": "Foreign key column",
+      "foreignKeyConstraint": "Foreign key constraint",
+      "primaryKeyConstraint": "Composite primary key",
+      "fkTo": "Foreign key column typed like the target key"
+    },
+    "historySuggestions": "History suggestions"
   },
   "erd": {
     "unique": "Unique",
@@ -668,7 +699,8 @@
       "switchLanguage": "Switch language (EN / PT)",
       "shortcuts": "Keyboard shortcuts",
       "signOut": "Sign out",
-      "openNotes": "Open connection notes"
+      "openNotes": "Open connection notes",
+      "openRoutines": "Open functions & triggers"
     }
   },
   "shortcuts": {
@@ -708,7 +740,9 @@
       "runStatement": "Run the statement under the cursor",
       "runAll": "Run everything",
       "format": "Format SQL",
-      "help": "Open the help"
+      "help": "Open the help",
+      "acceptSuggestion": "Accept the history suggestion",
+      "acceptSuggestionWord": "Accept the next word of the suggestion"
     }
   },
   "search": {
@@ -837,6 +871,10 @@
         "alertBeforeRun": {
           "title": "Alert before run",
           "text": "When ticked, every run first lists the statements and what each one does, and runs only after you confirm."
+        },
+        "historySuggestions": {
+          "title": "History suggestions",
+          "text": "While you type, the rest of a query you ran before shows in grey. → or Tab accepts it, ⌥→ takes one word."
         }
       },
       "erd": {
@@ -849,6 +887,12 @@
         "overview": {
           "title": "Notes",
           "text": "Free Markdown notes, one per connection and one per table. They stay in DbLocal's own store, never in your database, and save as you type."
+        }
+      },
+      "routines": {
+        "overview": {
+          "title": "Functions & triggers",
+          "text": "Read, create, edit and delete the logic stored in the database. Every change shows the exact SQL and asks before running."
         }
       }
     }
@@ -976,5 +1020,48 @@
       "image": "alt text",
       "column": "Column"
     }
+  },
+  "routines": {
+    "open": "Functions & triggers",
+    "title": "Functions & triggers",
+    "refresh": "Refresh",
+    "search": "Search by name or table…",
+    "filters": {
+      "all": "All",
+      "function": "Functions",
+      "procedure": "Procedures",
+      "trigger": "Triggers"
+    },
+    "new": {
+      "function": "New function",
+      "procedure": "New procedure",
+      "trigger": "New trigger"
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "This schema has no functions, procedures or triggers. Create one with the buttons above.",
+      "sqlite": "SQLite has no stored functions or procedures, only triggers. Create one with “New trigger”."
+    },
+    "noMatches": "No function or trigger matches.",
+    "pick": {
+      "title": "Select an item",
+      "description": "Pick a function, procedure or trigger on the left to read its definition."
+    },
+    "disabled": "Disabled",
+    "forEachRow": "for each row",
+    "forEachStatement": "for each statement",
+    "calls": "calls",
+    "returns": "returns",
+    "onTable": "On table",
+    "pickTable": "Pick a table",
+    "copy": "Copy",
+    "openInEditor": "Open in SQL editor",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "copied": "Copied",
+    "saved": "Done",
+    "discardConfirm": "Discard the unsaved changes?",
+    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped."
   }
 }

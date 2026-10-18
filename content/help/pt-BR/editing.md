@@ -38,7 +38,7 @@ Se o banco recusar algo, como uma chave duplicada, a linha responsável fica con
 
 ## Importando um arquivo {#import}
 
-**Importar**, ao lado de Exportar, lê um arquivo CSV ou JSON para a tabela. O CSV precisa de uma linha de cabeçalho; o separador (vírgula, ponto e vírgula, tab ou barra vertical) é detectado e pode ser trocado. O JSON é uma lista de objetos, ou um objeto por linha, como o DbLocal exporta.
+**Importar** (atrás do botão `«` à direita da barra, ao lado de Exportar) lê um arquivo CSV ou JSON para a tabela. O CSV precisa de uma linha de cabeçalho; o separador (vírgula, ponto e vírgula, tab ou barra vertical) é detectado e pode ser trocado. O JSON é uma lista de objetos, ou um objeto por linha, como o DbLocal exporta.
 
 As colunas do arquivo são ligadas às da tabela pelo nome (sem diferenciar maiúsculas, espaços, `_` e `-`); troque qualquer ligação ou marque *Não importar*. Colunas calculadas e binárias não podem ser preenchidas; colunas identity e auto-increment podem, então o arquivo mantém seus ids. Cada célula é verificada como um valor digitado no grid: números, datas (`AAAA-MM-DD`), booleanos (`true`/`false`, `1`/`0`, `sim`/`não`), JSON e UUIDs. Um texto como `now()` é gravado como está. Com **Células vazias são NULL**, uma célula vazia vira NULL, ou o default da coluna quando ela é NOT NULL e tem um.
 

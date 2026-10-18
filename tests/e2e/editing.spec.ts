@@ -211,6 +211,9 @@ test('the record panel edits the same pending changes', async ({ page, request }
 
 test('Import reads a CSV, lists invalid records and upserts the rest by key', async ({ page, request }) => {
   await open(page, ids.rw!, 'users')
+  // Import sits behind the right-hand toggle, collapsed by default.
+  await expect(page.locator('[data-import]')).toHaveCount(0)
+  await page.locator('[data-toggle-data-tools]').click()
   await page.locator('[data-import]').click()
   const csv = 'ID;Name;active;born\n1;Ana Nova;sim;\n4;Dora;no;2001-02-03\n5;Eva;maybe;\n'
   await page.locator('[data-import-file]').setInputFiles({ name: 'users.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })

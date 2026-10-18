@@ -832,6 +832,42 @@ onMounted(() => state.start())
       </FilterBar>
 
       <div class="ml-auto flex items-center gap-1">
+        <!-- Mirrors the left toggle: Import and Export stay behind it (remembered in `ui.gridDataTools`). -->
+        <button
+          type="button"
+          class="inline-flex size-6 items-center justify-center rounded-md text-fg-muted hover:bg-surface hover:text-fg"
+          :class="ui.gridDataTools && 'bg-surface text-fg'"
+          :aria-expanded="ui.gridDataTools"
+          aria-controls="grid-data-tools"
+          :aria-label="ui.gridDataTools ? t('grid.lessTools') : t('grid.moreTools')"
+          :title="ui.gridDataTools ? t('grid.lessTools') : t('grid.moreTools')"
+          data-toggle-data-tools
+          @click="ui.gridDataTools = !ui.gridDataTools"
+        >
+          <Icon name="lucide:chevrons-left" class="size-3.5 transition-transform" :class="ui.gridDataTools && 'rotate-180'" />
+        </button>
+        <div v-if="ui.gridDataTools" id="grid-data-tools" class="flex items-center gap-1" data-data-tools>
+          <button
+            v-if="editable && connection"
+            type="button"
+            class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+            data-import
+            @click="importOpen = true"
+          >
+            <Icon name="lucide:upload" class="size-3" />
+            {{ t('import.button') }}
+          </button>
+          <UiDropdownMenu :items="exportItems">
+            <button
+              type="button"
+              class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
+              data-export
+            >
+              <Icon name="lucide:download" class="size-3" />
+              {{ t('query.export') }}
+            </button>
+          </UiDropdownMenu>
+        </div>
         <button
           v-if="editable"
           type="button"
@@ -842,26 +878,6 @@ onMounted(() => state.start())
           <Icon name="lucide:plus" class="size-3" />
           {{ t('edit.addRecord') }}
         </button>
-        <button
-          v-if="editable && connection"
-          type="button"
-          class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-          data-import
-          @click="importOpen = true"
-        >
-          <Icon name="lucide:upload" class="size-3" />
-          {{ t('import.button') }}
-        </button>
-        <UiDropdownMenu :items="exportItems">
-          <button
-            type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-            data-export
-          >
-            <Icon name="lucide:download" class="size-3" />
-            {{ t('query.export') }}
-          </button>
-        </UiDropdownMenu>
         <UiPopover>
           <template #trigger>
             <button

@@ -146,3 +146,11 @@ FROM orders o JOIN users u ON u.id = o.user_id LEFT JOIN order_items i ON i.orde
 GROUP BY o.id, u.email, o.status, o.total;
 
 DROP TABLE _seq;
+
+-- Stored logic, for the functions & triggers view (SQLite has triggers only).
+CREATE TRIGGER products_price_check
+BEFORE UPDATE OF price ON products
+FOR EACH ROW WHEN NEW.price < 0
+BEGIN
+  SELECT RAISE(ABORT, 'price cannot be negative');
+END;

@@ -140,3 +140,34 @@ CREATE VIEW order_summaries AS
 SELECT o.id AS order_id, u.email, o.status, o.total, count(i.id) AS item_count
 FROM orders o JOIN users u ON u.id = o.user_id LEFT JOIN order_items i ON i.order_id = o.id
 GROUP BY o.id, u.email, o.status, o.total;
+
+-- Stored logic, for the functions & triggers view.
+CREATE FUNCTION order_total(p_order_id integer) RETURNS numeric
+LANGUAGE sql STABLE
+AS $$
+  SELECT coalesce(sum(quantity * unit_price), 0) FROM order_items WHERE order_id = p_order_id
+$$;
+COMMENT ON FUNCTION order_total(integer) IS 'Sum of the items of an order';
+
+CREATE PROCEDURE archive_audit_logs(p_before timestamptz)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  DELETE FROM audit_logs WHERE created_at < p_before;
+END;
+$$;
+
+CREATE FUNCTION products_price_check() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.price < 0 THEN
+    RAISE EXCEPTION 'price cannot be negative';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER products_price_check
+BEFORE INSERT OR UPDATE OF price ON products
+FOR EACH ROW EXECUTE FUNCTION products_price_check();

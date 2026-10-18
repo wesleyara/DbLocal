@@ -10,6 +10,7 @@ function fakeDriver(): Driver & { closed: boolean } {
     testConnection: async () => ({ serverVersion: 'fake', latencyMs: 1 }),
     listDatabases: async () => [],
     listSchemas: async () => [],
+    listRoutines: async () => ({ routines: [], triggers: [] }),
     readRows: async () => [],
     countRows: async () => 0,
     countGroups: async () => [],

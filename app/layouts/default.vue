@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaletteAction } from '~/components/shell/CommandPalette.vue'
+import type { MenuItem } from '~/components/ui/DropdownMenu.vue'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
 import { useTourStore } from '~/stores/tour'
@@ -54,6 +55,10 @@ function syncWorkspace() {
     workspace.sync(id, route.fullPath, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
     return
   }
+  if (route.path.endsWith('/routines') && !table) {
+    workspace.sync(id, route.fullPath, { schema: name, type: 'routines', title: t('routines.title'), icon: 'lucide:square-function' })
+    return
+  }
   if (route.path.endsWith('/notes') && !table) {
     workspace.sync(id, route.fullPath, { schema: name, type: 'notes', title: t('notes.open'), icon: 'lucide:notebook-pen' })
     return
@@ -89,6 +94,26 @@ function openErd() {
   workspace.open(id, path, { schema: name, type: 'erd', title: t('erd.title'), icon: 'lucide:network' })
   void navigateTo(path)
 }
+
+/** Functions and triggers are one tab per schema: an open one is reused. */
+function openRoutines() {
+  const id = connectionId.value
+  const name = schema.value
+  if (!id || !name) return
+  const path = `/c/${id}/${encodeURIComponent(name)}/routines`
+  const existing = workspace.forConnection(id).find((tab) => tab.type === 'routines' && tab.schema === name)
+  if (existing) {
+    const target = workspace.activate(existing.id)
+    if (target) return void navigateTo(target)
+  }
+  workspace.open(id, path, { schema: name, type: 'routines', title: t('routines.title'), icon: 'lucide:square-function' })
+  void navigateTo(path)
+}
+
+const moreItems = computed<MenuItem[]>(() => [
+  { label: t('routines.open'), icon: 'lucide:square-function', onSelect: () => openRoutines() },
+  { label: t('notes.open'), icon: 'lucide:notebook-pen', onSelect: () => openNotes() },
+])
 
 /** Connection notes are one tab per connection (the note is the same in every schema): an open one is reused. */
 function openNotes() {
@@ -165,6 +190,7 @@ const paletteActions = computed<PaletteAction[]>(() => {
   if (hasSchema.value) {
     list.push(
       { id: 'new-query', label: t('palette.actions.newQuery'), icon: 'lucide:terminal', shortcut: 'nav.newQuery', run: newQuery },
+      { id: 'routines', label: t('palette.actions.openRoutines'), icon: 'lucide:square-function', keywords: 'functions procedures triggers', run: openRoutines },
       { id: 'erd', label: t('palette.actions.openErd'), icon: 'lucide:network', keywords: 'diagram', run: openErd },
       { id: 'notes', label: t('palette.actions.openNotes'), icon: 'lucide:notebook-pen', keywords: 'notes notas markdown', run: openNotes },
       { id: 'search', label: t('palette.actions.search'), icon: 'lucide:text-search', shortcut: 'global.search', run: () => (searchOpen.value = true) },
@@ -270,9 +296,11 @@ function onResize(e: PointerEvent) {
         <UiButton size="sm" data-open-erd @click="openErd">
           <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
         </UiButton>
-        <UiButton size="sm" data-open-notes @click="openNotes">
-          <Icon name="lucide:notebook-pen" class="size-3.5" />{{ t('notes.open') }}
-        </UiButton>
+        <UiDropdownMenu :items="moreItems">
+          <UiButton size="sm" data-open-more :aria-label="t('shell.more')">
+            {{ t('shell.more') }}<Icon name="lucide:chevron-down" class="size-3.5" />
+          </UiButton>
+        </UiDropdownMenu>
       </template>
       <button
         type="button"

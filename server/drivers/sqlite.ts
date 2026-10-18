@@ -2,7 +2,9 @@ import Database from 'better-sqlite3'
 import { accessSync, constants } from 'node:fs'
 import { DriverError, isDriverError, messageOf } from './errors'
 import type { SchemaSnapshot } from '#shared/types/db'
+import type { RoutinesSnapshot } from '#shared/types/routines'
 import { introspectSqlite } from './introspect/sqlite'
+import { routinesSqlite } from './introspect/routines'
 import { compileCount, compileGroupCount, compileRows } from '../query/compile'
 import type { MutationPlan, MutationResult } from '#shared/types/mutations'
 import type { GroupCountPlan, RowsPlan } from '#shared/types/rows'
@@ -81,6 +83,10 @@ class SqliteDriver implements Driver {
 
   introspect(schema: string): Promise<SchemaSnapshot> {
     return introspectSqlite(<R>(sql: string) => Promise.resolve(this.run<R[]>(sql, (stmt) => stmt.all())), schema)
+  }
+
+  listRoutines(schema: string): Promise<RoutinesSnapshot> {
+    return routinesSqlite(<R>(sql: string) => Promise.resolve(this.run<R[]>(sql, (stmt) => stmt.all())), schema)
   }
 
   async readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {

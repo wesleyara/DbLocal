@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { usePendingStore } from './pending-changes'
 
-export type WorkspaceTabType = 'table' | 'record' | 'query' | 'erd' | 'notes'
+export type WorkspaceTabType = 'table' | 'record' | 'query' | 'erd' | 'notes' | 'routines'
 
 /** One step of the path walked through relations: `users › #42 Ana › orders (12)`. */
 export interface TrailSegment {
@@ -51,6 +51,7 @@ const ICONS: Record<WorkspaceTabType, string> = {
   query: 'lucide:terminal',
   erd: 'lucide:network',
   notes: 'lucide:notebook-pen',
+  routines: 'lucide:square-function',
 }
 export const tabIcon = (type: WorkspaceTabType): string => ICONS[type]
 

@@ -39,7 +39,8 @@
       "failed": "Sem conexão com {name}"
     },
     "home": "Voltar para o início",
-    "toggleTheme": "Alternar tema claro / escuro"
+    "toggleTheme": "Alternar tema claro / escuro",
+    "more": "Mais"
   },
   "access": {
     "exposedWarning": "O DbLocal está acessível pela rede e sem senha. Defina DBLOCAL_PASSWORD ou use o bind em 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Histórico de queries",
     "historyHint": "Tudo que foi executado nesta conexão, do mais recente ao mais antigo.",
-    "historyThisTable": "Só {table}"
+    "historyThisTable": "Só {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Selecionar todas as linhas",
@@ -668,7 +670,8 @@
       "switchLanguage": "Trocar idioma (EN / PT)",
       "shortcuts": "Atalhos de teclado",
       "signOut": "Sair",
-      "openNotes": "Abrir notas da conexão"
+      "openNotes": "Abrir notas da conexão",
+      "openRoutines": "Abrir funções e triggers"
     }
   },
   "shortcuts": {
@@ -850,6 +853,12 @@
           "title": "Notas",
           "text": "Notas livres em Markdown, uma por conexão e uma por tabela. Ficam no armazenamento do próprio DbLocal, nunca no seu banco, e são salvas enquanto você digita."
         }
+      },
+      "routines": {
+        "overview": {
+          "title": "Funções e triggers",
+          "text": "Veja, crie, edite e apague a lógica guardada no banco. Toda alteração mostra o SQL exato e pergunta antes de rodar."
+        }
       }
     }
   },
@@ -976,5 +985,48 @@
       "image": "texto alternativo",
       "column": "Coluna"
     }
+  },
+  "routines": {
+    "open": "Funções e triggers",
+    "title": "Funções e triggers",
+    "refresh": "Atualizar",
+    "search": "Buscar por nome ou tabela…",
+    "filters": {
+      "all": "Todos",
+      "function": "Funções",
+      "procedure": "Procedures",
+      "trigger": "Triggers"
+    },
+    "new": {
+      "function": "Nova função",
+      "procedure": "Nova procedure",
+      "trigger": "Novo trigger"
+    },
+    "empty": {
+      "title": "Nada por aqui ainda",
+      "description": "Este schema não tem funções, procedures nem triggers. Crie uma com os botões acima.",
+      "sqlite": "O SQLite não tem funções nem procedures armazenadas, só triggers. Crie um com “Novo trigger”."
+    },
+    "noMatches": "Nenhuma função ou trigger encontrada.",
+    "pick": {
+      "title": "Selecione um item",
+      "description": "Escolha uma função, procedure ou trigger à esquerda para ler a definição."
+    },
+    "disabled": "Desativado",
+    "forEachRow": "para cada linha",
+    "forEachStatement": "para cada comando",
+    "calls": "chama",
+    "returns": "retorna",
+    "onTable": "Na tabela",
+    "pickTable": "Escolha uma tabela",
+    "copy": "Copiar",
+    "openInEditor": "Abrir no editor SQL",
+    "edit": "Editar",
+    "disable": "Desativar",
+    "enable": "Ativar",
+    "copied": "Copiado",
+    "saved": "Pronto",
+    "discardConfirm": "Descartar as alterações não salvas?",
+    "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido."
   }
 }

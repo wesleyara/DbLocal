@@ -39,7 +39,8 @@
       "failed": "Could not connect to {name}"
     },
     "home": "Back to home",
-    "toggleTheme": "Toggle light / dark theme"
+    "toggleTheme": "Toggle light / dark theme",
+    "more": "More"
   },
   "access": {
     "exposedWarning": "DbLocal is reachable from the network and has no password. Set DBLOCAL_PASSWORD or bind to 127.0.0.1."
@@ -286,7 +287,8 @@
     "view": "View",
     "historyTitle": "Query history",
     "historyHint": "Everything run on this connection, newest first.",
-    "historyThisTable": "Only {table}"
+    "historyThisTable": "Only {table}",
+    "triggers": "Triggers"
   },
   "grid": {
     "selectAll": "Select all rows",
@@ -668,7 +670,8 @@
       "switchLanguage": "Switch language (EN / PT)",
       "shortcuts": "Keyboard shortcuts",
       "signOut": "Sign out",
-      "openNotes": "Open connection notes"
+      "openNotes": "Open connection notes",
+      "openRoutines": "Open functions & triggers"
     }
   },
   "shortcuts": {
@@ -850,6 +853,12 @@
           "title": "Notes",
           "text": "Free Markdown notes, one per connection and one per table. They stay in DbLocal's own store, never in your database, and save as you type."
         }
+      },
+      "routines": {
+        "overview": {
+          "title": "Functions & triggers",
+          "text": "Read, create, edit and delete the logic stored in the database. Every change shows the exact SQL and asks before running."
+        }
       }
     }
   },
@@ -976,5 +985,48 @@
       "image": "alt text",
       "column": "Column"
     }
+  },
+  "routines": {
+    "open": "Functions & triggers",
+    "title": "Functions & triggers",
+    "refresh": "Refresh",
+    "search": "Search by name or table…",
+    "filters": {
+      "all": "All",
+      "function": "Functions",
+      "procedure": "Procedures",
+      "trigger": "Triggers"
+    },
+    "new": {
+      "function": "New function",
+      "procedure": "New procedure",
+      "trigger": "New trigger"
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "This schema has no functions, procedures or triggers. Create one with the buttons above.",
+      "sqlite": "SQLite has no stored functions or procedures, only triggers. Create one with “New trigger”."
+    },
+    "noMatches": "No function or trigger matches.",
+    "pick": {
+      "title": "Select an item",
+      "description": "Pick a function, procedure or trigger on the left to read its definition."
+    },
+    "disabled": "Disabled",
+    "forEachRow": "for each row",
+    "forEachStatement": "for each statement",
+    "calls": "calls",
+    "returns": "returns",
+    "onTable": "On table",
+    "pickTable": "Pick a table",
+    "copy": "Copy",
+    "openInEditor": "Open in SQL editor",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "copied": "Copied",
+    "saved": "Done",
+    "discardConfirm": "Discard the unsaved changes?",
+    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped."
   }
 }

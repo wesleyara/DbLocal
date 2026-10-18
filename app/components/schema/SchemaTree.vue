@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SchemaTable } from '#shared/types/db'
 import { useSchemaStore } from '~/stores/schema'
+import { usePendingStore } from '~/stores/pending-changes'
 import { useWorkspaceStore } from '~/stores/workspace'
 import type { MenuItem } from '../ui/DropdownMenu.vue'
 
@@ -209,6 +210,17 @@ watch(
     void fetchMissingCounts()
   },
   { immediate: true },
+)
+
+// A save, an import or "Reload data" can change how many rows a table has: count again, keeping
+// the old numbers on screen until the new ones arrive.
+const pendingStore = usePendingStore()
+watch(
+  () => pendingStore.version,
+  () => {
+    requested.clear()
+    void fetchMissingCounts()
+  },
 )
 
 function rowsLabel(tb: SchemaTable): string | null {

@@ -326,9 +326,15 @@ async function runImport(): Promise<void> {
           {{ t('import.missing', { columns: missing.join(', ') }) }}
         </p>
 
-        <div v-if="build.errors.length" class="grid gap-1 rounded-md border border-danger/40 bg-danger-soft p-2" data-import-invalid>
-          <p class="text-xs font-medium text-danger">
-            {{ t('import.invalid', { count: number(build.invalidRows) }, build.invalidRows) }}
+        <!-- Blocking (danger) until "Skip invalid records" is ticked; then only a warning. -->
+        <div
+          v-if="build.errors.length"
+          class="grid gap-1 rounded-md border p-2"
+          :class="skipInvalid ? 'border-warning/40 bg-warning-soft' : 'border-danger/40 bg-danger-soft'"
+          data-import-invalid
+        >
+          <p class="text-xs font-medium" :class="skipInvalid ? 'text-warning' : 'text-danger'">
+            {{ t(skipInvalid ? 'import.willSkip' : 'import.invalid', { count: number(build.invalidRows) }, build.invalidRows) }}
           </p>
           <ul class="max-h-32 overflow-auto text-xs text-fg-muted">
             <li v-for="e in shownErrors" :key="`${e.row}:${e.column}`">

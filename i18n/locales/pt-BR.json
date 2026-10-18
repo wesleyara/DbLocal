@@ -548,6 +548,7 @@
     "noMapping": "Mapeie ao menos uma coluna.",
     "missing": "Estas colunas precisam de valor e não estão mapeadas: {columns}",
     "invalid": "{count} registro tem valores inválidos | {count} registros têm valores inválidos",
+    "willSkip": "{count} registro inválido será pulado | {count} registros inválidos serão pulados",
     "cellError": "Registro {row}, {column}: {message}",
     "moreErrors": "e mais {count}",
     "cellErrors": {

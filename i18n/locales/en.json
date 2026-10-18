@@ -548,6 +548,7 @@
     "noMapping": "Map at least one column.",
     "missing": "These columns need a value and are not mapped: {columns}",
     "invalid": "{count} record has invalid values | {count} records have invalid values",
+    "willSkip": "{count} invalid record will be skipped | {count} invalid records will be skipped",
     "cellError": "Record {row}, {column}: {message}",
     "moreErrors": "and {count} more",
     "cellErrors": {

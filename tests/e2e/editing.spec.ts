@@ -222,6 +222,7 @@ test('Import reads a CSV, lists invalid records and upserts the rest by key', as
   const run = page.locator('[data-import-run]')
   await expect(run).toBeDisabled()
   await page.locator('[data-import-skip-invalid]').click()
+  await expect(page.locator('[data-import-invalid]')).toContainText('will be skipped')
   // Insert would collide with Ana's id; insert-or-update keeps her row and changes the name.
   await page.locator('[data-import-mode] [role="combobox"]').click()
   await page.getByRole('option', { name: /update/ }).click()
@@ -232,4 +233,6 @@ test('Import reads a CSV, lists invalid records and upserts the rest by key', as
   expect(all[0]).toMatchObject({ email: 'ana@x.test' })
   expect(all[3]).toMatchObject({ active: 0, born: '2001-02-03' })
   await expect(cell(page, 3, 1)).toContainText('Dora')
+  // The sidebar counts the table again after the import.
+  await expect(page.locator('[data-row-key="users"]')).toContainText('4')
 })

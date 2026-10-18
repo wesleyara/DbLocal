@@ -599,7 +599,36 @@
       "rows": "rows",
       "time": "time"
     },
-    "running": "Running…"
+    "running": "Running…",
+    "snippets": {
+      "createTable": "Table with id and timestamps",
+      "createTableFk": "Table with a foreign key to another table",
+      "createJunction": "Junction table for a many-to-many relation",
+      "createIndex": "Index on a column",
+      "createUniqueIndex": "Unique index on a column",
+      "createView": "View from a query",
+      "createEnum": "Enum type",
+      "addColumn": "Add a column",
+      "addForeignKey": "Add a foreign key (relation)",
+      "addUnique": "Add a unique constraint",
+      "renameColumn": "Rename a column",
+      "dropColumn": "Drop a column",
+      "dropTable": "Drop a table if it exists",
+      "insert": "Insert a row",
+      "update": "Update rows by key",
+      "delete": "Delete rows by key",
+      "upsert": "Insert or update on conflict",
+      "selectJoin": "Select with a join",
+      "cte": "Common table expression",
+      "transaction": "Transaction block",
+      "idColumn": "Auto-increment primary key column",
+      "timestamps": "created_at and updated_at columns",
+      "references": "Foreign key column",
+      "foreignKeyConstraint": "Foreign key constraint",
+      "primaryKeyConstraint": "Composite primary key",
+      "fkTo": "Foreign key column typed like the target key"
+    },
+    "historySuggestions": "History suggestions"
   },
   "erd": {
     "unique": "Unique",
@@ -711,7 +740,9 @@
       "runStatement": "Run the statement under the cursor",
       "runAll": "Run everything",
       "format": "Format SQL",
-      "help": "Open the help"
+      "help": "Open the help",
+      "acceptSuggestion": "Accept the history suggestion",
+      "acceptSuggestionWord": "Accept the next word of the suggestion"
     }
   },
   "search": {
@@ -840,6 +871,10 @@
         "alertBeforeRun": {
           "title": "Alert before run",
           "text": "When ticked, every run first lists the statements and what each one does, and runs only after you confirm."
+        },
+        "historySuggestions": {
+          "title": "History suggestions",
+          "text": "While you type, the rest of a query you ran before shows in grey. → or Tab accepts it, ⌥→ takes one word."
         }
       },
       "erd": {

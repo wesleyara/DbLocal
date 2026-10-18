@@ -569,6 +569,7 @@ const confirmSql = ref<{ sql: string; kinds: string[] } | null>(null)
 /** SQL waiting for the "Alert before run" confirmation. */
 const alertSql = ref<string | null>(null)
 const sqlEditor = ref<InstanceType<typeof SqlEditor> | null>(null)
+const sqlHistory = useSqlHistory(() => props.connectionId)
 let sqlTimer: ReturnType<typeof setTimeout> | undefined
 
 const dialect = computed(() => (schemaStore.dialect ?? 'postgres') as 'postgres' | 'mysql' | 'sqlite')
@@ -685,6 +686,7 @@ async function runSql(sql?: string, confirmWrites = false): Promise<void> {
   } finally {
     running.value = false
     queryId.value = null
+    void sqlHistory.refresh()
   }
 }
 
@@ -909,6 +911,7 @@ onMounted(() => state.start())
             :dialect="dialect"
             :snapshot="schemaStore.snapshot"
             :graph="schemaStore.graph"
+            :history="queries.historySuggestions ? sqlHistory.entries.value : []"
             @run="(sql) => requestSql(sql)"
             @run-all="requestSql()"
           />

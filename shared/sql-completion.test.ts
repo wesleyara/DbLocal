@@ -46,3 +46,17 @@ describe('suggest', () => {
     expect(suggest('select zz.', 'select zz.', snapshot, graph)).toEqual([])
   })
 })
+
+describe('suggest snippets', () => {
+  it('adds dialect snippets at the start of a statement', () => {
+    const out = suggest('cre', 'cre', snapshot, graph, 'mysql')
+    const table = out.find((s) => s.snippetId === 'createTable')
+    expect(table).toMatchObject({ kind: 'snippet', replace: 3 })
+    expect(table!.insert).toContain('AUTO_INCREMENT')
+  })
+
+  it('puts ALTER TABLE snippets first', () => {
+    const out = suggest('alter table orders ', 'alter table orders ', snapshot, graph)
+    expect(out[0]).toMatchObject({ kind: 'snippet' })
+  })
+})

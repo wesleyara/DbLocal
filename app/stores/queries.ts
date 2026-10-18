@@ -28,6 +28,8 @@ export const useQueriesStore = defineStore('queries', () => {
   const timeoutMs = ref(DEFAULT_QUERY_TIMEOUT_MS)
   /** "Alert before run": every run (editor and the grid's SQL bar) asks for confirmation first. */
   const alertBeforeRun = ref(false)
+  /** Ghost text from the connection's history while typing (zsh-autosuggestions style). */
+  const historySuggestions = ref(true)
   let hydrated = false
 
   function hydrate(): void {
@@ -36,10 +38,11 @@ export const useQueriesStore = defineStore('queries', () => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}')
       if (saved && typeof saved === 'object') drafts.value = saved
-      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as { limit?: number; timeoutMs?: number; alertBeforeRun?: boolean }
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as { limit?: number; timeoutMs?: number; alertBeforeRun?: boolean; historySuggestions?: boolean }
       if (Number.isInteger(settings.limit) && settings.limit! > 0) limit.value = settings.limit!
       if (Number.isInteger(settings.timeoutMs) && settings.timeoutMs! >= 100) timeoutMs.value = settings.timeoutMs!
       if (typeof settings.alertBeforeRun === 'boolean') alertBeforeRun.value = settings.alertBeforeRun
+      if (typeof settings.historySuggestions === 'boolean') historySuggestions.value = settings.historySuggestions
     } catch {
       // storage unavailable: drafts live for this page load only
     }
@@ -57,10 +60,15 @@ export const useQueriesStore = defineStore('queries', () => {
     },
     { deep: true },
   )
-  watch([limit, timeoutMs, alertBeforeRun], () => {
+  watch([limit, timeoutMs, alertBeforeRun, historySuggestions], () => {
     if (!hydrated) return
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ limit: limit.value, timeoutMs: timeoutMs.value, alertBeforeRun: alertBeforeRun.value }))
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        limit: limit.value,
+        timeoutMs: timeoutMs.value,
+        alertBeforeRun: alertBeforeRun.value,
+        historySuggestions: historySuggestions.value,
+      }))
     } catch {
       // ignore
     }
@@ -88,5 +96,5 @@ export const useQueriesStore = defineStore('queries', () => {
 
   const isModified = (d: QueryDraft | undefined): boolean => !!d && d.savedId !== null && d.sql !== d.savedSql
 
-  return { drafts, limit, timeoutMs, alertBeforeRun, hydrate, create, ensure, remove, isModified }
+  return { drafts, limit, timeoutMs, alertBeforeRun, historySuggestions, hydrate, create, ensure, remove, isModified }
 })

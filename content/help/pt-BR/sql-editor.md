@@ -23,6 +23,16 @@ related: [data-grid, editing]
 
 Tabelas, colunas (depois de `alias.`), funções e palavras-chave são sugeridas para o seu dialeto. Depois de `JOIN`, o editor oferece os joins que suas relações descrevem, inclusive as virtuais. **Formatar** (⇧⌥F) organiza o script.
 
+### Snippets {#snippets}
+
+Digite o começo de um comando (`create`, `alter table`, `insert`, …) e escolha um snippet: criar tabela, tabela com chave estrangeira, tabela de junção para N:N, índice, índice único, view, adicionar coluna, adicionar chave estrangeira, renomear ou remover coluna, insert, update, delete, upsert, CTE, transação (e `create type … as enum` no Postgres). Tab passa pelos campos; campos de tabela oferecem as tabelas do schema e `ON DELETE` oferece as ações. O SQL segue o dialeto (identity no Postgres, `AUTO_INCREMENT` no MySQL, `AUTOINCREMENT` no SQLite; no SQLite a chave estrangeira é adicionada como nova coluna com `REFERENCES`).
+
+Depois de `alter table users ` os snippets já vêm com a tabela, e dentro de `create table … (` aparecem `id`, `timestamps`, `references` e um `fk → tabela` por tabela, com o tipo da chave dela.
+
+### Sugestões do histórico {#history-suggestions}
+
+Enquanto você digita, o resto da query mais recente desta conexão que começa igual (do histórico de execuções bem-sucedidas e das queries salvas) aparece em cinza, como no zsh-autosuggestions. <kbd>→</kbd> ou <kbd>Tab</kbd> aceita, <kbd>⌥→</kbd> pega uma palavra, continuar digitando ignora. Só aparece no fim da linha. Desligue nas configurações da query.
+
 ## Segurança {#safety}
 
 - Em conexão somente leitura só leituras rodam; o banco também garante isso.

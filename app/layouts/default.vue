@@ -255,6 +255,8 @@ useShortcutsRegistration([
   { id: 'editor.run', keys: 'mod+enter', description: 'shortcuts.items.runStatement', context: 'editor', allowInInput: true },
   { id: 'editor.runAll', keys: 'mod+shift+enter', description: 'shortcuts.items.runAll', context: 'editor', allowInInput: true },
   { id: 'editor.format', keys: 'alt+shift+f', description: 'shortcuts.items.format', context: 'editor', allowInInput: true },
+  { id: 'editor.acceptSuggestion', keys: 'arrowright', description: 'shortcuts.items.acceptSuggestion', context: 'editor', allowInInput: true },
+  { id: 'editor.acceptWord', keys: 'alt+arrowright', description: 'shortcuts.items.acceptSuggestionWord', context: 'editor', allowInInput: true },
 ])
 
 const dragging = ref(false)

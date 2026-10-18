@@ -599,7 +599,36 @@
       "rows": "linhas",
       "time": "tempo"
     },
-    "running": "Executando…"
+    "running": "Executando…",
+    "snippets": {
+      "createTable": "Tabela com id e timestamps",
+      "createTableFk": "Tabela com chave estrangeira para outra tabela",
+      "createJunction": "Tabela de junção para relação N:N",
+      "createIndex": "Índice em uma coluna",
+      "createUniqueIndex": "Índice único em uma coluna",
+      "createView": "View a partir de uma consulta",
+      "createEnum": "Tipo enum",
+      "addColumn": "Adicionar coluna",
+      "addForeignKey": "Adicionar chave estrangeira (relação)",
+      "addUnique": "Adicionar restrição única",
+      "renameColumn": "Renomear coluna",
+      "dropColumn": "Remover coluna",
+      "dropTable": "Remover tabela se existir",
+      "insert": "Inserir linha",
+      "update": "Atualizar linhas pela chave",
+      "delete": "Excluir linhas pela chave",
+      "upsert": "Inserir ou atualizar em conflito",
+      "selectJoin": "Select com join",
+      "cte": "Common table expression (CTE)",
+      "transaction": "Bloco de transação",
+      "idColumn": "Coluna de chave primária auto-incremento",
+      "timestamps": "Colunas created_at e updated_at",
+      "references": "Coluna de chave estrangeira",
+      "foreignKeyConstraint": "Restrição de chave estrangeira",
+      "primaryKeyConstraint": "Chave primária composta",
+      "fkTo": "Coluna FK com o tipo da chave do alvo"
+    },
+    "historySuggestions": "Sugestões do histórico"
   },
   "erd": {
     "unique": "Único",
@@ -711,7 +740,9 @@
       "runStatement": "Executar o statement sob o cursor",
       "runAll": "Executar tudo",
       "format": "Formatar SQL",
-      "help": "Abrir a ajuda"
+      "help": "Abrir a ajuda",
+      "acceptSuggestion": "Aceitar a sugestão do histórico",
+      "acceptSuggestionWord": "Aceitar a próxima palavra da sugestão"
     }
   },
   "search": {
@@ -840,6 +871,10 @@
         "alertBeforeRun": {
           "title": "Alertar antes de executar",
           "text": "Marcado, toda execução lista antes os statements e o que cada um faz, e só roda depois que você confirmar."
+        },
+        "historySuggestions": {
+          "title": "Sugestões do histórico",
+          "text": "Enquanto você digita, o resto de uma query já executada aparece em cinza. → ou Tab aceita, ⌥→ pega uma palavra."
         }
       },
       "erd": {

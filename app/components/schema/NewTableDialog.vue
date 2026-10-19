@@ -70,6 +70,7 @@ async function confirm(sql: string): Promise<void> {
     :sql="runner.pendingSql.value"
     :dialect="dialect"
     :prod="connection?.environment === 'prod'"
+    :connection-name="connection?.name"
     @cancel="runner.cancel"
     @confirm="confirm"
   />

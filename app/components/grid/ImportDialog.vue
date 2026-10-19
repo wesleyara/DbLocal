@@ -183,7 +183,8 @@ async function send(ops: MutationOp[], dryRun: boolean): Promise<MutationRespons
 
 function requestImport(): void {
   if (!canImport.value) return
-  if (props.environment === 'prod') {
+  // Upsert overwrites the rows that share a key with the file: confirmed like a prod write.
+  if (props.environment === 'prod' || mode.value === 'upsert') {
     typedName.value = ''
     confirmProd.value = true
   } else void runImport()
@@ -366,7 +367,14 @@ async function runImport(): Promise<void> {
     </template>
   </UiDialog>
 
-  <UiDialog v-model:open="confirmProd" :title="t('edit.prodTitle')" :description="t('import.prodBody', { count: number(total), name: connectionName }, total)">
+  <UiDialog
+    v-model:open="confirmProd"
+    :title="environment === 'prod' ? t('edit.prodTitle') : t('import.upsertTitle')"
+    :description="t('import.prodBody', { count: number(total), name: connectionName }, total)"
+  >
+    <p v-if="mode === 'upsert'" class="mb-3 flex items-center gap-2 rounded-md border border-warning/50 bg-warning-soft p-2 text-xs text-warning" role="alert" data-import-upsert-warning>
+      <Icon name="lucide:triangle-alert" class="size-4 shrink-0" />{{ t('import.upsertWarning', { key: (editableKey(table) ?? []).join(', ') }) }}
+    </p>
     <UiInput v-model="typedName" mono :placeholder="connectionName" :aria-label="t('edit.prodType', { name: connectionName })" data-prod-confirm />
     <template #footer>
       <UiButton size="sm" @click="confirmProd = false">{{ t('common.cancel') }}</UiButton>

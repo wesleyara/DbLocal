@@ -29,6 +29,7 @@ import ImportDialog from './ImportDialog.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
+import { hasDanger } from '#shared/sql-risk'
 import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 import ResultGrid from '~/components/query/ResultGrid.vue'
 import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
@@ -642,11 +643,11 @@ function resetSql(): void {
   adhocError.value = null
 }
 
-/** Runs the bar's SQL at once, or first shows what is about to run when "Alert before run" is on. */
+/** Runs the bar's SQL at once, or first shows what is about to run (always when it is destructive). */
 function requestSql(sql?: string): void {
   const text = (sql ?? sqlText.value).trim()
   if (!text || running.value) return
-  if (queries.alertBeforeRun) alertSql.value = text
+  if (queries.alertBeforeRun || hasDanger(text, dialect.value)) alertSql.value = text
   else void runSql(text)
 }
 
@@ -1086,6 +1087,7 @@ onMounted(() => state.start())
       :sql="alertSql"
       :dialect="dialect"
       :prod="connection?.environment === 'prod'"
+      :connection-name="connection?.name"
       @cancel="alertSql = null"
       @confirm="(sql) => { alertSql = null; void runSql(sql, true) }"
     />

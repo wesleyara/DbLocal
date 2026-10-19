@@ -160,7 +160,7 @@ export function statementPrefix(before: string, dialect: SqlDialect): string {
 }
 
 /** Replaces leading comments and whitespace so the first keyword can be read. */
-function stripLeading(sql: string): string {
+export function stripLeading(sql: string): string {
   let s = sql
   for (;;) {
     const t = s.replace(/^[\s(]+/, '')

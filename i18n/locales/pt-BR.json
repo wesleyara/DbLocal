@@ -477,8 +477,8 @@
     "prodTitle": "Salvar em uma conexão de produção",
     "prodBody": "{count} alteração será gravada em {name}. | {count} alterações serão gravadas em {name}.",
     "prodType": "Digite {name} para confirmar",
-    "deleteTitle": "Excluir {count} linha? | Excluir {count} linhas?",
-    "deleteBody": "As linhas de {table} ficam marcadas para exclusão e são removidas quando você salvar.",
+    "deleteTitle": "Excluir linhas",
+    "deleteBody": "O salvamento exclui linhas de {name}.",
     "impactNone": "Nenhum outro registro referencia estas linhas.",
     "impactCount": "{count} registro | {count} registros",
     "impactFailed": "Não foi possível verificar o que referencia estas linhas.",
@@ -508,7 +508,8 @@
       "required": "Esta coluna não aceita NULL."
     },
     "generate": "Gerar {fn}",
-    "undoCell": "Desfazer esta célula"
+    "undoCell": "Desfazer esta célula",
+    "deleteWarning": "{count} linha será excluída permanentemente. | {count} linhas serão excluídas permanentemente."
   },
   "import": {
     "button": "Importar",
@@ -562,7 +563,9 @@
     "run": "Importar {count} registro | Importar {count} registros",
     "done": "{count} registro importado | {count} registros importados",
     "skipped": "{count} registro inválido pulado | {count} registros inválidos pulados",
-    "prodBody": "{count} registro será gravado em {name}. | {count} registros serão gravados em {name}."
+    "prodBody": "{count} registro será gravado em {name}. | {count} registros serão gravados em {name}.",
+    "upsertTitle": "Sobrescrever linhas existentes",
+    "upsertWarning": "O upsert sobrescreve as linhas cuja {key} já está na tabela com os valores do arquivo."
   },
   "structure": {
     "edit": "Editar estrutura",
@@ -731,7 +734,37 @@
       "primaryKeyConstraint": "Chave primária composta",
       "fkTo": "Coluna FK com o tipo da chave do alvo"
     },
-    "historySuggestions": "Sugestões do histórico"
+    "historySuggestions": "Sugestões do histórico",
+    "risk": {
+      "title": "Comandos destrutivos",
+      "heading": "Isto pode destruir dados ou estrutura:",
+      "headingWarning": "Isto substitui objetos existentes:",
+      "noUndo": "Não dá para desfazer pelo DbLocal. Faça um backup antes se puder precisar dos dados.",
+      "typeName": "Digite {name} para confirmar",
+      "drop": "DROP {object} {target}: remove o objeto e tudo o que há nele.",
+      "truncate": "TRUNCATE {target}: apaga todas as linhas.",
+      "deleteAll": "DELETE sem WHERE em {target}: apaga todas as linhas.",
+      "updateAll": "UPDATE sem WHERE em {target}: altera todas as linhas.",
+      "alterDrop": "ALTER TABLE {target} remove uma coluna, chave ou constraint (e seus dados).",
+      "recreate": "{object} {target} é removido e criado de novo.",
+      "rebuild": "{target} é reconstruída: copiada para uma tabela nova e trocada.",
+      "objects": {
+        "table": "TABLE",
+        "view": "VIEW",
+        "materialized_view": "MATERIALIZED VIEW",
+        "schema": "SCHEMA",
+        "database": "DATABASE",
+        "index": "INDEX",
+        "function": "FUNCTION",
+        "procedure": "PROCEDURE",
+        "trigger": "TRIGGER",
+        "type": "TYPE",
+        "sequence": "SEQUENCE",
+        "event": "EVENT",
+        "domain": "DOMAIN",
+        "extension": "EXTENSION"
+      }
+    }
   },
   "erd": {
     "unique": "Único",
@@ -1209,11 +1242,16 @@
       "file": "Arquivo SQL",
       "hint": "Para no primeiro erro; os comandos que já rodaram ficam.",
       "readonly": "Esta conexão é somente leitura: nada pode ser restaurado.",
-      "confirmProd": "Sei que {name} é um banco de produção",
       "run": "Restaurar",
       "progress": "{done} de {total} comandos",
       "failedAt": "O comando {index} falhou:",
-      "done": "Restauração concluída: {count} comandos rodaram"
+      "done": "Restauração concluída: {count} comandos rodaram",
+      "review": "Revisar",
+      "reviewHeading": "{count} comando vai rodar em {name} ({schema}). | {count} comandos vão rodar em {name} ({schema}).",
+      "prodWarning": "Esta é uma conexão de produção.",
+      "destructive": "{count} comando remove ou apaga dados: | {count} comandos removem ou apagam dados:",
+      "statementN": "nº {n}",
+      "noUndo": "Não dá para desfazer pelo DbLocal. Faça backup do destino antes se ele tiver dados."
     },
     "workspace": {
       "title": "Backup do workspace",

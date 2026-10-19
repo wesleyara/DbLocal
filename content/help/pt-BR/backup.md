@@ -29,10 +29,10 @@ Numa conexão de arquivo SQLite o diálogo tem também **Baixar arquivo .sqlite*
 
 ## Restaurar {#restore}
 
-**Restaurar de SQL…** roda um arquivo `.sql` (um dump do DbLocal ou qualquer script) no schema ou banco escolhido, comando por comando, com barra de progresso. Para no primeiro erro e mostra o comando e a mensagem do banco; o que rodou antes fica. Restaure um dump num schema ou banco vazio: ele cria as tabelas.
+**Restaurar de SQL…** roda um arquivo `.sql` (um dump do DbLocal ou qualquer script) no schema ou banco escolhido, comando por comando, com barra de progresso. Antes, duas checagens: **Revisar** lê o arquivo e diz quantos comandos vão rodar e onde, listando os destrutivos (`DROP`, `TRUNCATE`, `DELETE` sem `WHERE`, ...); depois **Restaurar** só liga quando você digita o nome da conexão. Para no primeiro erro e mostra o comando e a mensagem do banco; o que rodou antes fica. Restaure um dump num schema ou banco vazio: ele cria as tabelas.
 
 > [!WARNING]
-> Conexões somente leitura não restauram. Uma conexão `prod` pede confirmação antes. Os comandos de uma restauração não entram no histórico de queries.
+> Conexões somente leitura não restauram, e o servidor recusa uma restauração não confirmada. Os comandos de uma restauração não entram no histórico de queries.
 
 ## Backup do workspace {#workspace}
 

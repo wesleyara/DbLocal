@@ -4,7 +4,7 @@ import { run } from '../../../connections/http'
 import { useStore } from '../../../store/db'
 
 /**
- * Restores a `.sql` file sent as the raw body (`?schema=`, `?confirm=1` on prod). The checks fail
+ * Restores a `.sql` file sent as the raw body (`?schema=`, `?confirm=1` always required). The checks fail
  * as a normal error response; then the answer is NDJSON, one `RestoreEvent` per line. Closing the
  * request stops it after the statement that is running.
  */

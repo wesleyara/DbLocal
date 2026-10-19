@@ -59,6 +59,7 @@ test('edits columns of a table, shows the SQL and runs it', async ({ page }) => 
   await page.locator('[data-review-structure]').click()
   const confirm = page.locator('[data-run-confirm]')
   await expect(confirm).toContainText('INSERT INTO "main"."users__dblocal_new"')
+  await expect(page.locator('[data-run-risks] [data-risk="rebuild"]')).toBeVisible()
   await page.locator('[data-confirm-alert-run]').click()
   await expect(page.locator('[data-structure-editor]')).toHaveCount(0)
   expect(read('select id, name, kind, age from users order by id')).toEqual([
@@ -90,6 +91,10 @@ test('creates a table with a foreign key and opens it, then drops it', async ({ 
   await page.locator('[data-edit-structure]').click()
   await page.locator('[data-drop-table]').click()
   await expect(page.locator('[data-run-confirm]')).toContainText('DROP TABLE "main"."posts"')
+  // Destructive: a warning, and Run stays off until the connection name is typed.
+  await expect(page.locator('[data-run-risks] [data-risk="drop"]')).toBeVisible()
+  await expect(page.locator('[data-confirm-alert-run]')).toBeDisabled()
+  await page.locator('[data-run-confirm-name]').fill('E2E structure')
   await page.locator('[data-confirm-alert-run]').click()
   await expect(page).not.toHaveURL(/\/t\/posts/)
   expect(read("select name from sqlite_schema where name = 'posts'")).toEqual([])

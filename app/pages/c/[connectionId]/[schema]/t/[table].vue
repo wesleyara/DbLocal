@@ -111,6 +111,7 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
         :triggers="tableTriggers"
         :editable="table.kind === 'table' && !!view && !view.readonly && !view.readonlyGlobal"
         :prod="view?.environment === 'prod'"
+        :connection-name="view?.name"
         @open-trigger="openTrigger"
       />
       <QueryHistoryDialog v-model:open="historyOpen" :connection-id="id" :schema="schemaName" :table="table.name" />

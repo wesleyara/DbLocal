@@ -477,8 +477,8 @@
     "prodTitle": "Save to a production connection",
     "prodBody": "{count} change will be written to {name}. | {count} changes will be written to {name}.",
     "prodType": "Type {name} to confirm",
-    "deleteTitle": "Delete {count} row? | Delete {count} rows?",
-    "deleteBody": "The rows of {table} are marked for deletion and removed when you save.",
+    "deleteTitle": "Delete rows",
+    "deleteBody": "The save deletes rows from {name}.",
     "impactNone": "No other records reference these rows.",
     "impactCount": "{count} record | {count} records",
     "impactFailed": "Could not check what references these rows.",
@@ -508,7 +508,8 @@
       "required": "This column cannot be NULL."
     },
     "generate": "Generate {fn}",
-    "undoCell": "Undo this cell"
+    "undoCell": "Undo this cell",
+    "deleteWarning": "{count} row will be deleted permanently. | {count} rows will be deleted permanently."
   },
   "import": {
     "button": "Import",
@@ -562,7 +563,9 @@
     "run": "Import {count} record | Import {count} records",
     "done": "{count} record imported | {count} records imported",
     "skipped": "{count} invalid record skipped | {count} invalid records skipped",
-    "prodBody": "{count} record will be written to {name}. | {count} records will be written to {name}."
+    "prodBody": "{count} record will be written to {name}. | {count} records will be written to {name}.",
+    "upsertTitle": "Overwrite existing rows",
+    "upsertWarning": "Upsert overwrites the rows whose {key} is already in the table with the file's values."
   },
   "structure": {
     "edit": "Edit structure",
@@ -731,7 +734,37 @@
       "primaryKeyConstraint": "Composite primary key",
       "fkTo": "Foreign key column typed like the target key"
     },
-    "historySuggestions": "History suggestions"
+    "historySuggestions": "History suggestions",
+    "risk": {
+      "title": "Destructive statements",
+      "heading": "This can destroy data or structure:",
+      "headingWarning": "This replaces existing objects:",
+      "noUndo": "It cannot be undone from DbLocal. Make a backup first if you may need the data.",
+      "typeName": "Type {name} to confirm",
+      "drop": "DROP {object} {target}: removes it and everything in it.",
+      "truncate": "TRUNCATE {target}: deletes every row.",
+      "deleteAll": "DELETE without WHERE on {target}: deletes every row.",
+      "updateAll": "UPDATE without WHERE on {target}: changes every row.",
+      "alterDrop": "ALTER TABLE {target} drops a column, key or constraint (and its data).",
+      "recreate": "{object} {target} is dropped and created again.",
+      "rebuild": "{target} is rebuilt: copied to a new table, then swapped in.",
+      "objects": {
+        "table": "TABLE",
+        "view": "VIEW",
+        "materialized_view": "MATERIALIZED VIEW",
+        "schema": "SCHEMA",
+        "database": "DATABASE",
+        "index": "INDEX",
+        "function": "FUNCTION",
+        "procedure": "PROCEDURE",
+        "trigger": "TRIGGER",
+        "type": "TYPE",
+        "sequence": "SEQUENCE",
+        "event": "EVENT",
+        "domain": "DOMAIN",
+        "extension": "EXTENSION"
+      }
+    }
   },
   "erd": {
     "unique": "Unique",
@@ -1209,11 +1242,16 @@
       "file": "SQL file",
       "hint": "It stops at the first error; the statements that already ran stay.",
       "readonly": "This connection is read-only: nothing can be restored.",
-      "confirmProd": "I know {name} is a production database",
       "run": "Restore",
       "progress": "{done} of {total} statements",
       "failedAt": "Statement {index} failed:",
-      "done": "Restore finished: {count} statements ran"
+      "done": "Restore finished: {count} statements ran",
+      "review": "Review",
+      "reviewHeading": "{count} statement will run in {name} ({schema}). | {count} statements will run in {name} ({schema}).",
+      "prodWarning": "This is a production connection.",
+      "destructive": "{count} statement drops or deletes data: | {count} statements drop or delete data:",
+      "statementN": "#{n}",
+      "noUndo": "It cannot be undone from DbLocal. Back up the target first if it holds data."
     },
     "workspace": {
       "title": "Workspace backup",

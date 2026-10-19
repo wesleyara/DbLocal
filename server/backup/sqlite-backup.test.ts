@@ -60,7 +60,7 @@ async function restoreInto(name: string, sql: string, extra: Record<string, unkn
   new Database(file).close()
   const id = (await createConnection(db, sqliteConnection(name, file, extra))).id
   const events: RestoreEvent[] = []
-  const plan = await planRestore(db, id, sql, { confirm: false })
+  const plan = await planRestore(db, id, sql, { confirm: true })
   await runRestore(db, id, plan, (e) => events.push(e), new AbortController().signal)
   return { file, events }
 }
@@ -109,12 +109,13 @@ describe('SQLite dump and restore', () => {
     expect(events.at(-1)).toMatchObject({ type: 'done', executed: 1, failed: true })
   })
 
-  it('refuses read-only connections and asks for confirmation on prod', async () => {
+  it('refuses read-only connections and always asks for confirmation', async () => {
     const ro = (await createConnection(db, sqliteConnection('ro', join(dir, 'source.sqlite'), { readonly: true }))).id
-    await expect(planRestore(db, ro, 'select 1;', { confirm: false })).rejects.toBeInstanceOf(DriverError)
-    const prod = (await createConnection(db, sqliteConnection('prod', join(dir, 'source.sqlite'), { environment: 'prod' }))).id
-    await expect(planRestore(db, prod, 'delete from tags;', { confirm: false })).rejects.toBeInstanceOf(ConfirmationRequiredError)
-    await expect(planRestore(db, prod, 'delete from tags;', { confirm: true })).resolves.toBeTruthy()
+    await expect(planRestore(db, ro, 'select 1;', { confirm: true })).rejects.toBeInstanceOf(DriverError)
+    const unconfirmed = planRestore(db, sourceId, 'delete from tags;', { confirm: false })
+    await expect(unconfirmed).rejects.toBeInstanceOf(ConfirmationRequiredError)
+    await expect(unconfirmed).rejects.toMatchObject({ risks: [{ kind: 'deleteAll', target: 'tags' }] })
+    await expect(planRestore(db, sourceId, 'delete from tags;', { confirm: true })).resolves.toBeTruthy()
   })
 
   it('copies the file with the backup API', async () => {

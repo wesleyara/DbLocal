@@ -25,6 +25,8 @@ const props = defineProps<{
   /** The connection allows writes (not read-only) and the object is a table. */
   editable: boolean
   prod: boolean
+  /** Typed to confirm destructive changes (drop table, drop column, ...). */
+  connectionName?: string | null
 }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ openTrigger: [trigger: DbTrigger] }>()
@@ -122,5 +124,5 @@ async function confirm(sql: string): Promise<void> {
     </template>
   </UiDialog>
 
-  <RunConfirmDialog :sql="runner.pendingSql.value" :dialect="dialect" :prod="prod" @cancel="runner.cancel" @confirm="confirm" />
+  <RunConfirmDialog :sql="runner.pendingSql.value" :dialect="dialect" :prod="prod" :connection-name="connectionName" @cancel="runner.cancel" @confirm="confirm" />
 </template>

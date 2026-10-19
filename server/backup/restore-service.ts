@@ -1,4 +1,5 @@
 import type { Kysely } from 'kysely'
+import { assessScript } from '#shared/sql-risk'
 import { classifyStatement, splitStatements, type SqlStatement } from '#shared/sql-split'
 import type { RestoreEvent } from '#shared/types/backup'
 import { getConnection } from '../connections/repository'
@@ -20,7 +21,8 @@ export interface RestorePlan {
 
 /**
  * Checks a restore before anything runs: the script is not empty and not too big, the connection
- * is not read-only (403), and a `prod` connection needs `confirm` (409, like the SQL editor).
+ * is not read-only (403), and `confirm` is set (409 otherwise, on every connection: a restore
+ * writes a whole script into a database that may be in use; the UI asks for the connection name).
  */
 export async function planRestore(db: Db, connectionId: string, sql: string, req: { schema?: string; confirm: boolean }): Promise<RestorePlan> {
   const connection = await getConnection(db, connectionId)
@@ -30,8 +32,9 @@ export async function planRestore(db: Db, connectionId: string, sql: string, req
   if (Buffer.byteLength(sql) > MAX_RESTORE_BYTES) throw new QueryInputError(400, 'The file is larger than 200 MB')
   const statements = splitStatements(sql, connection.dialect)
   if (statements.length === 0) throw new QueryInputError(400, 'The file has no SQL statements')
-  if (connection.environment === 'prod' && !req.confirm) {
-    throw new ConfirmationRequiredError([...new Set(statements.map((s) => classifyStatement(s.sql, connection.dialect)))])
+  if (!req.confirm) {
+    const kinds = [...new Set(statements.map((s) => classifyStatement(s.sql, connection.dialect)))]
+    throw new ConfirmationRequiredError(kinds, assessScript(sql, connection.dialect).filter((r) => r.level === 'danger'))
   }
   const schema = req.schema || defaultSchemaOf(connection.dialect, connection.defaultSchema, connection.database) || undefined
   return { statements, schema }

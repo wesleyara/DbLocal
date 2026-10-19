@@ -64,7 +64,7 @@ describe.skipIf(!enabled)('dump and restore on dev databases', () => {
       await streamDump(db, source, { structure: true, data: true }, { write: async (c) => void (sql += c), aborted: () => false })
       const schema = 'dblocal_restore'
       const events: RestoreEvent[] = []
-      const plan = await planRestore(db, target, sql, { schema, confirm: false })
+      const plan = await planRestore(db, target, sql, { schema, confirm: true })
       await runRestore(db, target, plan, (e) => events.push(e), new AbortController().signal)
       expect(events.filter((e) => e.type === 'error')).toEqual([])
 

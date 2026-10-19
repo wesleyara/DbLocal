@@ -147,6 +147,10 @@ for (const target of targets.filter((t) => wanted.includes(t.dialect))) {
       if (await confirm.isVisible().catch(() => false)) await confirm.click()
       await expect(page.locator('[data-row-state="deleted"]')).toHaveCount(1)
       await page.locator('[data-save]').click()
+      // Saving a delete asks for the connection name.
+      await expect(page.locator('[data-save-deletes]')).toBeVisible()
+      await page.locator('[data-prod-confirm]').fill(`E2E ${target.dialect}`)
+      await page.locator('[data-prod-save]').click()
       await expect(page.locator('[data-pending-bar]')).toHaveCount(0)
       const left = await request.post(`/api/c/${ids.rw}/tables/tags/count`, {
         data: {

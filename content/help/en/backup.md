@@ -29,10 +29,10 @@ For a SQLite file connection the dialog also has **Download .sqlite file**: an e
 
 ## Restore {#restore}
 
-**Restore from SQL…** runs a `.sql` file (a DbLocal dump or any script) in the schema or database you choose, statement by statement, with a progress bar. It stops at the first error and shows the statement and the database message; what ran before it stays. Restore a dump into an empty schema or database: it creates the tables.
+**Restore from SQL…** runs a `.sql` file (a DbLocal dump or any script) in the schema or database you choose, statement by statement, with a progress bar. It is checked twice first: **Review** reads the file and says how many statements will run where, listing the destructive ones (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`, ...); then **Restore** stays off until you type the connection's name. It stops at the first error and shows the statement and the database message; what ran before it stays. Restore a dump into an empty schema or database: it creates the tables.
 
 > [!WARNING]
-> Read-only connections cannot restore. A `prod` connection asks you to confirm first. Statements of a restore are not added to the query history.
+> Read-only connections cannot restore, and the server refuses a restore that was not confirmed. Statements of a restore are not added to the query history.
 
 ## Workspace backup {#workspace}
 

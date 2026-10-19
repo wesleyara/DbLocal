@@ -227,6 +227,10 @@ test('Import reads a CSV, lists invalid records and upserts the rest by key', as
   await page.locator('[data-import-mode] [role="combobox"]').click()
   await page.getByRole('option', { name: /update/ }).click()
   await run.click()
+  // Upsert overwrites rows: a warning, then the connection name.
+  await expect(page.locator('[data-import-upsert-warning]')).toBeVisible()
+  await page.locator('[data-prod-confirm]').fill('E2E rw')
+  await page.getByRole('dialog').last().getByRole('button', { name: /Import|Importar/ }).click()
   await expect(page.locator('[data-import-dialog]')).toHaveCount(0)
   const all = await rows(request, ids.rw!, 'users')
   expect(all.map((r) => r.name)).toEqual(['Ana Nova', 'Bruno Lima', 'Carla Dias', 'Dora'])

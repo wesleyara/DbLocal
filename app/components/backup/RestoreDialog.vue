@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { ConnectionView } from '#shared/types/connection'
 import type { RestoreEvent } from '#shared/types/backup'
+import { assessScript, type StatementRisk } from '#shared/sql-risk'
+import { splitStatements } from '#shared/sql-split'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
 
 /**
  * Runs a `.sql` file (a DbLocal dump or any script) against a connection, statement by statement,
- * with progress. Stops at the first error; what ran before it stays.
+ * with progress. Stops at the first error; what ran before it stays. Two checks first: a review of
+ * the file (statement count, destructive statements spelled out) and the connection's name typed.
  */
 const props = defineProps<{ connection: ConnectionView; schema?: string | null }>()
 const open = defineModel<boolean>('open', { default: false })
@@ -20,7 +23,10 @@ const readonly = computed(() => props.connection.readonly || props.connection.re
 const prod = computed(() => props.connection.environment === 'prod')
 const schemaName = ref('')
 const file = ref<File | null>(null)
-const confirmed = ref(false)
+const typedName = ref('')
+/** The file read and assessed: shown before the name can be typed. */
+const review = ref<{ text: string; statements: number; risks: StatementRisk[] } | null>(null)
+const reviewing = ref(false)
 const running = ref(false)
 const progress = ref<{ done: number; total: number } | null>(null)
 const error = ref<{ index: number; sql: string; message: string } | null>(null)
@@ -32,7 +38,8 @@ watch(open, (value) => {
   if (value) {
     schemaName.value = props.schema || defaultSchema.value
     file.value = null
-    confirmed.value = false
+    typedName.value = ''
+    review.value = null
     reset()
   } else controller?.abort()
 })
@@ -45,25 +52,44 @@ function reset(): void {
 
 function onFile(event: Event): void {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
+  review.value = null
+  typedName.value = ''
   reset()
 }
 
-const canRun = computed(() => !!file.value && !running.value && !readonly.value && (!prod.value || confirmed.value))
+async function reviewFile(): Promise<void> {
+  if (!file.value) return
+  reviewing.value = true
+  try {
+    const text = await file.value.text()
+    review.value = { text, statements: splitStatements(text, props.connection.dialect).length, risks: assessScript(text, props.connection.dialect) }
+  } finally {
+    reviewing.value = false
+  }
+}
+const dangerous = computed(() => review.value?.risks.filter((r) => r.level === 'danger') ?? [])
+const riskText = (r: StatementRisk) =>
+  t(`query.risk.${r.kind}`, { target: r.target ?? '', object: r.object ? t(`query.risk.objects.${r.object.replace(' ', '_')}`, r.object) : '' })
+
+const canRun = computed(
+  () => !!review.value && !running.value && !readonly.value && review.value.statements > 0 && typedName.value.trim() === props.connection.name,
+)
 const percent = computed(() => (progress.value && progress.value.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0))
 
 async function restore(): Promise<void> {
-  if (!file.value || !canRun.value) return
+  if (!review.value || !canRun.value) return
   reset()
   running.value = true
   controller = new AbortController()
   try {
     const query = new URLSearchParams()
     if (schemaName.value) query.set('schema', schemaName.value)
-    if (prod.value) query.set('confirm', '1')
+    // Both checks were passed in the dialog (review + name); the server refuses without it.
+    query.set('confirm', '1')
     const res = await fetch(`/api/c/${props.connection.id}/restore?${query}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/sql' },
-      body: await file.value.text(),
+      body: review.value.text,
       signal: controller.signal,
     })
     if (!res.ok || !res.body) {
@@ -128,8 +154,34 @@ async function restore(): Promise<void> {
           @change="onFile"
         >
       </label>
-      <UiCheckbox v-if="prod" v-model="confirmed" :label="t('backup.restore.confirmProd', { name: connection.name })" data-restore-confirm />
       <p class="text-xs text-fg-subtle">{{ t('backup.restore.hint') }}</p>
+
+      <div v-if="review" class="grid gap-2" data-restore-review>
+        <div
+          class="flex gap-2 rounded-md border p-2 text-xs"
+          :class="dangerous.length || prod ? 'border-danger/50 bg-danger-soft text-danger' : 'border-warning/50 bg-warning-soft text-warning'"
+          role="alert"
+        >
+          <Icon name="lucide:triangle-alert" class="mt-0.5 size-4 shrink-0" />
+          <div class="grid gap-1">
+            <p class="font-medium">
+              {{ t('backup.restore.reviewHeading', { count: number(review.statements), name: connection.name, schema: schemaName || '—' }, review.statements) }}
+            </p>
+            <p v-if="prod">{{ t('backup.restore.prodWarning') }}</p>
+            <template v-if="dangerous.length">
+              <p>{{ t('backup.restore.destructive', { count: dangerous.length }, dangerous.length) }}</p>
+              <ul class="max-h-28 overflow-auto">
+                <li v-for="r in dangerous.slice(0, 50)" :key="r.index" :data-risk="r.kind">{{ t('backup.restore.statementN', { n: r.index + 1 }) }} {{ riskText(r) }}</li>
+              </ul>
+            </template>
+            <p>{{ t('backup.restore.noUndo') }}</p>
+          </div>
+        </div>
+        <label class="grid gap-1 text-xs text-fg-muted">
+          {{ t('query.risk.typeName', { name: connection.name }) }}
+          <UiInput v-model="typedName" mono :placeholder="connection.name" autocomplete="off" :disabled="running" data-restore-confirm-name />
+        </label>
+      </div>
 
       <div v-if="progress" class="grid gap-1" data-restore-progress>
         <div class="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
@@ -148,7 +200,10 @@ async function restore(): Promise<void> {
     </div>
     <template #footer>
       <UiButton @click="open = false">{{ t('common.close') }}</UiButton>
-      <UiButton :variant="prod ? 'danger' : 'primary'" :loading="running" :disabled="!canRun" data-restore-run @click="restore">
+      <UiButton v-if="!review" variant="primary" :loading="reviewing" :disabled="!file || readonly" data-restore-review-run @click="reviewFile">
+        <Icon name="lucide:search-check" class="size-3.5" />{{ t('backup.restore.review') }}
+      </UiButton>
+      <UiButton v-else variant="danger" :loading="running" :disabled="!canRun" data-restore-run @click="restore">
         <Icon name="lucide:upload" class="size-3.5" />{{ t('backup.restore.run') }}
       </UiButton>
     </template>

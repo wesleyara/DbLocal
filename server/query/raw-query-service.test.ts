@@ -102,7 +102,7 @@ describe('raw SQL on SQLite', () => {
   })
 
   it('drops the schema cache after DDL', async () => {
-    const res = await run('create table extras (id integer primary key); drop table extras')
+    const res = await run('create table extras (id integer primary key); drop table extras', { confirmWrites: true })
     expect(res.statements.map((s) => s.kind)).toEqual(['ddl', 'ddl'])
     expect(res.schemaInvalidated).toBe(true)
     expect((await run('select 1')).schemaInvalidated).toBe(false)
@@ -177,5 +177,15 @@ describe('guards', () => {
     expect(res.statements[0]!.affectedRows).toBe(1)
     await updateConnection(db, prod, { readonly: true })
     await expect(runRawQuery(db, prod, { sql: 'delete from pets', confirmWrites: true })).rejects.toMatchObject({ code: 'permission' })
+  })
+
+  it('asks for confirmation before destructive statements on any connection', async () => {
+    const attempt = run('create table scratch (id integer); drop table scratch')
+    await expect(attempt).rejects.toBeInstanceOf(ConfirmationRequiredError)
+    await expect(attempt).rejects.toMatchObject({ risks: [{ kind: 'drop', target: 'scratch' }] })
+    // Nothing ran: the table was not even created.
+    expect((await run("select count(*) as n from sqlite_schema where name = 'scratch'")).statements[0]!.rows[0]).toEqual({ n: 0 })
+    expect((await run('delete from pets where id = 999')).statements[0]!.status).toBe('ok')
+    expect((await run('create table scratch (id integer); drop table scratch', { confirmWrites: true })).statements[1]!.status).toBe('ok')
   })
 })

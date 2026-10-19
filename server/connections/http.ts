@@ -40,7 +40,7 @@ export async function run<T>(fn: () => Promise<T>): Promise<T> {
       throw createError({
         statusCode: 409,
         statusMessage: 'Confirmation required',
-        data: { code: 'confirmation_required', kinds: err.kinds },
+        data: { code: 'confirmation_required', kinds: err.kinds, risks: err.risks },
       })
     }
     if (err instanceof WorkspaceBackupError) {

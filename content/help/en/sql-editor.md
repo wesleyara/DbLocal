@@ -39,6 +39,13 @@ While you type, the rest of the newest query of this connection that starts the 
 - On a `prod` connection a statement that writes or changes the schema asks for confirmation first.
 - After DDL the schema in the sidebar refreshes by itself.
 
+### Destructive statements {#destructive}
+
+`DROP`, `TRUNCATE`, `DELETE` or `UPDATE` without `WHERE`, and `ALTER TABLE ... DROP` (a column, key or constraint) always open the confirmation, whatever the **Alert before run** setting, on every connection. It says what each one destroys, and **Run** stays off until you type the connection's name. The same check covers the structure editor (drop table, drop column), deleting a function or trigger, and the table's **Show SQL** bar. The server refuses these statements unless the confirmation was given, so a script sent by other means cannot skip it.
+
+> [!WARNING]
+> The check reads the statements, it does not know your data: a `DELETE` with a `WHERE` that matches every row is not flagged. Back up before large changes.
+
 ### Alert before run {#alert-before-run}
 
 Tick **Alert before run** (in the editor toolbar or in the table's **Show SQL** bar; one setting for both) and every run first lists the statements about to execute, each marked *read*, *write*, *schema* or *unknown* with what it does. Nothing runs until you confirm. On a `prod` connection this confirmation also counts as the production one.

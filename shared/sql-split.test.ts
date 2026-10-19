@@ -45,6 +45,13 @@ describe('splitStatements', () => {
     expect(texts(`${trg}; select 1`, 'sqlite')).toEqual([trg, 'select 1'])
   })
 
+  it('keeps a trigger body whole after a leading comment', () => {
+    const trg = `-- triggers\ncreate trigger t before update on a when new.x < 0 begin select raise(abort, 'no'); end`
+    expect(texts(`${trg}; select 1`, 'sqlite')).toEqual([trg, 'select 1'])
+    const fn = `/* routines */ CREATE FUNCTION f() RETURNS INT DETERMINISTIC BEGIN DECLARE x INT; SET x = 1; RETURN x; END`
+    expect(texts(`${fn}; select 1`, 'mysql')).toEqual([fn, 'select 1'])
+  })
+
   it('reports offsets', () => {
     const s = splitStatements('  select 1;\n  select 2', 'sqlite')
     expect(s[1]).toMatchObject({ sql: 'select 2', start: 14 })

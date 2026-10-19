@@ -121,7 +121,8 @@ export function splitStatements(text: string, dialect: SqlDialect): SqlStatement
       const word = text.slice(i, j).toLowerCase()
       meaningful = true
       if (compound === null && (dialect === 'sqlite' || dialect === 'mysql')) {
-        compound = COMPOUND_START.test(text.slice(start, Math.min(n, start + 160)))
+        // From the first word, so a comment before CREATE TRIGGER does not hide it.
+        compound = COMPOUND_START.test(text.slice(i, Math.min(n, i + 160)))
       }
       if (compound && word === 'begin') beginSeen = true
       lastWord = word

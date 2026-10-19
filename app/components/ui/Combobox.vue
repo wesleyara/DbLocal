@@ -32,6 +32,7 @@ const selected = computed(() => props.options.find((o) => o.value === model.valu
     </ComboboxAnchor>
     <ComboboxPortal>
       <ComboboxContent
+        position="popper"
         :side-offset="4"
         class="z-50 w-[var(--reka-combobox-trigger-width)] max-w-[var(--reka-combobox-content-available-width)] rounded-md border border-border bg-surface p-1 shadow-pop"
       >

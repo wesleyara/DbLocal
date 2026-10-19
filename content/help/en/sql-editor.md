@@ -54,7 +54,7 @@ The SQL of a table view (**Show SQL**) is written with keywords in upper case, l
 
 ## Saved queries and history
 
-⌘/Ctrl+S saves the query (it asks for a name the first time). The side panel has **Saved** (open, rename, delete, copy, run) and **History**: every execution with duration, rows and status, searchable and filterable. Clear it any time or choose how many entries to keep. The same history is available from any table: the **History** button next to **Structure** lists it, filtered to that table by default, and can run an entry again in the editor.
+⌘/Ctrl+S saves the query (it asks for a name the first time). The side panel has **Saved** (open, view in full, rename, delete, copy, run) and **History**: every execution with duration, rows and status, searchable and filterable. Clear it any time or choose how many entries to keep. The same history is available from any table: the **History** button next to **Structure** lists it, filtered to that table by default, and can run an entry again in the editor.
 
 ## Explain and export
 

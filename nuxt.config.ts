@@ -5,7 +5,42 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/icon', '@pinia/nuxt', '@nuxtjs/i18n'],
   css: ['~/assets/css/main.css'],
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    plugins: [tailwindcss()],
+    // Pages load these lazily (Monaco, Markdown editor, diagram). Without the list, Vite finds them while the
+    // first visit to Notes / Diagram / SQL is already loading, re-optimises and the dynamic import fails
+    // ("Failed to fetch dynamically imported module") until a reload.
+    optimizeDeps: {
+      include: [
+        'monaco-editor/editor/editor.main',
+        'md-editor-v3',
+        'mermaid',
+        'highlight.js/lib/core',
+        'highlight.js/lib/languages/bash',
+        'highlight.js/lib/languages/javascript',
+        'highlight.js/lib/languages/json',
+        'highlight.js/lib/languages/pgsql',
+        'highlight.js/lib/languages/plaintext',
+        'highlight.js/lib/languages/python',
+        'highlight.js/lib/languages/sql',
+        'highlight.js/lib/languages/typescript',
+        'highlight.js/lib/languages/xml',
+        'highlight.js/lib/languages/yaml',
+        'sql-formatter',
+        'elkjs/lib/elk-api.js',
+        '@vue-flow/core',
+        '@vue-flow/background',
+        '@vue-flow/minimap',
+        '@tanstack/vue-table',
+        '@tanstack/vue-virtual',
+        'reka-ui',
+        'nanoid',
+        'ulid',
+        'cuid',
+        '@paralleldrive/cuid2',
+      ],
+    },
+  },
   typescript: { strict: true },
   devServer: {
     host: process.env.DBLOCAL_HOST || '127.0.0.1',

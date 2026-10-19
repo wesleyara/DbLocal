@@ -37,6 +37,9 @@ beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'dbl-backup-'))
   const source = new Database(join(dir, 'source.sqlite'))
   source.exec(readFileSync(SEED, 'utf8'))
+  source.exec(
+    "CREATE TRIGGER products_price_check BEFORE UPDATE OF price ON products FOR EACH ROW WHEN NEW.price < 0 BEGIN SELECT RAISE(ABORT, 'price cannot be negative'); END",
+  )
   source.close()
   db = openStore(dir)
   await migrateStore(db)

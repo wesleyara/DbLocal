@@ -1047,6 +1047,12 @@
           "text": "Changes become DDL that you review before it runs. Postgres and SQLite apply it in one transaction; MySQL commits each statement. A type change on a full table can take a while and lock it."
         }
       },
+      "safety": {
+        "doubleCheck": {
+          "title": "Double check",
+          "text": "Destructive actions list what they destroy and ask for the connection name. Off keeps only the warning."
+        }
+      },
       "backup": {
         "workspace": {
           "title": "Workspace backup",

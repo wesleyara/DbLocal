@@ -27,6 +27,7 @@ export const HELP_HINTS = {
   'notes.overview': { slug: 'notes', anchor: 'writing' },
   'routines.overview': { slug: 'routines', anchor: 'safety' },
   'backup.workspace': { slug: 'backup', anchor: 'workspace' },
+  'safety.doubleCheck': { slug: 'security', anchor: 'double-check' },
   'structure.edit': { slug: 'schema-browser', anchor: 'editing-the-structure' },
 } as const satisfies Record<string, HelpHintDef>
 

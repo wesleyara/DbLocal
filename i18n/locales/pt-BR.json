@@ -1047,6 +1047,12 @@
           "text": "As mudanças viram DDL que você revisa antes de rodar. Postgres e SQLite aplicam tudo em uma transação; o MySQL confirma cada comando. Trocar o tipo numa tabela cheia pode demorar e travá-la."
         }
       },
+      "safety": {
+        "doubleCheck": {
+          "title": "Confirmação dupla",
+          "text": "Ações destrutivas listam o que destroem e pedem o nome da conexão. Desligada, fica só o aviso."
+        }
+      },
       "backup": {
         "workspace": {
           "title": "Backup do workspace",

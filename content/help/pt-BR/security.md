@@ -30,6 +30,10 @@ Senhas, certificados SSL e chaves SSH são criptografados com AES-256-GCM antes 
 - Marque uma conexão como **somente leitura**, ou inicie com `--readonly`: as escritas são recusadas pelo DbLocal e pela própria sessão do banco.
 - Marque uma conexão como `prod`: salvar alterações pede que você digite o nome da conexão, e statements de escrita ou DDL no editor SQL pedem confirmação.
 
+## Confirmação dupla de ações pesadas {#double-check}
+
+Ações destrutivas (apagar tabelas ou colunas, `DELETE` / `UPDATE` sem `WHERE`, apagar linhas ao salvar, restaurar um dump) listam o que será destruído e pedem que você digite o nome da conexão. Desative em **Configurações → Segurança → Confirmação dupla de ações pesadas** para manter só o aviso. Escritas em conexões `prod` sempre pedem o nome, e o servidor recusa esses statements sem confirmação de qualquer forma.
+
 ## Demo e tour {#demo}
 
 O banco de demonstração é um arquivo SQLite separado no diretório de dados. O tour só roda nele, e **Resetar demo** o restaura. Nenhum dos dois toca nos seus bancos.

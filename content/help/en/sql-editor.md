@@ -60,4 +60,4 @@ The SQL of a table view (**Show SQL**) is written with keywords in upper case, l
 
 **Explain** draws the plan as a tree with cost, rows and, with **Explain analyze**, the time of each node; the heaviest nodes are highlighted. *Analyze runs the statement* (reads only, not on SQLite).
 
-**Export** saves the current result as CSV or JSON, or re-runs the query without the limit and streams it to a file. The table grid has the same export, respecting its filters, behind the `«` toggle on the right of its toolbar.
+**Export** saves the current result as CSV or JSON, or re-runs the query without the limit and streams it to a file. The table grid has the same export, respecting its filters, in the **More** menu `⋯` on the right of its toolbar.

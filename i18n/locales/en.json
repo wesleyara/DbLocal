@@ -400,8 +400,7 @@
     "reloadTitle": "Read the rows from the database again (⌘R)",
     "notesToggle": "Notes",
     "hasNotes": "This table has notes",
-    "moreTools": "More tools",
-    "lessTools": "Fewer tools"
+    "more": "More"
   },
   "relations": {
     "orphan": "No matching record in {target}",

@@ -38,7 +38,7 @@ If the database rejects something, such as a duplicate key, the row that caused 
 
 ## Importing a file {#import}
 
-**Import** (behind the `«` toggle on the right of the toolbar, next to Export) reads a CSV or JSON file into the table. CSV needs a header row; the delimiter (comma, semicolon, tab or pipe) is detected and can be changed. JSON is an array of objects, or one object per line, as DbLocal exports it.
+**Import** (in the **More** menu `⋯` on the right of the toolbar, above the exports) reads a CSV or JSON file into the table. CSV needs a header row; the delimiter (comma, semicolon, tab or pipe) is detected and can be changed. JSON is an array of objects, or one object per line, as DbLocal exports it.
 
 File columns are matched to table columns by name (case, spaces, `_` and `-` ignored); change any match or set it to *Do not import*. Computed and binary columns cannot be filled; identity and auto-increment columns can, so the file keeps its ids. Every cell is checked like a value typed in the grid: numbers, dates (`YYYY-MM-DD`), booleans (`true`/`false`, `1`/`0`, `yes`/`no`), JSON and UUIDs. Text such as `now()` is stored as written. With **Empty cells are NULL**, an empty cell is NULL, or the column default when the column is NOT NULL and has one.
 

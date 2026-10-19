@@ -60,4 +60,4 @@ O SQL de uma visão de tabela (**Ver SQL**) é escrito com as palavras-chave em 
 
 **Explain** desenha o plano como árvore com custo, linhas e, com **Explain analyze**, o tempo de cada nó; os nós mais pesados ficam destacados. *O analyze executa o statement* (só leituras, e não no SQLite).
 
-**Exportar** salva o resultado atual em CSV ou JSON, ou reexecuta a query sem o limite e grava em arquivo por streaming. O grid de tabela tem a mesma exportação, respeitando os filtros, atrás do botão `«` à direita da barra.
+**Exportar** salva o resultado atual em CSV ou JSON, ou reexecuta a query sem o limite e grava em arquivo por streaming. O grid de tabela tem a mesma exportação, respeitando os filtros, no menu **Mais** `⋯` à direita da barra.

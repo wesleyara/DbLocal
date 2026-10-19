@@ -400,8 +400,7 @@
     "reloadTitle": "Ler as linhas do banco de novo (⌘R)",
     "notesToggle": "Notas",
     "hasNotes": "Esta tabela tem notas",
-    "moreTools": "Mais ferramentas",
-    "lessTools": "Menos ferramentas"
+    "more": "Mais"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",

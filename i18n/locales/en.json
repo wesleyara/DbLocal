@@ -804,7 +804,9 @@
       "signOut": "Sign out",
       "openNotes": "Open connection notes",
       "openRoutines": "Open functions & triggers",
-      "newTable": "New table"
+      "newTable": "New table",
+      "dump": "Back up the connection (SQL dump)",
+      "restore": "Restore a SQL file"
     }
   },
   "shortcuts": {
@@ -1008,6 +1010,12 @@
           "title": "Editing the structure",
           "text": "Changes become DDL that you review before it runs. Postgres and SQLite apply it in one transaction; MySQL commits each statement. A type change on a full table can take a while and lock it."
         }
+      },
+      "backup": {
+        "workspace": {
+          "title": "Workspace backup",
+          "text": "Exports DbLocal's own data. With a password, connection secrets travel encrypted with it; without one they stay behind."
+        }
       }
     }
   },
@@ -1177,5 +1185,54 @@
     "saved": "Done",
     "discardConfirm": "Discard the unsaved changes?",
     "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped."
+  },
+  "backup": {
+    "menu": "Backup",
+    "schema": "Schema",
+    "database": "Database",
+    "dump": {
+      "menu": "Dump to SQL…",
+      "title": "Back up {name}",
+      "description": "Download the schema as a .sql file that Restore (or the database client) can run again.",
+      "structure": "Structure (tables, indexes, views, routines, triggers)",
+      "data": "Data",
+      "pickTables": "Only some tables",
+      "pickHint": "Views and routines are left out when you pick tables.",
+      "run": "Download .sql",
+      "file": "Download .sqlite file",
+      "done": "Dump downloaded"
+    },
+    "restore": {
+      "menu": "Restore from SQL…",
+      "title": "Restore into {name}",
+      "description": "Run a .sql file, statement by statement. A DbLocal dump creates the tables, so restore it into an empty schema or database.",
+      "file": "SQL file",
+      "hint": "It stops at the first error; the statements that already ran stay.",
+      "readonly": "This connection is read-only: nothing can be restored.",
+      "confirmProd": "I know {name} is a production database",
+      "run": "Restore",
+      "progress": "{done} of {total} statements",
+      "failedAt": "Statement {index} failed:",
+      "done": "Restore finished: {count} statements ran"
+    },
+    "workspace": {
+      "title": "Workspace backup",
+      "description": "Connections, saved queries, notes, ERD layouts and grid settings, to move DbLocal to another machine.",
+      "password": "Password for the secrets",
+      "passwordHint": "Encrypts the connection passwords and keys. Leave it empty to export without them.",
+      "passwordShort": "Use at least 8 characters.",
+      "history": "Include the query history",
+      "export": "Export",
+      "passwordOfFile": "Password of this backup",
+      "noSecrets": "This backup has no secrets: server connections will ask for their passwords again.",
+      "mergeHint": "Items with the same id are replaced; everything else here is kept.",
+      "import": "Import",
+      "contents": "{connections} connections, {queries} saved queries",
+      "imported": "Workspace imported",
+      "result": "Imported {connections} connections and {queries} saved queries.",
+      "resultNoSecrets": " {count} need their password again.",
+      "wrongPassword": "Wrong password for this backup.",
+      "notBackup": "This file is not a DbLocal workspace backup."
+    }
   }
 }

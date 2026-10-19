@@ -224,6 +224,11 @@ function foreignKeySql(dialect: DdlDialect, schema: string, f: ForeignKeyDraft):
   return `${named}FOREIGN KEY (${list(dialect, f.columns)}) REFERENCES ${target}${refs} ON DELETE ${action(f.onDelete)} ON UPDATE ${action(f.onUpdate)}`
 }
 
+/** `ALTER TABLE ... ADD` for one foreign key (a dump adds them after the data). */
+export function addForeignKeySql(dialect: DdlDialect, schema: string, table: string, f: ForeignKeyDraft): string {
+  return `ALTER TABLE ${qualified(dialect, schema, table)} ADD ${foreignKeySql(dialect, schema, f)};`
+}
+
 function createIndexSql(dialect: DdlDialect, schema: string, table: string, i: IndexDraft): string {
   const on = dialect === 'postgres' ? qualified(dialect, schema, table) : dialect === 'mysql' ? qualified(dialect, schema, table) : quote(dialect, table)
   const name = dialect === 'sqlite' ? qualified(dialect, schema, i.name) : quote(dialect, i.name)

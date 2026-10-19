@@ -84,6 +84,8 @@ function resetQuery() {
           <UiButton size="sm" variant="ghost" @click="resetQuery">{{ t('settings.reset') }}</UiButton>
         </div>
       </section>
+
+      <BackupWorkspaceBackup />
     </div>
   </UiDialog>
 </template>

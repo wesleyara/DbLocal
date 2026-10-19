@@ -1,3 +1,4 @@
+import { EXPORT_MIME } from '#shared/export-format'
 import { tableExportRequestSchema } from '#shared/schemas/rows'
 import { parseBody, run } from '../../../../../connections/http'
 import { streamTableExport } from '../../../../../query/export-service'
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const table = getRouterParam(event, 'table')!
   const body = parseBody(tableExportRequestSchema, await readBody(event))
   return run(() =>
-    sendExport(event, `${table}.${body.format}`, body.format, (sink) =>
+    sendExport(event, `${table}.${body.format}`, EXPORT_MIME[body.format], (sink) =>
       streamTableExport(useStore(), id, table, { ...body, filter: body.filter ?? null, sort: body.sort ?? [] }, sink),
     ),
   )

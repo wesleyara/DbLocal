@@ -804,7 +804,9 @@
       "signOut": "Sair",
       "openNotes": "Abrir notas da conexão",
       "openRoutines": "Abrir funções e triggers",
-      "newTable": "Nova tabela"
+      "newTable": "Nova tabela",
+      "dump": "Fazer backup da conexão (dump SQL)",
+      "restore": "Restaurar um arquivo SQL"
     }
   },
   "shortcuts": {
@@ -1008,6 +1010,12 @@
           "title": "Editar a estrutura",
           "text": "As mudanças viram DDL que você revisa antes de rodar. Postgres e SQLite aplicam tudo em uma transação; o MySQL confirma cada comando. Trocar o tipo numa tabela cheia pode demorar e travá-la."
         }
+      },
+      "backup": {
+        "workspace": {
+          "title": "Backup do workspace",
+          "text": "Exporta os dados do próprio DbLocal. Com senha, os segredos das conexões vão cifrados com ela; sem senha, ficam de fora."
+        }
       }
     }
   },
@@ -1177,5 +1185,54 @@
     "saved": "Pronto",
     "discardConfirm": "Descartar as alterações não salvas?",
     "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido."
+  },
+  "backup": {
+    "menu": "Backup",
+    "schema": "Schema",
+    "database": "Banco",
+    "dump": {
+      "menu": "Dump em SQL…",
+      "title": "Backup de {name}",
+      "description": "Baixe o schema como um arquivo .sql que o Restaurar (ou o cliente do banco) consegue rodar de novo.",
+      "structure": "Estrutura (tabelas, índices, views, rotinas, triggers)",
+      "data": "Dados",
+      "pickTables": "Só algumas tabelas",
+      "pickHint": "Views e rotinas ficam de fora quando você escolhe tabelas.",
+      "run": "Baixar .sql",
+      "file": "Baixar arquivo .sqlite",
+      "done": "Dump baixado"
+    },
+    "restore": {
+      "menu": "Restaurar de SQL…",
+      "title": "Restaurar em {name}",
+      "description": "Roda um arquivo .sql, comando por comando. Um dump do DbLocal cria as tabelas, então restaure num schema ou banco vazio.",
+      "file": "Arquivo SQL",
+      "hint": "Para no primeiro erro; os comandos que já rodaram ficam.",
+      "readonly": "Esta conexão é somente leitura: nada pode ser restaurado.",
+      "confirmProd": "Sei que {name} é um banco de produção",
+      "run": "Restaurar",
+      "progress": "{done} de {total} comandos",
+      "failedAt": "O comando {index} falhou:",
+      "done": "Restauração concluída: {count} comandos rodaram"
+    },
+    "workspace": {
+      "title": "Backup do workspace",
+      "description": "Conexões, queries salvas, notas, layouts do diagrama e ajustes do grid, para levar o DbLocal para outra máquina.",
+      "password": "Senha para os segredos",
+      "passwordHint": "Cifra as senhas e chaves das conexões. Deixe vazio para exportar sem elas.",
+      "passwordShort": "Use pelo menos 8 caracteres.",
+      "history": "Incluir o histórico de queries",
+      "export": "Exportar",
+      "passwordOfFile": "Senha deste backup",
+      "noSecrets": "Este backup não tem segredos: as conexões de servidor vão pedir a senha de novo.",
+      "mergeHint": "Itens com o mesmo id são substituídos; o resto daqui é mantido.",
+      "import": "Importar",
+      "contents": "{connections} conexões, {queries} queries salvas",
+      "imported": "Workspace importado",
+      "result": "Importadas {connections} conexões e {queries} queries salvas.",
+      "resultNoSecrets": " {count} precisam da senha de novo.",
+      "wrongPassword": "Senha errada para este backup.",
+      "notBackup": "Este arquivo não é um backup de workspace do DbLocal."
+    }
   }
 }

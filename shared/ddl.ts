@@ -78,13 +78,18 @@ export const REFERENTIAL_ACTIONS: ReferentialAction[] = ['no action', 'restrict'
 export const TYPE_SUGGESTIONS: Record<DdlDialect, string[]> = {
   postgres: [
     'integer', 'bigint', 'smallint', 'numeric(12,2)', 'real', 'double precision', 'boolean', 'text', 'varchar(255)',
-    'char(1)', 'uuid', 'date', 'time', 'timestamp', 'timestamptz', 'interval', 'jsonb', 'json', 'bytea', 'text[]', 'integer[]',
+    'char(1)', 'uuid', 'date', 'time', 'timestamp', 'timestamptz', 'timetz', 'interval', 'jsonb', 'json', 'bytea', 'text[]', 'integer[]', 'uuid[]', 'inet', 'cidr', 'macaddr',
+    'money', 'xml', 'bit(1)',
   ],
   mysql: [
     'int', 'bigint', 'smallint', 'tinyint(1)', 'decimal(12,2)', 'float', 'double', 'varchar(255)', 'char(36)', 'text',
-    'longtext', 'date', 'time', 'datetime(3)', 'timestamp', 'json', 'blob', "enum('a','b')",
+    'longtext', 'mediumtext', 'tinytext', 'mediumint', 'date', 'time', 'year', 'datetime(3)', 'timestamp', 'json', 'blob',
+    'binary(16)', 'varbinary(255)', "enum('a','b')", "set('a','b')",
   ],
-  sqlite: ['INTEGER', 'TEXT', 'REAL', 'NUMERIC', 'BLOB', 'BOOLEAN', 'DATE', 'DATETIME', 'JSON'],
+  sqlite: [
+    'INTEGER', 'TEXT', 'REAL', 'NUMERIC', 'BLOB', 'BOOLEAN', 'VARCHAR(255)', 'CHAR(36)', 'UUID', 'DECIMAL(12,2)', 'BIGINT', 'DOUBLE',
+    'DATE', 'TIME', 'DATETIME', 'TIMESTAMP', 'JSON',
+  ],
 }
 
 /** Type of the id column a new table starts with. */

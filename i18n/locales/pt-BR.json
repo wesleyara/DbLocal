@@ -763,7 +763,8 @@
         "domain": "DOMAIN",
         "extension": "EXTENSION"
       }
-    }
+    },
+    "viewFull": "Ver completo"
   },
   "erd": {
     "unique": "Único",
@@ -1241,7 +1242,10 @@
     "copied": "Copiado",
     "saved": "Pronto",
     "discardConfirm": "Descartar as alterações não salvas?",
-    "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido."
+    "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido.",
+    "discardTitle": "Descartar alterações?",
+    "keepEditing": "Continuar editando",
+    "discard": "Descartar"
   },
   "backup": {
     "menu": "Backup",

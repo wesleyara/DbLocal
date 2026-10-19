@@ -28,7 +28,6 @@ const props = defineProps<{
 const draft = defineModel<TableDraft>({ required: true })
 const { t } = useI18n()
 
-const typeList = useId()
 const types = computed(() => TYPE_SUGGESTIONS[props.dialect])
 
 function addColumn(): void {
@@ -136,9 +135,6 @@ function errorText(e: DraftError): string {
 
     <div>
       <h3 class="mb-1 text-xs font-medium uppercase tracking-wide text-fg-subtle">{{ t('tableView.columns') }}</h3>
-      <datalist :id="typeList">
-        <option v-for="type in types" :key="type" :value="type" />
-      </datalist>
       <div class="overflow-x-auto rounded-md border border-border">
         <table class="w-full text-left text-sm">
           <thead class="bg-bg-subtle text-xs text-fg-muted">
@@ -168,7 +164,7 @@ function errorText(e: DraftError): string {
               </td>
               <td class="min-w-36 px-2 py-1">
                 <UiBadge v-if="col.computed" tone="neutral">{{ t('tableView.generated') }}</UiBadge>
-                <UiInput v-else v-model="col.type" mono :list="typeList" data-column-type />
+                <UiTypeCombobox v-else v-model="col.type" :options="types" data-column-type />
               </td>
               <td class="px-2 py-1.5">
                 <UiCheckbox

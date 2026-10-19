@@ -39,7 +39,7 @@ const items = computed<Item[]>(() => [
 ])
 
 // ---- list ------------------------------------------------------------------------------------
-const filter = ref<'all' | 'function' | 'procedure' | 'trigger'>('all')
+const filter = ref<Item['type'][]>([])
 const search = ref('')
 const counts = computed(() => ({
   all: items.value.length,
@@ -48,14 +48,14 @@ const counts = computed(() => ({
   trigger: items.value.filter((i) => i.type === 'trigger').length,
 }))
 const filters = computed(() =>
-  (['all', 'function', 'procedure', 'trigger'] as const)
-    .filter((f) => f === 'all' || f === 'trigger' || dialect.value !== 'sqlite')
+  (['function', 'procedure', 'trigger'] as const)
+    .filter((f) => f === 'trigger' || dialect.value !== 'sqlite')
     .map((f) => ({ value: f, label: `${t(`routines.filters.${f}`)} ${counts.value[f]}` })),
 )
 const visible = computed(() => {
   const q = search.value.trim().toLowerCase()
   return items.value.filter((i) => {
-    if (filter.value !== 'all' && i.type !== filter.value) return false
+    if (filter.value.length && !filter.value.includes(i.type)) return false
     if (!q) return true
     return `${i.name} ${i.trigger?.table ?? ''} ${i.routine?.signature ?? ''}`.toLowerCase().includes(q)
   })
@@ -67,12 +67,14 @@ const groups = computed(() => {
 
 const editing = ref(false)
 const creating = ref<NewKind | null>(null)
+/** Writing a new object or editing one: the other "New ..." buttons wait until it is saved or cancelled. */
+const busy = computed(() => editing.value || creating.value !== null)
 
 // ---- selection (in the URL, so a link opens the same object) ---------------------------------
 const selectedKey = computed(() => (typeof route.query.sel === 'string' ? route.query.sel : null))
 const selected = computed(() => items.value.find((i) => i.key === selectedKey.value) ?? null)
-function select(item: Item | null): void {
-  if (editing.value && !leaveEditing()) return
+async function select(item: Item | null): Promise<void> {
+  if ((editing.value || creating.value) && !(await leaveEditing())) return
   void router.replace({ query: { ...route.query, sel: item?.key } })
 }
 watch(
@@ -101,8 +103,17 @@ watch(
 )
 const tableOptions = computed(() => schemaStore.tables.map((tb) => ({ value: tb.name, label: tb.name })))
 
-function leaveEditing(): boolean {
-  if (dirty.value && !window.confirm(t('routines.discardConfirm'))) return false
+// Leaving unsaved text asks in an in-app dialog (never the browser's `confirm`).
+const discardAsk = ref<((ok: boolean) => void) | null>(null)
+function askDiscard(): Promise<boolean> {
+  return new Promise((resolve) => (discardAsk.value = resolve))
+}
+function answerDiscard(ok: boolean): void {
+  discardAsk.value?.(ok)
+  discardAsk.value = null
+}
+async function leaveEditing(): Promise<boolean> {
+  if (dirty.value && !(await askDiscard())) return false
   editing.value = false
   creating.value = null
   return true
@@ -112,8 +123,9 @@ function startEdit(): void {
   draft.value = original.value.definition
   editing.value = true
 }
-function startCreate(kind: NewKind): void {
-  if (editing.value && !leaveEditing()) return
+async function startCreate(kind: NewKind): Promise<void> {
+  if (creating.value === kind) return
+  if ((editing.value || creating.value) && !(await leaveEditing())) return
   if (kind === 'trigger') newTable.value ||= tableOptions.value[0]?.value ?? ''
   creating.value = kind
   editing.value = false
@@ -122,8 +134,8 @@ function startCreate(kind: NewKind): void {
 watch(newTable, (table) => {
   if (creating.value === 'trigger') draft.value = createTemplate(dialect.value, schemaName, 'trigger', table || undefined)
 })
-function cancelEdit(): void {
-  if (leaveEditing()) editing.value = false
+async function cancelEdit(): Promise<void> {
+  await leaveEditing()
 }
 
 // ---- running the DDL (through the SQL endpoint: read-only, prod and history guards apply) ----
@@ -211,7 +223,15 @@ watch(dirty, (value) => {
           <Icon name="lucide:refresh-cw" class="size-3.5" :class="status === 'pending' && 'animate-spin'" />{{ t('routines.refresh') }}
         </UiButton>
         <template v-if="!readonly">
-          <UiButton v-for="k in newKinds" :key="k" size="sm" :data-new-routine="k" @click="startCreate(k)">
+          <UiButton
+            v-for="k in newKinds"
+            :key="k"
+            size="sm"
+            :variant="creating === k ? 'primary' : undefined"
+            :disabled="busy && creating !== k"
+            :data-new-routine="k"
+            @click="startCreate(k)"
+          >
             <Icon name="lucide:plus" class="size-3.5" />{{ t(`routines.new.${k}`) }}
           </UiButton>
         </template>
@@ -223,19 +243,13 @@ watch(dirty, (value) => {
       <aside class="flex min-h-0 flex-col border-r border-border" data-routines-list>
         <div class="flex flex-col gap-2 border-b border-border p-2">
           <UiInput v-model="search" :placeholder="t('routines.search')" :aria-label="t('routines.search')" data-routines-search />
-          <div class="flex flex-wrap gap-1">
-            <button
-              v-for="f in filters"
-              :key="f.value"
-              type="button"
-              class="h-6 rounded-md border px-2 text-xs"
-              :class="filter === f.value ? 'border-accent/40 bg-accent-soft text-accent' : 'border-border text-fg-muted hover:bg-surface'"
-              :data-filter="f.value"
-              @click="filter = f.value"
-            >
-              {{ f.label }}
-            </button>
-          </div>
+          <UiMultiCombobox
+            v-model="filter"
+            :options="filters"
+            :placeholder="`${t('routines.filters.all')} ${counts.all}`"
+            :empty-text="t('routines.noMatches')"
+            data-routines-filter
+          />
         </div>
         <div class="min-h-0 flex-1 overflow-auto p-1">
           <div v-if="!loaded" class="flex flex-col gap-1 p-1" data-routines-skeleton>
@@ -357,6 +371,13 @@ watch(dirty, (value) => {
         />
       </section>
     </div>
+
+    <UiDialog :open="!!discardAsk" :title="t('routines.discardTitle')" :description="t('routines.discardConfirm')" @update:open="(v) => !v && answerDiscard(false)">
+      <template #footer>
+        <UiButton data-discard-cancel @click="answerDiscard(false)">{{ t('routines.keepEditing') }}</UiButton>
+        <UiButton variant="danger" data-discard-confirm @click="answerDiscard(true)">{{ t('routines.discard') }}</UiButton>
+      </template>
+    </UiDialog>
 
     <RunConfirmDialog
       :sql="pendingSql"

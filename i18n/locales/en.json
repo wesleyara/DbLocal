@@ -763,7 +763,8 @@
         "domain": "DOMAIN",
         "extension": "EXTENSION"
       }
-    }
+    },
+    "viewFull": "View in full"
   },
   "erd": {
     "unique": "Unique",
@@ -1241,7 +1242,10 @@
     "copied": "Copied",
     "saved": "Done",
     "discardConfirm": "Discard the unsaved changes?",
-    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped."
+    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped.",
+    "discardTitle": "Discard changes?",
+    "keepEditing": "Keep editing",
+    "discard": "Discard"
   },
   "backup": {
     "menu": "Backup",

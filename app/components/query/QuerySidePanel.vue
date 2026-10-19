@@ -60,6 +60,15 @@ watch(() => props.connectionId, refresh)
 /** SQL as written, trimmed; the entry clamps it to a few lines until it is expanded. */
 const clean = (sql: string) => sql.trim().replace(/\n{3,}/g, '\n\n')
 
+/** Full view: the whole statement in a dialog, for what does not fit the narrow panel. */
+const full = ref<{ title: string; sql: string; savedId?: string } | null>(null)
+
+function openFull() {
+  if (!full.value) return
+  emit('open', { sql: full.value.sql, savedId: full.value.savedId, name: full.value.savedId ? full.value.title : undefined })
+  full.value = null
+}
+
 const expanded = ref(new Set<string>())
 function toggle(id: string) {
   const next = new Set(expanded.value)
@@ -140,8 +149,8 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
           <button type="button" class="block w-full text-left" @click="emit('open', { sql: q.sql, savedId: q.id, name: q.name })">
             <span class="block truncate text-sm font-medium text-fg">{{ q.name }}</span>
             <span
-              class="font-data mt-0.5 block whitespace-pre-wrap break-words text-xs text-fg-muted"
-              :class="!expanded.has(q.id) && 'line-clamp-3'"
+              class="font-data mt-0.5 whitespace-pre-wrap break-words text-xs text-fg-muted"
+              :class="expanded.has(q.id) ? 'block' : 'line-clamp-3'"
             >{{ clean(q.sql) }}</span>
           </button>
           <div class="mt-1 flex items-center gap-0.5">
@@ -152,6 +161,7 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
               size="sm"
               @click="toggle(q.id)"
             />
+            <UiIconButton icon="lucide:maximize-2" :label="t('query.viewFull')" size="sm" data-view-full @click="full = { title: q.name, sql: q.sql, savedId: q.id }" />
             <UiIconButton icon="lucide:play" :label="t('query.rerun')" size="sm" @click="emit('rerun', q.sql)" />
             <UiIconButton icon="lucide:pencil" :label="t('query.rename')" size="sm" @click="startRename(q)" />
             <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" @click="copy(q.sql)" />
@@ -192,8 +202,8 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
             </div>
             <button type="button" class="mt-1 block w-full text-left" :title="t('query.openInEditor')" @click="emit('open', { sql: h.sql })">
               <span
-                class="font-data block whitespace-pre-wrap break-words text-xs text-fg"
-                :class="!expanded.has(String(h.id)) && 'line-clamp-3'"
+                class="font-data whitespace-pre-wrap break-words text-xs text-fg"
+                :class="expanded.has(String(h.id)) ? 'block' : 'line-clamp-3'"
               >{{ clean(h.sql) }}</span>
             </button>
             <p v-if="h.error" class="font-data mt-1 break-words text-xs text-danger" :class="!expanded.has(String(h.id)) && 'line-clamp-2'">{{ h.error }}</p>
@@ -205,6 +215,7 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
                 size="sm"
                 @click="toggle(String(h.id))"
               />
+              <UiIconButton icon="lucide:maximize-2" :label="t('query.viewFull')" size="sm" data-view-full @click="full = { title: date(h.executedAt), sql: h.sql }" />
               <UiIconButton icon="lucide:play" :label="t('query.rerun')" size="sm" @click="emit('rerun', h.sql)" />
               <UiIconButton icon="lucide:copy" :label="t('query.copy')" size="sm" @click="copy(h.sql)" />
             </div>
@@ -225,6 +236,15 @@ const statusTone = (s: string) => (s === 'ok' ? 'success' : s === 'error' ? 'dan
       </div>
     </div>
 
+    <UiDialog :open="!!full" :title="full?.title ?? ''" medium @update:open="(v) => !v && (full = null)">
+      <pre class="font-data max-h-[60vh] overflow-auto rounded-md border border-border bg-bg-subtle p-3 text-xs break-words whitespace-pre-wrap text-fg" data-full-sql>{{ full ? clean(full.sql) : '' }}</pre>
+      <template #footer>
+        <UiButton @click="full && copy(full.sql)"><Icon name="lucide:copy" class="size-3.5" />{{ t('query.copy') }}</UiButton>
+        <UiButton variant="primary" @click="openFull">
+          <Icon name="lucide:terminal" class="size-3.5" />{{ t('query.openInEditor') }}
+        </UiButton>
+      </template>
+    </UiDialog>
     <UiDialog :open="!!renaming" :title="t('query.rename')" @update:open="(v) => !v && (renaming = null)">
       <UiInput v-model="newName" :aria-label="t('common.name')" @keydown.enter="rename" />
       <template #footer>

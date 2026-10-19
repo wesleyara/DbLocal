@@ -54,7 +54,7 @@ O SQL de uma visão de tabela (**Ver SQL**) é escrito com as palavras-chave em 
 
 ## Queries salvas e histórico
 
-⌘/Ctrl+S salva a query (pede um nome na primeira vez). O painel lateral tem **Salvas** (abrir, renomear, excluir, copiar, executar) e **Histórico**: cada execução com duração, linhas e status, com busca e filtro. Limpe quando quiser ou escolha quantas entradas manter. O mesmo histórico está em qualquer tabela: o botão **Histórico** ao lado de **Estrutura** o lista, filtrado pela tabela por padrão, e permite executar uma entrada de novo no editor.
+⌘/Ctrl+S salva a query (pede um nome na primeira vez). O painel lateral tem **Salvas** (abrir, ver completo, renomear, excluir, copiar, executar) e **Histórico**: cada execução com duração, linhas e status, com busca e filtro. Limpe quando quiser ou escolha quantas entradas manter. O mesmo histórico está em qualquer tabela: o botão **Histórico** ao lado de **Estrutura** o lista, filtrado pela tabela por padrão, e permite executar uma entrada de novo no editor.
 
 ## Explain e exportação
 

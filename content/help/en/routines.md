@@ -12,7 +12,7 @@ The **Functions & triggers** button in the top bar (or <kbd>⌘</kbd><kbd>K</kbd
 
 ## Finding things {#finding}
 
-The list on the left groups items by type. Filter by type, or search by name or by table (a trigger is found by the table it belongs to). A trigger shows its table, when it fires (`BEFORE INSERT`, `AFTER UPDATE / DELETE`…) and whether it is disabled. The selected item is in the URL, so a link opens the same definition.
+The list on the left groups items by type. Filter by type (pick one or several in the filter box), or search by name or by table (a trigger is found by the table it belongs to). A trigger shows its table, when it fires (`BEFORE INSERT`, `AFTER UPDATE / DELETE`…) and whether it is disabled. While you write a new object or edit one, the other **New …** buttons wait until you save or cancel; leaving unsaved text asks first. The selected item is in the URL, so a link opens the same definition.
 
 > [!NOTE]
 > SQLite has no stored functions or procedures, only triggers. MySQL and Postgres have all three. Triggers of a table are one click from its name in the detail header.

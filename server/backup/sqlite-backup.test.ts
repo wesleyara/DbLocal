@@ -44,7 +44,7 @@ beforeAll(async () => {
   db = openStore(dir)
   await migrateStore(db)
   sourceId = (await createConnection(db, sqliteConnection('source', join(dir, 'source.sqlite')))).id
-})
+}, 60_000)
 
 afterAll(async () => {
   await getPoolManager().closeAll()

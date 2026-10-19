@@ -32,7 +32,7 @@ Pressing **Delete** (or *Delete row*) on selected rows first shows what depends 
 
 ## Saving {#saving}
 
-The bar at the bottom of the grid shows **N pending changes**. **Preview SQL** shows the statements that will run; values go to the database as parameters and are shown inline only so you can read them. **Save** (or **Ctrl/⌘+S**) applies the batch. On a `prod` connection you are asked to type the connection's name first.
+The bar at the bottom of the grid shows **N pending changes**. **Preview SQL** shows the statements that will run; values go to the database as parameters and are shown inline only so you can read them. **Save** (or **Ctrl/⌘+S**) applies the batch. When the batch deletes rows (on any connection), or on a `prod` connection, a dialog says how many rows go away and asks you to type the connection's name first. For deletes this follows **Settings → Safety → Double check heavy actions**.
 
 If the database rejects something, such as a duplicate key, the row that caused it is outlined in red with the database's message, and every pending change is kept so you can fix it and save again. **Discard** drops all pending changes. Closing a tab that has pending changes asks first.
 

@@ -477,6 +477,8 @@
     "prodTitle": "Save to a production connection",
     "prodBody": "{count} change will be written to {name}. | {count} changes will be written to {name}.",
     "prodType": "Type {name} to confirm",
+    "deleteTitle": "Delete rows",
+    "deleteBody": "The save deletes rows from {name}.",
     "impactNone": "No other records reference these rows.",
     "impactCount": "{count} record | {count} records",
     "impactFailed": "Could not check what references these rows.",
@@ -506,7 +508,8 @@
       "required": "This column cannot be NULL."
     },
     "generate": "Generate {fn}",
-    "undoCell": "Undo this cell"
+    "undoCell": "Undo this cell",
+    "deleteWarning": "{count} row will be deleted permanently. | {count} rows will be deleted permanently."
   },
   "import": {
     "button": "Import",
@@ -914,7 +917,7 @@
     "reset": "Restore defaults",
     "safety": "Safety",
     "doubleCheck": "Double check heavy actions",
-    "doubleCheckHint": "Destructive SQL (DROP, TRUNCATE, DELETE or UPDATE without WHERE), restoring a file and an import that overwrites rows ask you to type the connection name after the warning. Off: the warning alone. Writes on prod connections always ask for it."
+    "doubleCheckHint": "Deleting rows in the grid, destructive SQL (DROP, TRUNCATE, DELETE or UPDATE without WHERE), restoring a file and an import that overwrites rows ask you to type the connection name after the warning. Off: the warning alone. Writes on prod connections always ask for it."
   },
   "home": {
     "tagline": "Browse your databases through their relations.",

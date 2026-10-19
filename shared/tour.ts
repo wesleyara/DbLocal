@@ -30,6 +30,10 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'record', target: 'record-panel', placement: 'left' },
   { id: 'trail', target: 'breadcrumb', placement: 'bottom' },
   { id: 'edit', target: 'grid', placement: 'top' },
+  { id: 'safety', target: 'grid', placement: 'top' },
+  { id: 'structure', target: 'structure', placement: 'bottom' },
+  { id: 'routines', target: 'more', placement: 'bottom' },
+  { id: 'backup', target: 'more', placement: 'bottom' },
   { id: 'sql', target: 'new-query', placement: 'bottom' },
   { id: 'palette', target: 'palette', placement: 'bottom' },
 ]
@@ -45,9 +49,11 @@ export function tourPath(stepId: string, ctx: TourContext): string {
       return `/c/${c}/${encodeURIComponent(s)}`
     case 'grid':
     case 'children':
+    case 'structure':
       return tablePath(c, s, 'users')
     case 'parents':
     case 'edit':
+    case 'safety':
       return tablePath(c, s, 'orders')
     case 'related':
       return tablePath(c, s, 'orders', { rel: encodeScope({ table: 'users', relation: 'users.orders', key: { id: 1 } }) })

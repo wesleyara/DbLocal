@@ -1114,6 +1114,22 @@
         "title": "Edit and save",
         "body": "Double-click a cell, type a value and press Enter. The change stays pending until you save with the bar at the bottom (Ctrl/⌘ + S), after previewing the SQL. This demo is safe to change."
       },
+      "safety": {
+        "title": "Destructive actions ask twice",
+        "body": "Dropping a table, deleting rows or running DELETE without WHERE lists what will be lost and asks you to type the connection name. You can turn this off in Settings → Safety; the warning stays."
+      },
+      "structure": {
+        "title": "Edit the structure",
+        "body": "Structure shows columns, keys and relations. On editable tables, Edit structure changes columns, indexes and foreign keys: you review the generated SQL before it runs."
+      },
+      "routines": {
+        "title": "Functions and triggers",
+        "body": "In More, Functions & triggers lists the routines and triggers of the schema. This demo has two triggers that write to audit_logs; you can read, edit or delete them."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "Also in More: back up the schema to a .sql file (structure, data or both), copy a SQLite file, or restore a backup. Restore always asks for the connection name."
+      },
       "sql": {
         "title": "The SQL editor",
         "body": "For anything the grid does not cover: autocomplete from your schema, run the statement under the cursor, save queries and see the history."

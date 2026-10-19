@@ -745,6 +745,7 @@ onMounted(() => state.start())
             type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
             data-toggle-structure
+            data-tour="structure"
             @click="emit('structure')"
           >
             <Icon name="lucide:table-properties" class="size-3" />

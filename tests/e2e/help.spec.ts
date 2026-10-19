@@ -56,7 +56,7 @@ test('the tour runs on the demo from the first step to the last and does not com
   await page.goto('/')
   await hydrated(page)
   await page.locator('[data-tour-start]').first().click()
-  const steps = ['tables', 'grid', 'children', 'parents', 'related', 'record', 'trail', 'edit', 'sql', 'palette']
+  const steps = ['tables', 'grid', 'children', 'parents', 'related', 'record', 'trail', 'edit', 'safety', 'structure', 'routines', 'backup', 'sql', 'palette']
   for (const [i, id] of steps.entries()) {
     await expect(page.locator('[data-tour-step]')).toHaveAttribute('data-step', id, { timeout: 20_000 })
     await expect(page.locator('[data-tour-spotlight]')).toBeVisible({ timeout: 20_000 })

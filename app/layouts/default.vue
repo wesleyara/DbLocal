@@ -322,7 +322,7 @@ function onResize(e: PointerEvent) {
           <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
         </UiButton>
         <UiDropdownMenu :items="moreItems">
-          <UiButton size="sm" data-open-more :aria-label="t('shell.more')">
+          <UiButton size="sm" data-open-more data-tour="more" :aria-label="t('shell.more')">
             {{ t('shell.more') }}<Icon name="lucide:chevron-down" class="size-3.5" />
           </UiButton>
         </UiDropdownMenu>

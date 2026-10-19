@@ -1114,6 +1114,22 @@
         "title": "Edite e salve",
         "body": "Dê duplo clique numa célula, digite um valor e pressione Enter. A alteração fica pendente até você salvar pela barra inferior (Ctrl/⌘ + S), depois de ver o SQL. Esta demo é segura para alterar."
       },
+      "safety": {
+        "title": "Ações destrutivas pedem confirmação dupla",
+        "body": "Apagar uma tabela, linhas ou rodar DELETE sem WHERE lista o que será perdido e pede que você digite o nome da conexão. Dá para desligar em Configurações → Segurança; o aviso continua."
+      },
+      "structure": {
+        "title": "Edite a estrutura",
+        "body": "Estrutura mostra colunas, chaves e relações. Em tabelas editáveis, Editar estrutura altera colunas, índices e chaves estrangeiras: você revisa o SQL gerado antes de rodar."
+      },
+      "routines": {
+        "title": "Funções e triggers",
+        "body": "Em Mais, Funções e triggers lista as rotinas e triggers do schema. Este demo tem dois triggers que gravam em audit_logs; você pode ler, editar ou apagar."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "Também em Mais: faça backup do schema em um arquivo .sql (estrutura, dados ou ambos), copie um arquivo SQLite ou restaure um backup. O restore sempre pede o nome da conexão."
+      },
       "sql": {
         "title": "O editor SQL",
         "body": "Para tudo que o grid não cobre: autocomplete do seu schema, rodar o statement sob o cursor, salvar queries e ver o histórico."

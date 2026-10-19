@@ -477,8 +477,6 @@
     "prodTitle": "Save to a production connection",
     "prodBody": "{count} change will be written to {name}. | {count} changes will be written to {name}.",
     "prodType": "Type {name} to confirm",
-    "deleteTitle": "Delete rows",
-    "deleteBody": "The save deletes rows from {name}.",
     "impactNone": "No other records reference these rows.",
     "impactCount": "{count} record | {count} records",
     "impactFailed": "Could not check what references these rows.",
@@ -508,8 +506,7 @@
       "required": "This column cannot be NULL."
     },
     "generate": "Generate {fn}",
-    "undoCell": "Undo this cell",
-    "deleteWarning": "{count} row will be deleted permanently. | {count} rows will be deleted permanently."
+    "undoCell": "Undo this cell"
   },
   "import": {
     "button": "Import",

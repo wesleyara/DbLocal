@@ -477,8 +477,6 @@
     "prodTitle": "Salvar em uma conexão de produção",
     "prodBody": "{count} alteração será gravada em {name}. | {count} alterações serão gravadas em {name}.",
     "prodType": "Digite {name} para confirmar",
-    "deleteTitle": "Excluir linhas",
-    "deleteBody": "O salvamento exclui linhas de {name}.",
     "impactNone": "Nenhum outro registro referencia estas linhas.",
     "impactCount": "{count} registro | {count} registros",
     "impactFailed": "Não foi possível verificar o que referencia estas linhas.",
@@ -508,8 +506,7 @@
       "required": "Esta coluna não aceita NULL."
     },
     "generate": "Gerar {fn}",
-    "undoCell": "Desfazer esta célula",
-    "deleteWarning": "{count} linha será excluída permanentemente. | {count} linhas serão excluídas permanentemente."
+    "undoCell": "Desfazer esta célula"
   },
   "import": {
     "button": "Importar",

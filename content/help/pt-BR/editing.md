@@ -32,7 +32,7 @@ Apertar **Delete** (ou *Excluir linha*) nas linhas selecionadas mostra antes o q
 
 ## Salvando {#saving}
 
-A barra no fim do grid mostra **N alterações pendentes**. **Ver SQL** mostra os comandos que vão rodar; os valores vão ao banco como parâmetros e aparecem inline só para leitura. **Salvar** (ou **Ctrl/⌘+S**) aplica o lote. Quando o lote exclui linhas (em qualquer conexão), ou numa conexão `prod`, um diálogo diz quantas linhas vão embora e pede o nome da conexão antes.
+A barra no fim do grid mostra **N alterações pendentes**. **Ver SQL** mostra os comandos que vão rodar; os valores vão ao banco como parâmetros e aparecem inline só para leitura. **Salvar** (ou **Ctrl/⌘+S**) aplica o lote. Em uma conexão `prod`, você precisa digitar o nome da conexão antes.
 
 Se o banco recusar algo, como uma chave duplicada, a linha responsável fica contornada em vermelho com a mensagem do banco, e todas as alterações pendentes são mantidas para você corrigir e salvar de novo. **Descartar** remove todas as pendências. Fechar uma aba com alterações pendentes pergunta antes.
 

@@ -400,8 +400,7 @@
     "reloadTitle": "Ler as linhas do banco de novo (⌘R)",
     "notesToggle": "Notas",
     "hasNotes": "Esta tabela tem notas",
-    "moreTools": "Mais ferramentas",
-    "lessTools": "Menos ferramentas"
+    "more": "Mais"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",
@@ -477,8 +476,8 @@
     "prodTitle": "Salvar em uma conexão de produção",
     "prodBody": "{count} alteração será gravada em {name}. | {count} alterações serão gravadas em {name}.",
     "prodType": "Digite {name} para confirmar",
-    "deleteTitle": "Excluir {count} linha? | Excluir {count} linhas?",
-    "deleteBody": "As linhas de {table} ficam marcadas para exclusão e são removidas quando você salvar.",
+    "deleteTitle": "Excluir linhas",
+    "deleteBody": "O salvamento exclui linhas de {name}.",
     "impactNone": "Nenhum outro registro referencia estas linhas.",
     "impactCount": "{count} registro | {count} registros",
     "impactFailed": "Não foi possível verificar o que referencia estas linhas.",
@@ -508,7 +507,113 @@
       "required": "Esta coluna não aceita NULL."
     },
     "generate": "Gerar {fn}",
-    "undoCell": "Desfazer esta célula"
+    "undoCell": "Desfazer esta célula",
+    "deleteWarning": "{count} linha será excluída permanentemente. | {count} linhas serão excluídas permanentemente."
+  },
+  "import": {
+    "button": "Importar",
+    "title": "Importar em {table}",
+    "description": "As linhas de um arquivo CSV ou JSON são adicionadas à tabela. Nada é gravado até todas as linhas passarem nas verificações.",
+    "choose": "Escolher arquivo",
+    "drop": "ou solte aqui um arquivo CSV ou JSON",
+    "records": "{count} registro | {count} registros",
+    "format": "Formato",
+    "delimiter": "Separador",
+    "delimiters": {
+      "comma": "Vírgula (,)",
+      "semicolon": "Ponto e vírgula (;)",
+      "tab": "Tab",
+      "pipe": "Barra vertical"
+    },
+    "parseErrors": {
+      "empty": "O arquivo não tem registros.",
+      "json": "O arquivo não é um JSON válido.",
+      "jsonShape": "O JSON precisa ser uma lista de objetos, ou um objeto por linha.",
+      "csvQuote": "Um valor entre aspas do CSV nunca é fechado.",
+      "tooBig": "O arquivo tem mais de 50 MB.",
+      "read": "Não foi possível ler o arquivo."
+    },
+    "mapping": "Colunas",
+    "fileColumn": "Coluna do arquivo",
+    "sample": "Exemplo",
+    "tableColumn": "Coluna da tabela",
+    "skipColumn": "Não importar",
+    "mode": "Modo",
+    "modes": {
+      "insert": "Inserir novas linhas",
+      "upsert": "Inserir ou atualizar por {key}"
+    },
+    "emptyAsNull": "Células vazias são NULL",
+    "skipInvalid": "Pular registros inválidos",
+    "noMapping": "Mapeie ao menos uma coluna.",
+    "missing": "Estas colunas precisam de valor e não estão mapeadas: {columns}",
+    "invalid": "{count} registro tem valores inválidos | {count} registros têm valores inválidos",
+    "willSkip": "{count} registro inválido será pulado | {count} registros inválidos serão pulados",
+    "cellError": "Registro {row}, {column}: {message}",
+    "moreErrors": "e mais {count}",
+    "cellErrors": {
+      "boolean": "Use true ou false.",
+      "text": "Espera um valor simples, não um objeto."
+    },
+    "checking": "Verificando {done} de {total}…",
+    "writing": "Importando {done} de {total}…",
+    "rowFailed": "Registro {row}: {message}",
+    "partial": "{count} registros foram importados antes da falha.",
+    "run": "Importar {count} registro | Importar {count} registros",
+    "done": "{count} registro importado | {count} registros importados",
+    "skipped": "{count} registro inválido pulado | {count} registros inválidos pulados",
+    "prodBody": "{count} registro será gravado em {name}. | {count} registros serão gravados em {name}.",
+    "upsertTitle": "Sobrescrever linhas existentes",
+    "upsertWarning": "O upsert sobrescreve as linhas cuja {key} já está na tabela com os valores do arquivo."
+  },
+  "structure": {
+    "edit": "Editar estrutura",
+    "editTitle": "Editar {table}",
+    "tableName": "Nome da tabela",
+    "key": "Chave",
+    "primaryKey": "Chave primária",
+    "autoIncrement": "Auto-incremento",
+    "identity": "identity",
+    "was": "era {name}",
+    "defaultPlaceholder": "SQL: 'texto', 0, now()",
+    "addColumn": "Adicionar coluna",
+    "removeColumn": "Remover coluna {name}",
+    "remove": "Remover",
+    "indexes": "Índices",
+    "noIndexes": "Nenhum índice.",
+    "addIndex": "Adicionar índice",
+    "foreignKeys": "Chaves estrangeiras",
+    "noForeignKeys": "Nenhuma chave estrangeira.",
+    "fkColumn": "Coluna",
+    "fkTable": "Referencia a tabela",
+    "fkRefColumn": "Coluna",
+    "onDelete": "on delete {action}",
+    "onDeleteLabel": "Ao excluir",
+    "onUpdateLabel": "Ao atualizar",
+    "addForeignKey": "Adicionar chave estrangeira",
+    "review": "Revisar e rodar",
+    "rebuild": "O SQLite não faz essa mudança com ALTER TABLE: a tabela é recriada (uma tabela nova, as linhas copiadas, a antiga removida e a nova renomeada), com seus índices e triggers, em uma transação.",
+    "dropTable": "Excluir tabela",
+    "saved": "Estrutura alterada",
+    "dropped": "Tabela {table} excluída",
+    "newTitle": "Nova tabela",
+    "newDescription": "Cria uma tabela em {schema}. Revise o SQL antes de rodar.",
+    "create": "Revisar e criar",
+    "created": "Tabela {table} criada",
+    "errors": {
+      "tableName": "Dê um nome à tabela.",
+      "noColumns": "Uma tabela precisa de ao menos uma coluna.",
+      "columnName": "Toda coluna precisa de um nome.",
+      "duplicateColumn": "A coluna {column} aparece duas vezes.",
+      "type": "O tipo de {column} está vazio ou tem um ; ou um comentário.",
+      "default": "O default de {column} tem um ; ou um comentário.",
+      "indexColumns": "O índice {name} precisa de nome e colunas.",
+      "duplicateName": "{name} é usado por dois índices ou chaves.",
+      "fkColumns": "A chave estrangeira {name} precisa de colunas e de uma tabela de destino.",
+      "unknownColumn": "{name} usa uma coluna que não está na tabela: {column}.",
+      "sqliteComputed": "Essa mudança precisa recriar a tabela, e o SQLite não informa a expressão das colunas geradas dela. Faça pelo editor SQL.",
+      "tableExists": "Já existe uma tabela chamada {name}."
+    }
   },
   "query": {
     "new": "Nova query",
@@ -628,7 +733,37 @@
       "primaryKeyConstraint": "Chave primária composta",
       "fkTo": "Coluna FK com o tipo da chave do alvo"
     },
-    "historySuggestions": "Sugestões do histórico"
+    "historySuggestions": "Sugestões do histórico",
+    "risk": {
+      "title": "Comandos destrutivos",
+      "heading": "Isto pode destruir dados ou estrutura:",
+      "headingWarning": "Isto substitui objetos existentes:",
+      "noUndo": "Não dá para desfazer pelo DbLocal. Faça um backup antes se puder precisar dos dados.",
+      "typeName": "Digite {name} para confirmar",
+      "drop": "DROP {object} {target}: remove o objeto e tudo o que há nele.",
+      "truncate": "TRUNCATE {target}: apaga todas as linhas.",
+      "deleteAll": "DELETE sem WHERE em {target}: apaga todas as linhas.",
+      "updateAll": "UPDATE sem WHERE em {target}: altera todas as linhas.",
+      "alterDrop": "ALTER TABLE {target} remove uma coluna, chave ou constraint (e seus dados).",
+      "recreate": "{object} {target} é removido e criado de novo.",
+      "rebuild": "{target} é reconstruída: copiada para uma tabela nova e trocada.",
+      "objects": {
+        "table": "TABLE",
+        "view": "VIEW",
+        "materialized_view": "MATERIALIZED VIEW",
+        "schema": "SCHEMA",
+        "database": "DATABASE",
+        "index": "INDEX",
+        "function": "FUNCTION",
+        "procedure": "PROCEDURE",
+        "trigger": "TRIGGER",
+        "type": "TYPE",
+        "sequence": "SEQUENCE",
+        "event": "EVENT",
+        "domain": "DOMAIN",
+        "extension": "EXTENSION"
+      }
+    }
   },
   "erd": {
     "unique": "Único",
@@ -700,7 +835,10 @@
       "shortcuts": "Atalhos de teclado",
       "signOut": "Sair",
       "openNotes": "Abrir notas da conexão",
-      "openRoutines": "Abrir funções e triggers"
+      "openRoutines": "Abrir funções e triggers",
+      "newTable": "Nova tabela",
+      "dump": "Fazer backup da conexão (dump SQL)",
+      "restore": "Restaurar um arquivo SQL"
     }
   },
   "shortcuts": {
@@ -775,7 +913,10 @@
     "queries": "Editor SQL",
     "rowLimit": "Limite de linhas por statement",
     "timeout": "Timeout por statement (segundos)",
-    "reset": "Restaurar padrões"
+    "reset": "Restaurar padrões",
+    "safety": "Segurança",
+    "doubleCheck": "Verificação dupla em ações pesadas",
+    "doubleCheckHint": "Excluir linhas no grid, SQL destrutivo (DROP, TRUNCATE, DELETE ou UPDATE sem WHERE), restaurar um arquivo e um import que sobrescreve linhas pedem o nome da conexão depois do aviso. Desligado: só o aviso. Escritas em conexões prod sempre pedem o nome."
   },
   "home": {
     "tagline": "Navegue pelos seus bancos através das relações.",
@@ -857,6 +998,10 @@
         "prod": {
           "title": "Escrever em prod",
           "text": "Numa conexão prod, salvar pede que você digite o nome da conexão antes."
+        },
+        "import": {
+          "title": "Importar um arquivo",
+          "text": "As colunas são ligadas pelo nome. Cada registro é verificado como um valor digitado; com “Inserir ou atualizar”, um registro cuja chave já existe atualiza essa linha."
         }
       },
       "sql": {
@@ -893,6 +1038,24 @@
         "overview": {
           "title": "Funções e triggers",
           "text": "Veja, crie, edite e apague a lógica guardada no banco. Toda alteração mostra o SQL exato e pergunta antes de rodar."
+        }
+      },
+      "structure": {
+        "edit": {
+          "title": "Editar a estrutura",
+          "text": "As mudanças viram DDL que você revisa antes de rodar. Postgres e SQLite aplicam tudo em uma transação; o MySQL confirma cada comando. Trocar o tipo numa tabela cheia pode demorar e travá-la."
+        }
+      },
+      "safety": {
+        "doubleCheck": {
+          "title": "Confirmação dupla",
+          "text": "Ações destrutivas listam o que destroem e pedem o nome da conexão. Desligada, fica só o aviso."
+        }
+      },
+      "backup": {
+        "workspace": {
+          "title": "Backup do workspace",
+          "text": "Exporta os dados do próprio DbLocal. Com senha, os segredos das conexões vão cifrados com ela; sem senha, ficam de fora."
         }
       }
     }
@@ -949,6 +1112,22 @@
       "edit": {
         "title": "Edite e salve",
         "body": "Dê duplo clique numa célula, digite um valor e pressione Enter. A alteração fica pendente até você salvar pela barra inferior (Ctrl/⌘ + S), depois de ver o SQL. Esta demo é segura para alterar."
+      },
+      "safety": {
+        "title": "Ações destrutivas pedem confirmação dupla",
+        "body": "Apagar uma tabela, linhas ou rodar DELETE sem WHERE lista o que será perdido e pede que você digite o nome da conexão. Dá para desligar em Configurações → Segurança; o aviso continua."
+      },
+      "structure": {
+        "title": "Edite a estrutura",
+        "body": "Estrutura mostra colunas, chaves e relações. Em tabelas editáveis, Editar estrutura altera colunas, índices e chaves estrangeiras: você revisa o SQL gerado antes de rodar."
+      },
+      "routines": {
+        "title": "Funções e triggers",
+        "body": "Em Mais, Funções e triggers lista as rotinas e triggers do schema. Este demo tem dois triggers que gravam em audit_logs; você pode ler, editar ou apagar."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "Também em Mais: faça backup do schema em um arquivo .sql (estrutura, dados ou ambos), copie um arquivo SQLite ou restaure um backup. O restore sempre pede o nome da conexão."
       },
       "sql": {
         "title": "O editor SQL",
@@ -1063,5 +1242,59 @@
     "saved": "Pronto",
     "discardConfirm": "Descartar as alterações não salvas?",
     "mysqlNotAtomic": "O MySQL não desfaz DDL: editar remove o objeto e o cria de novo, então se a nova definição falhar ele continua removido."
+  },
+  "backup": {
+    "menu": "Backup",
+    "schema": "Schema",
+    "database": "Banco",
+    "dump": {
+      "menu": "Dump em SQL…",
+      "title": "Backup de {name}",
+      "description": "Baixe o schema como um arquivo .sql que o Restaurar (ou o cliente do banco) consegue rodar de novo.",
+      "structure": "Estrutura (tabelas, índices, views, rotinas, triggers)",
+      "data": "Dados",
+      "pickTables": "Só algumas tabelas",
+      "pickHint": "Views e rotinas ficam de fora quando você escolhe tabelas.",
+      "run": "Baixar .sql",
+      "file": "Baixar arquivo .sqlite",
+      "done": "Dump baixado"
+    },
+    "restore": {
+      "menu": "Restaurar de SQL…",
+      "title": "Restaurar em {name}",
+      "description": "Roda um arquivo .sql, comando por comando. Um dump do DbLocal cria as tabelas, então restaure num schema ou banco vazio.",
+      "file": "Arquivo SQL",
+      "hint": "Para no primeiro erro; os comandos que já rodaram ficam.",
+      "readonly": "Esta conexão é somente leitura: nada pode ser restaurado.",
+      "run": "Restaurar",
+      "progress": "{done} de {total} comandos",
+      "failedAt": "O comando {index} falhou:",
+      "done": "Restauração concluída: {count} comandos rodaram",
+      "review": "Revisar",
+      "reviewHeading": "{count} comando vai rodar em {name} ({schema}). | {count} comandos vão rodar em {name} ({schema}).",
+      "prodWarning": "Esta é uma conexão de produção.",
+      "destructive": "{count} comando remove ou apaga dados: | {count} comandos removem ou apagam dados:",
+      "statementN": "nº {n}",
+      "noUndo": "Não dá para desfazer pelo DbLocal. Faça backup do destino antes se ele tiver dados."
+    },
+    "workspace": {
+      "title": "Backup do workspace",
+      "description": "Conexões, queries salvas, notas, layouts do diagrama e ajustes do grid, para levar o DbLocal para outra máquina.",
+      "password": "Senha para os segredos",
+      "passwordHint": "Cifra as senhas e chaves das conexões. Deixe vazio para exportar sem elas.",
+      "passwordShort": "Use pelo menos 8 caracteres.",
+      "history": "Incluir o histórico de queries",
+      "export": "Exportar",
+      "passwordOfFile": "Senha deste backup",
+      "noSecrets": "Este backup não tem segredos: as conexões de servidor vão pedir a senha de novo.",
+      "mergeHint": "Itens com o mesmo id são substituídos; o resto daqui é mantido.",
+      "import": "Importar",
+      "contents": "{connections} conexões, {queries} queries salvas",
+      "imported": "Workspace importado",
+      "result": "Importadas {connections} conexões e {queries} queries salvas.",
+      "resultNoSecrets": " {count} precisam da senha de novo.",
+      "wrongPassword": "Senha errada para este backup.",
+      "notBackup": "Este arquivo não é um backup de workspace do DbLocal."
+    }
   }
 }

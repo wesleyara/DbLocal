@@ -39,6 +39,13 @@ While you type, the rest of the newest query of this connection that starts the 
 - On a `prod` connection a statement that writes or changes the schema asks for confirmation first.
 - After DDL the schema in the sidebar refreshes by itself.
 
+### Destructive statements {#destructive}
+
+`DROP`, `TRUNCATE`, `DELETE` or `UPDATE` without `WHERE`, and `ALTER TABLE ... DROP` (a column, key or constraint) always open the confirmation, whatever the **Alert before run** setting, on every connection. It says what each one destroys, and **Run** stays off until you type the connection's name (**Settings → Safety → Double check heavy actions**; turned off, the warning alone is shown, except for writes on `prod`). The same check covers the structure editor (drop table, drop column), deleting a function or trigger, and the table's **Show SQL** bar. The server refuses these statements unless the confirmation was given, so a script sent by other means cannot skip it.
+
+> [!WARNING]
+> The check reads the statements, it does not know your data: a `DELETE` with a `WHERE` that matches every row is not flagged. Back up before large changes.
+
 ### Alert before run {#alert-before-run}
 
 Tick **Alert before run** (in the editor toolbar or in the table's **Show SQL** bar; one setting for both) and every run first lists the statements about to execute, each marked *read*, *write*, *schema* or *unknown* with what it does. Nothing runs until you confirm. On a `prod` connection this confirmation also counts as the production one.
@@ -53,4 +60,4 @@ The SQL of a table view (**Show SQL**) is written with keywords in upper case, l
 
 **Explain** draws the plan as a tree with cost, rows and, with **Explain analyze**, the time of each node; the heaviest nodes are highlighted. *Analyze runs the statement* (reads only, not on SQLite).
 
-**Export** saves the current result as CSV or JSON, or re-runs the query without the limit and streams it to a file. The table grid has the same export, respecting its filters.
+**Export** saves the current result as CSV or JSON, or re-runs the query without the limit and streams it to a file. The table grid has the same export, respecting its filters, in the **More** menu `⋯` on the right of its toolbar.

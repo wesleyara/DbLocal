@@ -18,6 +18,7 @@ export const HELP_HINTS = {
   'grid.filters': { slug: 'data-grid', anchor: 'filter' },
   'grid.pending': { slug: 'editing', anchor: 'saving' },
   'grid.prod': { slug: 'editing', anchor: 'saving' },
+  'grid.import': { slug: 'editing', anchor: 'import' },
   'sql.limits': { slug: 'sql-editor', anchor: 'running' },
   'sql.readonly': { slug: 'sql-editor', anchor: 'safety' },
   'sql.alertBeforeRun': { slug: 'sql-editor', anchor: 'alert-before-run' },
@@ -25,6 +26,9 @@ export const HELP_HINTS = {
   'erd.layout': { slug: 'erd', anchor: 'layout' },
   'notes.overview': { slug: 'notes', anchor: 'writing' },
   'routines.overview': { slug: 'routines', anchor: 'safety' },
+  'backup.workspace': { slug: 'backup', anchor: 'workspace' },
+  'safety.doubleCheck': { slug: 'security', anchor: 'double-check' },
+  'structure.edit': { slug: 'schema-browser', anchor: 'editing-the-structure' },
 } as const satisfies Record<string, HelpHintDef>
 
 export type HelpHintId = keyof typeof HELP_HINTS

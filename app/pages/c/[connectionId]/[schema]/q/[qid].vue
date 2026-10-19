@@ -4,6 +4,7 @@ import type { ExplainResponse } from '#shared/types/explain'
 import type { QueryResponse, StatementResult } from '#shared/types/query'
 import type { SavedQuery } from '#shared/types/saved-queries'
 import { resultColumn } from '#shared/result-columns'
+import { hasDanger } from '#shared/sql-risk'
 import { formatResult, type ExportFormat } from '#shared/export-format'
 import { useSchemaStore } from '~/stores/schema'
 import { useQueriesStore } from '~/stores/queries'
@@ -109,10 +110,13 @@ async function cancel(): Promise<void> {
   await $fetch(`/api/c/${id}/query/${queryId.value}/cancel`, { method: 'POST' }).catch(() => {})
 }
 
-/** Runs at once, or first shows what is about to run when "Alert before run" is on. */
+/**
+ * Runs at once, or first shows what is about to run: always for destructive statements (DROP,
+ * TRUNCATE, DELETE / UPDATE without WHERE, ...), and for everything when "Alert before run" is on.
+ */
 function request(sql: string): void {
   if (!sql.trim() || running.value) return
-  if (queries.alertBeforeRun) alertSql.value = sql
+  if (queries.alertBeforeRun || hasDanger(sql, dialect.value)) alertSql.value = sql
   else void execute(sql)
 }
 const runCurrent = (sql?: string) => request(sql ?? editor.value?.currentSql() ?? draft.sql)
@@ -431,6 +435,7 @@ const timeoutText = computed({
       :sql="alertSql"
       :dialect="dialect"
       :prod="view?.environment === 'prod'"
+      :connection-name="view?.name"
       @cancel="alertSql = null"
       @confirm="(sql) => { alertSql = null; void execute(sql, true) }"
     />

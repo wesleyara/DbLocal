@@ -106,6 +106,11 @@ export interface Driver {
    * everything back and throws a `MutationFailedError` with the index of the operation.
    */
   applyMutations(plan: MutationPlan): Promise<MutationResult[]>
+  /**
+   * Writes a consistent copy of the database file to `path` (SQLite files only; online backup, so
+   * readers and writers keep working). Absent on drivers that have no file to copy.
+   */
+  backupTo?(path: string): Promise<void>
   /** Opens a dedicated session to run raw SQL (the SQL editor). */
   openQuerySession(options: QuerySessionOptions): Promise<QuerySession>
   close(): Promise<void>

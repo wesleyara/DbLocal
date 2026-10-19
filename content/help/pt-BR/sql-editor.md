@@ -39,6 +39,13 @@ Enquanto você digita, o resto da query mais recente desta conexão que começa 
 - Em conexão `prod`, um statement que escreve ou altera o schema pede confirmação antes.
 - Depois de DDL, o schema da barra lateral é atualizado sozinho.
 
+### Comandos destrutivos {#destructive}
+
+`DROP`, `TRUNCATE`, `DELETE` ou `UPDATE` sem `WHERE` e `ALTER TABLE ... DROP` (coluna, chave ou constraint) sempre abrem a confirmação, qualquer que seja o **Alertar antes de rodar**, em qualquer conexão. Ela diz o que cada um destrói, e **Rodar** fica desligado até você digitar o nome da conexão (**Configurações → Segurança → Verificação dupla em ações pesadas**; desligada, fica só o aviso, exceto em escritas em `prod`). A mesma checagem vale para o editor de estrutura (remover tabela, remover coluna), para apagar uma função ou trigger e para a barra **Mostrar SQL** da tabela. O servidor recusa esses comandos sem a confirmação, então um script enviado por outro caminho não pula a checagem.
+
+> [!WARNING]
+> A checagem lê os comandos, não conhece seus dados: um `DELETE` com um `WHERE` que pega todas as linhas não é marcado. Faça backup antes de mudanças grandes.
+
 ### Alertar antes de executar {#alert-before-run}
 
 Marque **Alertar antes de executar** (na barra do editor ou na barra **Ver SQL** da tabela; é uma configuração só para os dois) e toda execução lista antes os statements que vão rodar, cada um marcado como *leitura*, *escrita*, *schema* ou *desconhecido*, com o que ele faz. Nada roda até você confirmar. Em conexão `prod`, essa confirmação vale também como a de produção.
@@ -53,4 +60,4 @@ O SQL de uma visão de tabela (**Ver SQL**) é escrito com as palavras-chave em 
 
 **Explain** desenha o plano como árvore com custo, linhas e, com **Explain analyze**, o tempo de cada nó; os nós mais pesados ficam destacados. *O analyze executa o statement* (só leituras, e não no SQLite).
 
-**Exportar** salva o resultado atual em CSV ou JSON, ou reexecuta a query sem o limite e grava em arquivo por streaming. O grid de tabela tem a mesma exportação, respeitando os filtros.
+**Exportar** salva o resultado atual em CSV ou JSON, ou reexecuta a query sem o limite e grava em arquivo por streaming. O grid de tabela tem a mesma exportação, respeitando os filtros, no menu **Mais** `⋯` à direita da barra.

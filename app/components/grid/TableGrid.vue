@@ -25,9 +25,11 @@ import RelationCountCell from './cells/RelationCountCell.vue'
 import DeleteImpactDialog from './DeleteImpactDialog.vue'
 import FkPicker from './editors/FkPicker.vue'
 import FilterBar from './FilterBar.vue'
+import ImportDialog from './ImportDialog.vue'
 import GridFooter from './GridFooter.vue'
 import PendingBar from './PendingBar.vue'
 import SqlEditor from '~/components/query/SqlEditor.vue'
+import { hasDanger } from '#shared/sql-risk'
 import RunConfirmDialog from '~/components/query/RunConfirmDialog.vue'
 import ResultGrid from '~/components/query/ResultGrid.vue'
 import { isDefaultValue, metaOf, ROW_META, type RowMeta } from './row-meta'
@@ -547,7 +549,12 @@ async function exportTable(format: 'csv' | 'json'): Promise<void> {
     toast.push({ kind: 'error', title: t('query.exportFailed') })
   }
 }
-const exportItems = computed(() => [
+const importOpen = ref(false)
+/** The "More" menu next to Add record: Import (editable tables) and the exports. */
+const dataItems = computed(() => [
+  ...(editable.value && props.connection
+    ? [{ label: t('import.button'), icon: 'lucide:upload', onSelect: () => (importOpen.value = true) }, { label: '', separator: true }]
+    : []),
   { label: t('query.exportCsv'), icon: 'lucide:file-spreadsheet', onSelect: () => void exportTable('csv') },
   { label: t('query.exportJson'), icon: 'lucide:file-json', onSelect: () => void exportTable('json') },
 ])
@@ -640,11 +647,11 @@ function resetSql(): void {
   adhocError.value = null
 }
 
-/** Runs the bar's SQL at once, or first shows what is about to run when "Alert before run" is on. */
+/** Runs the bar's SQL at once, or first shows what is about to run (always when it is destructive). */
 function requestSql(sql?: string): void {
   const text = (sql ?? sqlText.value).trim()
   if (!text || running.value) return
-  if (queries.alertBeforeRun) alertSql.value = text
+  if (queries.alertBeforeRun || hasDanger(text, dialect.value)) alertSql.value = text
   else void runSql(text)
 }
 
@@ -742,6 +749,7 @@ onMounted(() => state.start())
             type="button"
             class="inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
             data-toggle-structure
+            data-tour="structure"
             @click="emit('structure')"
           >
             <Icon name="lucide:table-properties" class="size-3" />
@@ -840,16 +848,6 @@ onMounted(() => state.start())
           <Icon name="lucide:plus" class="size-3" />
           {{ t('edit.addRecord') }}
         </button>
-        <UiDropdownMenu :items="exportItems">
-          <button
-            type="button"
-            class="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-xs text-fg-muted hover:bg-surface hover:text-fg"
-            data-export
-          >
-            <Icon name="lucide:download" class="size-3" />
-            {{ t('query.export') }}
-          </button>
-        </UiDropdownMenu>
         <UiPopover>
           <template #trigger>
             <button
@@ -882,6 +880,17 @@ onMounted(() => state.start())
             </div>
           </div>
         </UiPopover>
+        <UiDropdownMenu :items="dataItems">
+          <button
+            type="button"
+            class="inline-flex size-6 items-center justify-center rounded-md border border-border text-fg-muted hover:bg-surface hover:text-fg"
+            :aria-label="t('grid.more')"
+            :title="t('grid.more')"
+            data-more-data
+          >
+            <Icon name="lucide:ellipsis" class="size-3.5" />
+          </button>
+        </UiDropdownMenu>
       </div>
     </div>
 
@@ -1034,6 +1043,17 @@ onMounted(() => state.start())
       :environment="connection.environment"
     />
 
+    <ImportDialog
+      v-if="editable && connection"
+      v-model:open="importOpen"
+      :connection-id="connectionId"
+      :schema="schema"
+      :table="table"
+      :connection-name="connection.name"
+      :environment="connection.environment"
+      @imported="reloadData"
+    />
+
     <DeleteImpactDialog
       v-model:open="deleteOpen"
       :connection-id="connectionId"
@@ -1047,6 +1067,7 @@ onMounted(() => state.start())
       :sql="alertSql"
       :dialect="dialect"
       :prod="connection?.environment === 'prod'"
+      :connection-name="connection?.name"
       @cancel="alertSql = null"
       @confirm="(sql) => { alertSql = null; void runSql(sql, true) }"
     />

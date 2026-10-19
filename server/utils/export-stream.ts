@@ -1,6 +1,5 @@
 import { PassThrough } from 'node:stream'
 import type { H3Event } from 'h3'
-import { EXPORT_MIME, type ExportFormat } from '#shared/export-format'
 import type { ExportSink } from '../query/export-service'
 
 /**
@@ -11,7 +10,7 @@ import type { ExportSink } from '../query/export-service'
 export async function sendExport(
   event: H3Event,
   filename: string,
-  format: ExportFormat,
+  contentType: string,
   job: (sink: ExportSink) => Promise<unknown>,
 ): Promise<unknown> {
   const out = new PassThrough()
@@ -49,7 +48,7 @@ export async function sendExport(
   await Promise.race([first, done.catch((e) => (failure = e))])
   if (failure) throw failure
 
-  setHeader(event, 'Content-Type', EXPORT_MIME[format])
+  setHeader(event, 'Content-Type', contentType)
   setHeader(event, 'Content-Disposition', `attachment; filename="${filename.replace(/[^\w.-]+/g, '_')}"`)
   setHeader(event, 'Cache-Control', 'no-store')
   return sendStream(event, out)

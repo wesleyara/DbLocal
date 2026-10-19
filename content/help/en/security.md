@@ -30,6 +30,10 @@ Passwords, SSL certificates and SSH keys are encrypted with AES-256-GCM before t
 - Mark a connection **read-only**, or start with `--readonly`: writes are refused by DbLocal and by the database session itself.
 - Mark a connection `prod`: saving changes asks you to type the connection name, and write or DDL statements in the SQL editor ask for confirmation.
 
+## Double check heavy actions {#double-check}
+
+Destructive actions (dropping tables or columns, `DELETE` / `UPDATE` without `WHERE`, deleting rows on save, restoring a dump) list what they will destroy and ask you to type the connection's name. Turn this off in **Settings → Safety → Double check heavy actions** to keep only the warning. Writes on `prod` connections always ask for the name, and the server refuses these statements without confirmation either way.
+
 ## Demo and tour {#demo}
 
 The demo database is a separate SQLite file in the data directory. The tour only ever runs on it, and **Reset demo** restores it. Neither touches your own databases.

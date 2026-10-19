@@ -116,6 +116,25 @@ describe.skipIf(!enabled)('mutations on dev databases', () => {
         expect(await count()).toEqual(before)
       })
 
+      it('upserts by the key: inserts, then updates the same row', async () => {
+        const res = await driver.applyMutations(
+          plan([
+            { type: 'upsert', table: PAIRS, values: { a: 5, b: 6, note: 'first' } },
+            { type: 'upsert', table: PAIRS, values: { a: 5, b: 6, note: 'second' } },
+            { type: 'upsert', table: PAIRS, values: { a: 5, b: 7 } },
+          ]),
+        )
+        expect(res.map((r) => r.row)).toMatchObject([{ note: 'first' }, { note: 'second' }, { a: 5, b: 7, note: null }])
+      })
+
+      it('upserts an explicit id into an auto-increment / serial key', async () => {
+        const [res] = await driver.applyMutations(plan([{ type: 'upsert', table: TABLE, values: { id: 900, name: 'Imported' } }]))
+        expect(res!.row).toMatchObject({ id: 900, name: 'Imported' })
+        const [again] = await driver.applyMutations(plan([{ type: 'upsert', table: TABLE, values: { id: 900, name: 'Again' } }]))
+        expect(again!.row).toMatchObject({ id: 900, name: 'Again' })
+        await driver.applyMutations(plan([{ type: 'delete', table: TABLE, pk: { id: 900 } }]))
+      })
+
       it('reports a stale key', async () => {
         await expect(
           driver.applyMutations(plan([{ type: 'update', table: TABLE, pk: { id: 987654 }, values: { name: 'x' } }])),

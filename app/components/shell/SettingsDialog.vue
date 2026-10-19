@@ -84,6 +84,17 @@ function resetQuery() {
           <UiButton size="sm" variant="ghost" @click="resetQuery">{{ t('settings.reset') }}</UiButton>
         </div>
       </section>
+
+      <section data-settings-safety>
+        <h3 class="mb-2 text-xs font-medium uppercase tracking-wide text-fg-subtle">{{ t('settings.safety') }}</h3>
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-sm text-fg">{{ t('settings.doubleCheck') }}<HelpHint id="safety.doubleCheck" /></span>
+          <UiSwitch v-model="ui.doubleCheck" :label="''" data-double-check />
+        </div>
+        <p class="mt-1 text-xs text-fg-subtle">{{ t('settings.doubleCheckHint') }}</p>
+      </section>
+
+      <BackupWorkspaceBackup />
     </div>
   </UiDialog>
 </template>

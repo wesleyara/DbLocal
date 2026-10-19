@@ -362,6 +362,7 @@ watch(dirty, (value) => {
       :sql="pendingSql"
       :dialect="dialect"
       :prod="view?.environment === 'prod'"
+      :connection-name="view?.name"
       @confirm="runPending"
       @cancel="pendingSql = null"
     />

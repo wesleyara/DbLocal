@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaletteAction } from '~/components/shell/CommandPalette.vue'
+import type { ConnectionView } from '#shared/types/connection'
 import type { MenuItem } from '~/components/ui/DropdownMenu.vue'
 import { usePendingStore } from '~/stores/pending-changes'
 import { useSchemaStore } from '~/stores/schema'
@@ -110,9 +111,27 @@ function openRoutines() {
   void navigateTo(path)
 }
 
+/** Dump / restore of the open connection: its view is read when the dialog opens. */
+const backup = ref<{ connection: ConnectionView; mode: 'dump' | 'restore' } | null>(null)
+const backupOpen = (mode: 'dump' | 'restore') =>
+  computed({
+    get: () => backup.value?.mode === mode,
+    set: (v: boolean) => !v && (backup.value = null),
+  })
+const dumpOpen = backupOpen('dump')
+const restoreOpen = backupOpen('restore')
+async function openBackup(mode: 'dump' | 'restore') {
+  const id = connectionId.value
+  if (!id) return
+  backup.value = { connection: await $fetch<ConnectionView>(`/api/connections/${id}`), mode }
+}
+
 const moreItems = computed<MenuItem[]>(() => [
   { label: t('routines.open'), icon: 'lucide:square-function', onSelect: () => openRoutines() },
   { label: t('notes.open'), icon: 'lucide:notebook-pen', onSelect: () => openNotes() },
+  { label: '', separator: true },
+  { label: t('backup.dump.menu'), icon: 'lucide:download', onSelect: () => void openBackup('dump') },
+  { label: t('backup.restore.menu'), icon: 'lucide:upload', onSelect: () => void openBackup('restore') },
 ])
 
 /** Connection notes are one tab per connection (the note is the same in every schema): an open one is reused. */
@@ -148,6 +167,7 @@ watch(
 // ---- productivity: palette, global search, cheat sheet and the shortcut registry -----------------
 const paletteOpen = ref(false)
 const searchOpen = ref(false)
+const newTableOpen = ref(false)
 const cheatSheetOpen = ref(false)
 const { openCentre } = useHelp()
 const tour = useTourStore()
@@ -193,6 +213,9 @@ const paletteActions = computed<PaletteAction[]>(() => {
       { id: 'routines', label: t('palette.actions.openRoutines'), icon: 'lucide:square-function', keywords: 'functions procedures triggers', run: openRoutines },
       { id: 'erd', label: t('palette.actions.openErd'), icon: 'lucide:network', keywords: 'diagram', run: openErd },
       { id: 'notes', label: t('palette.actions.openNotes'), icon: 'lucide:notebook-pen', keywords: 'notes notas markdown', run: openNotes },
+      { id: 'dump', label: t('palette.actions.dump'), icon: 'lucide:download', keywords: 'backup dump export sql', run: () => void openBackup('dump') },
+      { id: 'restore', label: t('palette.actions.restore'), icon: 'lucide:upload', keywords: 'restore import sql backup', run: () => void openBackup('restore') },
+      { id: 'new-table', label: t('palette.actions.newTable'), icon: 'lucide:table-2', keywords: 'create table criar tabela', run: () => (newTableOpen.value = true) },
       { id: 'search', label: t('palette.actions.search'), icon: 'lucide:text-search', shortcut: 'global.search', run: () => (searchOpen.value = true) },
       { id: 'refresh', label: t('palette.actions.refreshSchema'), icon: 'lucide:refresh-cw', run: () => void refreshSchema() },
       { id: 'reload', label: t('palette.actions.reloadData'), icon: 'lucide:rotate-cw', shortcut: 'nav.reload', run: () => void pendingStore.version++ },
@@ -299,7 +322,7 @@ function onResize(e: PointerEvent) {
           <Icon name="lucide:network" class="size-3.5" />{{ t('erd.open') }}
         </UiButton>
         <UiDropdownMenu :items="moreItems">
-          <UiButton size="sm" data-open-more :aria-label="t('shell.more')">
+          <UiButton size="sm" data-open-more data-tour="more" :aria-label="t('shell.more')">
             {{ t('shell.more') }}<Icon name="lucide:chevron-down" class="size-3.5" />
           </UiButton>
         </UiDropdownMenu>
@@ -320,7 +343,7 @@ function onResize(e: PointerEvent) {
         <UiIconButton :icon="themeIcon" :label="t('shell.toggleTheme')" data-theme-toggle @click="toggleTheme" />
         <UiIconButton icon="lucide:circle-help" :label="t('help.open')" data-open-help @click="openCentre()" />
         <UiIconButton icon="lucide:keyboard" :label="t('shortcuts.title')" @click="cheatSheetOpen = true" />
-        <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings @click="settingsOpen = true" />
+        <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings data-tour="settings" @click="settingsOpen = true" />
       </div>
     </header>
 
@@ -342,6 +365,8 @@ function onResize(e: PointerEvent) {
           :key="connectionId"
           :connection-id="connectionId"
           :schema="schema"
+          :can-create="!!schema && !activeConnection?.readonly"
+          @new-table="newTableOpen = true"
         />
         <div
           class="absolute inset-y-0 -right-0.5 w-1 cursor-col-resize hover:bg-accent/50"
@@ -382,9 +407,14 @@ function onResize(e: PointerEvent) {
       :schema="schema"
       :actions="paletteActions"
     />
+    <SchemaNewTableDialog v-if="connectionId && schema" v-model:open="newTableOpen" :connection-id="connectionId" :schema="schema" />
     <ShellGlobalSearch v-if="connectionId && schema" v-model:open="searchOpen" :connection-id="connectionId" :schema="schema" />
     <ShellShortcutsDialog v-model:open="cheatSheetOpen" />
     <ShellSettingsDialog v-model:open="settingsOpen" />
+    <template v-if="backup">
+      <BackupDumpDialog v-model:open="dumpOpen" :connection="backup.connection" :schema="schema" />
+      <BackupRestoreDialog v-model:open="restoreOpen" :connection="backup.connection" :schema="schema" />
+    </template>
     <HelpDrawer />
     <HelpTourOverlay />
     <HelpTourCard v-if="tour.offered && route.path === '/' && !tour.active" floating />

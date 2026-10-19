@@ -68,6 +68,21 @@ const INDEXES_SQL = `
   WHERE TABLE_SCHEMA = ?
   ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`
 
+/**
+ * `COLUMN_DEFAULT` as an SQL expression, like Postgres and SQLite report it: a literal comes back
+ * bare (`user`), so it is quoted; an expression default (`DEFAULT_GENERATED`) stays as written,
+ * in parentheses unless it is `CURRENT_TIMESTAMP`. The structure editor writes it back as is.
+ */
+export function mysqlDefault(value: string | null, extra: string, kind: ColumnKind): string | null {
+  if (value === null) return null
+  if (extra.toLowerCase().includes('default_generated')) {
+    return /^(current_timestamp|now)(\(\d*\))?$/i.test(value) || /^\(.*\)$/.test(value) ? value : `(${value})`
+  }
+  if ((kind === 'number' || kind === 'boolean') && /^-?\d+(\.\d+)?$/.test(value)) return value
+  if (/^b'[01]*'$/.test(value)) return value
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`
+}
+
 /** Normalised kind from MySQL's `DATA_TYPE` and the full `COLUMN_TYPE`. `tinyint(1)` is a boolean. */
 export function mysqlKind(dataType: string, nativeType: string): ColumnKind {
   const t = dataType.toLowerCase()
@@ -109,13 +124,17 @@ export async function introspectMysql(query: QueryFn, database: string): Promise
     const cols: SchemaColumn[] = (columnsBy.get(t.name) ?? []).map((c) => {
       const kind = mysqlKind(c.data_type, c.native_type)
       const extra = c.extra.toLowerCase()
+      // `DEFAULT_GENERATED` only marks an expression default; computed columns say VIRTUAL / STORED GENERATED.
+      const computed = /\b(virtual|stored) generated\b/.test(extra)
       return {
         name: c.name,
         nativeType: c.native_type,
         kind,
         nullable: c.nullable === 'YES',
-        default: c.default_value,
-        isGenerated: extra.includes('generated') || extra.includes('auto_increment'),
+        default: mysqlDefault(c.default_value, c.extra, kind),
+        isGenerated: computed || extra.includes('auto_increment'),
+        identity: extra.includes('auto_increment') && !computed,
+        onUpdate: /on update (\S+)/i.exec(c.extra)?.[1] ?? null,
         isPrimaryKey: pk.includes(c.name),
         comment: c.comment || null,
         enumValues: kind === 'enum' ? parseEnumValues(c.native_type) : null,

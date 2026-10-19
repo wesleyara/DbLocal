@@ -147,4 +147,17 @@ SELECT o.id AS order_id, u.email, o.status, o.total, count(i.id) AS item_count
 FROM orders o JOIN users u ON u.id = o.user_id LEFT JOIN order_items i ON i.order_id = o.id
 GROUP BY o.id, u.email, o.status, o.total;
 
+CREATE TRIGGER trg_users_audit_insert AFTER INSERT ON users
+BEGIN
+  INSERT INTO audit_logs (entity_type, entity_id, action, payload, created_at)
+  VALUES ('user', NEW.id, 'create', json_object('email', NEW.email), datetime('now'));
+END;
+
+CREATE TRIGGER trg_orders_audit_status AFTER UPDATE OF status ON orders
+WHEN OLD.status <> NEW.status
+BEGIN
+  INSERT INTO audit_logs (entity_type, entity_id, action, payload, created_at)
+  VALUES ('order', NEW.id, 'update', json_object('from', OLD.status, 'to', NEW.status), datetime('now'));
+END;
+
 DROP TABLE _seq;

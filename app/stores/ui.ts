@@ -14,6 +14,12 @@ export const useUiStore = defineStore(
     const gridSql = ref(false)
     /** Grid toolbar: Advanced filters, Show SQL, History and Notes sit behind a toggle, collapsed by default. */
     const gridTools = ref(false)
+    /** Grid toolbar, right side: Import and Export sit behind a mirrored toggle, collapsed by default. */
+    /**
+     * Heavy actions (destructive SQL, restore, import that overwrites rows) ask for the connection
+     * name after the warning. Off: the warning alone. Writes on `prod` always ask for it.
+     */
+    const doubleCheck = ref(true)
 
     function setSidebarWidth(w: number) {
       sidebarWidth.value = Math.min(480, Math.max(200, Math.round(w)))
@@ -23,6 +29,6 @@ export const useUiStore = defineStore(
       recordPanelWidth.value = Math.min(900, Math.max(320, Math.round(w)))
     }
 
-    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridSql, gridTools, setSidebarWidth, setRecordPanelWidth }
+    return { theme, sidebarWidth, sidebarCollapsed, statusBar, recordPanelWidth, gridSql, gridTools, doubleCheck, setSidebarWidth, setRecordPanelWidth }
   },
 )

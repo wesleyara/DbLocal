@@ -911,7 +911,10 @@
     "queries": "Editor SQL",
     "rowLimit": "Limite de linhas por statement",
     "timeout": "Timeout por statement (segundos)",
-    "reset": "Restaurar padrões"
+    "reset": "Restaurar padrões",
+    "safety": "Segurança",
+    "doubleCheck": "Verificação dupla em ações pesadas",
+    "doubleCheckHint": "SQL destrutivo (DROP, TRUNCATE, DELETE ou UPDATE sem WHERE), restaurar um arquivo e um import que sobrescreve linhas pedem o nome da conexão depois do aviso. Desligado: só o aviso. Escritas em conexões prod sempre pedem o nome."
   },
   "home": {
     "tagline": "Navegue pelos seus bancos através das relações.",

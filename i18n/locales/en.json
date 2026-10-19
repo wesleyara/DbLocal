@@ -911,7 +911,10 @@
     "queries": "SQL editor",
     "rowLimit": "Row limit per statement",
     "timeout": "Timeout per statement (seconds)",
-    "reset": "Restore defaults"
+    "reset": "Restore defaults",
+    "safety": "Safety",
+    "doubleCheck": "Double check heavy actions",
+    "doubleCheckHint": "Destructive SQL (DROP, TRUNCATE, DELETE or UPDATE without WHERE), restoring a file and an import that overwrites rows ask you to type the connection name after the warning. Off: the warning alone. Writes on prod connections always ask for it."
   },
   "home": {
     "tagline": "Browse your databases through their relations.",

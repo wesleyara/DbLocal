@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SchemaTable } from '#shared/types/db'
 import type { MutationErrorItem, MutationOp, MutationResponse } from '#shared/types/mutations'
+import { useUiStore } from '~/stores/ui'
 import { editableKey } from '#shared/editable'
 import {
   autoMapping,
@@ -184,7 +185,7 @@ async function send(ops: MutationOp[], dryRun: boolean): Promise<MutationRespons
 function requestImport(): void {
   if (!canImport.value) return
   // Upsert overwrites the rows that share a key with the file: confirmed like a prod write.
-  if (props.environment === 'prod' || mode.value === 'upsert') {
+  if (props.environment === 'prod' || (mode.value === 'upsert' && useUiStore().doubleCheck)) {
     typedName.value = ''
     confirmProd.value = true
   } else void runImport()

@@ -2,6 +2,7 @@
 import type { StatementKind } from '#shared/types/query'
 import { assessScript, type StatementRisk } from '#shared/sql-risk'
 import { summarizeStatements, type SqlDialect } from '#shared/sql-split'
+import { useUiStore } from '~/stores/ui'
 
 /**
  * Lists the statements about to run and what each one does (reads, changes rows, changes the
@@ -19,8 +20,12 @@ const changes = computed(() => statements.value.some((s) => s.kind !== 'read'))
 const risks = computed(() => (props.sql ? assessScript(props.sql, props.dialect) : []))
 const riskOf = computed(() => new Map(risks.value.map((r) => [r.index, r])))
 const danger = computed(() => risks.value.some((r) => r.level === 'danger'))
-/** The name is typed when something destructive runs, or anything that changes a prod database. */
-const needsName = computed(() => !!props.connectionName && (danger.value || (props.prod && changes.value)))
+const ui = useUiStore()
+/**
+ * The name is typed when something destructive runs (unless the "double check" setting is off),
+ * and always for anything that changes a prod database.
+ */
+const needsName = computed(() => !!props.connectionName && ((danger.value && ui.doubleCheck) || (props.prod && changes.value)))
 const typed = ref('')
 const nameMatches = computed(() => !needsName.value || typed.value.trim() === props.connectionName)
 watch(

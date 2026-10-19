@@ -4,6 +4,7 @@ import type { RestoreEvent } from '#shared/types/backup'
 import { assessScript, type StatementRisk } from '#shared/sql-risk'
 import { splitStatements } from '#shared/sql-split'
 import { usePendingStore } from '~/stores/pending-changes'
+import { useUiStore } from '~/stores/ui'
 import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
 
@@ -76,8 +77,16 @@ const dangerous = computed(() => review.value?.risks.filter((r) => r.level === '
 const riskText = (r: StatementRisk) =>
   t(`query.risk.${r.kind}`, { target: r.target ?? '', object: r.object ? t(`query.risk.objects.${r.object.replace(' ', '_')}`, r.object) : '' })
 
+const ui = useUiStore()
+/** The name is asked unless the "double check" setting is off (always on prod). */
+const needsName = computed(() => ui.doubleCheck || prod.value)
 const canRun = computed(
-  () => !!review.value && !running.value && !readonly.value && review.value.statements > 0 && typedName.value.trim() === props.connection.name,
+  () =>
+    !!review.value &&
+    !running.value &&
+    !readonly.value &&
+    review.value.statements > 0 &&
+    (!needsName.value || typedName.value.trim() === props.connection.name),
 )
 const percent = computed(() => (progress.value && progress.value.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0))
 
@@ -182,7 +191,7 @@ async function restore(): Promise<void> {
             <p>{{ t('backup.restore.noUndo') }}</p>
           </div>
         </div>
-        <label class="grid gap-1 text-xs text-fg-muted">
+        <label v-if="needsName" class="grid gap-1 text-xs text-fg-muted">
           {{ t('query.risk.typeName', { name: connection.name }) }}
           <UiInput v-model="typedName" mono :placeholder="connection.name" autocomplete="off" :disabled="running" data-restore-confirm-name />
         </label>

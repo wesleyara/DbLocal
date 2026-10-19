@@ -41,7 +41,7 @@ Enquanto você digita, o resto da query mais recente desta conexão que começa 
 
 ### Comandos destrutivos {#destructive}
 
-`DROP`, `TRUNCATE`, `DELETE` ou `UPDATE` sem `WHERE` e `ALTER TABLE ... DROP` (coluna, chave ou constraint) sempre abrem a confirmação, qualquer que seja o **Alertar antes de rodar**, em qualquer conexão. Ela diz o que cada um destrói, e **Rodar** fica desligado até você digitar o nome da conexão. A mesma checagem vale para o editor de estrutura (remover tabela, remover coluna), para apagar uma função ou trigger e para a barra **Mostrar SQL** da tabela. O servidor recusa esses comandos sem a confirmação, então um script enviado por outro caminho não pula a checagem.
+`DROP`, `TRUNCATE`, `DELETE` ou `UPDATE` sem `WHERE` e `ALTER TABLE ... DROP` (coluna, chave ou constraint) sempre abrem a confirmação, qualquer que seja o **Alertar antes de rodar**, em qualquer conexão. Ela diz o que cada um destrói, e **Rodar** fica desligado até você digitar o nome da conexão (**Configurações → Segurança → Verificação dupla em ações pesadas**; desligada, fica só o aviso, exceto em escritas em `prod`). A mesma checagem vale para o editor de estrutura (remover tabela, remover coluna), para apagar uma função ou trigger e para a barra **Mostrar SQL** da tabela. O servidor recusa esses comandos sem a confirmação, então um script enviado por outro caminho não pula a checagem.
 
 > [!WARNING]
 > A checagem lê os comandos, não conhece seus dados: um `DELETE` com um `WHERE` que pega todas as linhas não é marcado. Faça backup antes de mudanças grandes.

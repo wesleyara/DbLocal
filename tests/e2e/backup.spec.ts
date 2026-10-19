@@ -100,6 +100,27 @@ test('a destructive restore script is spelled out and needs the right name', asy
   await expect(page.locator('[data-restore-run]')).toBeDisabled()
 })
 
+test('with the double check off in the settings, a restore needs no name', async ({ page }) => {
+  const ok = join(dir, 'ok.sql')
+  writeFileSync(ok, 'create table if not exists extra (id integer);\n')
+  await page.goto('/')
+  await hydrated(page)
+  await page.keyboard.press('Control+k')
+  await page.keyboard.type('settings')
+  await page.keyboard.press('Enter')
+  await page.locator('[data-double-check]').click()
+  await page.keyboard.press('Escape')
+  await page.locator('article', { hasText: 'E2E backup target' }).locator('[data-backup-menu]').click()
+  await page.getByRole('menuitem').nth(1).click()
+  await page.locator('[data-restore-file]').setInputFiles(ok)
+  await page.locator('[data-restore-review-run]').click()
+  await expect(page.locator('[data-restore-confirm-name]')).toHaveCount(0)
+  await page.locator('[data-restore-run]').click()
+  await expect(page.locator('[data-restore-done]')).toBeVisible()
+  // Back on for the other tests (the setting lives in localStorage).
+  await page.evaluate(() => localStorage.removeItem('dblocal-ui'))
+})
+
 test('exports the workspace from the settings', async ({ page }) => {
   await page.goto('/')
   await hydrated(page)

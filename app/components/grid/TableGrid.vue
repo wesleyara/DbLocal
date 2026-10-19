@@ -838,17 +838,6 @@ onMounted(() => state.start())
       </FilterBar>
 
       <div class="ml-auto flex items-center gap-1">
-        <UiDropdownMenu :items="dataItems">
-          <button
-            type="button"
-            class="inline-flex size-6 items-center justify-center rounded-md border border-border text-fg-muted hover:bg-surface hover:text-fg"
-            :aria-label="t('grid.more')"
-            :title="t('grid.more')"
-            data-more-data
-          >
-            <Icon name="lucide:ellipsis" class="size-3.5" />
-          </button>
-        </UiDropdownMenu>
         <button
           v-if="editable"
           type="button"
@@ -891,6 +880,17 @@ onMounted(() => state.start())
             </div>
           </div>
         </UiPopover>
+        <UiDropdownMenu :items="dataItems">
+          <button
+            type="button"
+            class="inline-flex size-6 items-center justify-center rounded-md border border-border text-fg-muted hover:bg-surface hover:text-fg"
+            :aria-label="t('grid.more')"
+            :title="t('grid.more')"
+            data-more-data
+          >
+            <Icon name="lucide:ellipsis" class="size-3.5" />
+          </button>
+        </UiDropdownMenu>
       </div>
     </div>
 

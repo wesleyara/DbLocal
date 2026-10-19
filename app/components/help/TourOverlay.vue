@@ -86,7 +86,13 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey, true)
 })
 
-const anchored = computed(() => !!rect.value && !!el.value)
+/**
+ * A target that fills most of the viewport (the grid) has no room around it: a popover on its top edge
+ * would be pushed off screen and clipped. Its card is shown at the bottom of the screen instead, over the
+ * spotlight, so the whole step stays readable.
+ */
+const oversized = computed(() => !!rect.value && (rect.value.height > window.innerHeight * 0.6 || rect.value.width > window.innerWidth * 0.9))
+const anchored = computed(() => !!rect.value && !!el.value && !oversized.value)
 const spotlight = computed(() =>
   rect.value ? { top: `${rect.value.top}px`, left: `${rect.value.left}px`, width: `${rect.value.width}px`, height: `${rect.value.height}px` } : null,
 )
@@ -124,7 +130,7 @@ const spotlight = computed(() =>
       </PopoverRoot>
 
       <!-- the element is not on screen (and the grace period is over): a centred card -->
-      <div v-else-if="!waiting" class="absolute inset-0 flex items-center justify-center p-4">
+      <div v-else-if="!waiting" class="absolute inset-0 flex justify-center p-4" :class="oversized ? 'items-end pb-16' : 'items-center'">
         <div
           class="pointer-events-auto w-80 rounded-lg border border-border bg-surface p-4 shadow-pop"
           role="dialog"

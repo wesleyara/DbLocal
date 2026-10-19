@@ -1,6 +1,8 @@
+import type { SqlDialect } from './sql-split'
+import { snippetsFor } from './sql-snippets'
 import type { RelationGraph, SchemaSnapshot } from './types/db'
 
-export type SuggestionKind = 'table' | 'column' | 'keyword' | 'function' | 'join'
+export type SuggestionKind = 'table' | 'column' | 'keyword' | 'function' | 'join' | 'snippet'
 
 export interface Suggestion {
   label: string
@@ -10,6 +12,10 @@ export interface Suggestion {
   detail?: string
   /** Lower sorts first. */
   rank: number
+  /** Snippets: the id of their description (`query.snippets.<id>`); `insert` is a snippet body. */
+  snippetId?: string
+  /** Characters before the cursor the insert replaces, when more than the current word. */
+  replace?: number
 }
 
 const KEYWORDS = [
@@ -50,9 +56,14 @@ export function tablesInScope(sql: string): Map<string, string> {
  * Suggestions at the end of `before` (the text up to the cursor). `full` is the whole script, so
  * tables referenced after the cursor still resolve aliases (`select u.| from users u`).
  */
-export function suggest(before: string, full: string, snapshot: SchemaSnapshot | null, graph: RelationGraph | null): Suggestion[] {
+export function suggest(
+  before: string,
+  full: string,
+  snapshot: SchemaSnapshot | null,
+  graph: RelationGraph | null,
+  dialect: SqlDialect = snapshot?.dialect ?? 'postgres',
+): Suggestion[] {
   const out: Suggestion[] = []
-  const dialect = snapshot?.dialect ?? 'postgres'
   const tables = snapshot?.tables ?? []
   const byName = new Map(tables.map((t) => [t.name, t]))
   const scope = tablesInScope(full)
@@ -93,6 +104,9 @@ export function suggest(before: string, full: string, snapshot: SchemaSnapshot |
     }
   }
 
+  for (const s of snippetsFor(before, dialect, snapshot)) {
+    out.push({ label: s.label, kind: 'snippet', insert: s.body, snippetId: s.id, replace: s.replace, rank: s.rank })
+  }
   for (const t of tables) out.push({ label: t.name, kind: 'table', detail: t.kind, rank: scope.has(t.name) ? 1 : 2 })
   const seen = new Set<string>()
   for (const real of new Set(scope.values())) {

@@ -121,7 +121,8 @@ export function splitStatements(text: string, dialect: SqlDialect): SqlStatement
       const word = text.slice(i, j).toLowerCase()
       meaningful = true
       if (compound === null && (dialect === 'sqlite' || dialect === 'mysql')) {
-        compound = COMPOUND_START.test(text.slice(start, Math.min(n, start + 160)))
+        // From the first word, so a comment before CREATE TRIGGER does not hide it.
+        compound = COMPOUND_START.test(text.slice(i, Math.min(n, i + 160)))
       }
       if (compound && word === 'begin') beginSeen = true
       lastWord = word
@@ -146,8 +147,20 @@ export function statementAt(statements: SqlStatement[], offset: number): SqlStat
   return found ?? statements[0] ?? null
 }
 
+/**
+ * Text of the statement being typed, from its start to the end of `before` (the text up to the
+ * cursor). Empty right after a `;`.
+ */
+export function statementPrefix(before: string, dialect: SqlDialect): string {
+  const last = splitStatements(before, dialect).at(-1)
+  if (!last) return before.trimStart()
+  const rest = before.slice(last.end)
+  const semi = rest.indexOf(';')
+  return semi === -1 ? before.slice(last.start) : rest.slice(semi + 1).trimStart()
+}
+
 /** Replaces leading comments and whitespace so the first keyword can be read. */
-function stripLeading(sql: string): string {
+export function stripLeading(sql: string): string {
   let s = sql
   for (;;) {
     const t = s.replace(/^[\s(]+/, '')

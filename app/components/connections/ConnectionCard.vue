@@ -2,7 +2,7 @@
 import type { ConnectionView } from '#shared/types/connection'
 
 const props = defineProps<{ connection: ConnectionView }>()
-const emit = defineEmits<{ open: []; edit: []; duplicate: []; delete: []; resetDemo: [] }>()
+const emit = defineEmits<{ open: []; edit: []; duplicate: []; delete: []; resetDemo: []; dump: []; restore: [] }>()
 const { t } = useI18n()
 const { date } = useFormat()
 
@@ -64,6 +64,14 @@ const where = computed(() =>
       <UiIconButton v-if="connection.demo" icon="lucide:rotate-ccw" :label="t('demo.reset')" size="sm" data-reset-demo @click="emit('resetDemo')" />
       <UiIconButton icon="lucide:pencil" :label="t('connections.edit')" size="sm" @click="emit('edit')" />
       <UiIconButton icon="lucide:copy" :label="t('connections.duplicate')" size="sm" @click="emit('duplicate')" />
+      <UiDropdownMenu
+        :items="[
+          { label: t('backup.dump.menu'), icon: 'lucide:download', onSelect: () => emit('dump') },
+          { label: t('backup.restore.menu'), icon: 'lucide:upload', onSelect: () => emit('restore') },
+        ]"
+      >
+        <UiIconButton icon="lucide:database-backup" :label="t('backup.menu')" size="sm" data-backup-menu />
+      </UiDropdownMenu>
       <UiIconButton icon="lucide:trash-2" :label="t('common.delete')" size="sm" @click="emit('delete')" />
     </footer>
   </article>

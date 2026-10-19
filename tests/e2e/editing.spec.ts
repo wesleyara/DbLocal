@@ -208,3 +208,34 @@ test('the record panel edits the same pending changes', async ({ page, request }
   await expect(page.locator('[data-pending-bar]')).toHaveCount(0)
   expect((await rows(request, ids.rw!, 'users'))[0]!.name).toBe('Ana Panel')
 })
+
+test('Import reads a CSV, lists invalid records and upserts the rest by key', async ({ page, request }) => {
+  await open(page, ids.rw!, 'users')
+  // Import sits in the right-hand More menu.
+  await page.locator('[data-more-data]').click()
+  await page.getByRole('menuitem', { name: 'Import' }).click()
+  const csv = 'ID;Name;active;born\n1;Ana Nova;sim;\n4;Dora;no;2001-02-03\n5;Eva;maybe;\n'
+  await page.locator('[data-import-file]').setInputFiles({ name: 'users.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })
+  await expect(page.locator('[data-import-count]')).toContainText('3')
+  await expect(page.locator('[data-import-invalid]')).toContainText('Record 3, active')
+  const run = page.locator('[data-import-run]')
+  await expect(run).toBeDisabled()
+  await page.locator('[data-import-skip-invalid]').click()
+  await expect(page.locator('[data-import-invalid]')).toContainText('will be skipped')
+  // Insert would collide with Ana's id; insert-or-update keeps her row and changes the name.
+  await page.locator('[data-import-mode] [role="combobox"]').click()
+  await page.getByRole('option', { name: /update/ }).click()
+  await run.click()
+  // Upsert overwrites rows: a warning, then the connection name.
+  await expect(page.locator('[data-import-upsert-warning]')).toBeVisible()
+  await page.locator('[data-prod-confirm]').fill('E2E rw')
+  await page.getByRole('dialog').last().getByRole('button', { name: /Import|Importar/ }).click()
+  await expect(page.locator('[data-import-dialog]')).toHaveCount(0)
+  const all = await rows(request, ids.rw!, 'users')
+  expect(all.map((r) => r.name)).toEqual(['Ana Nova', 'Bruno Lima', 'Carla Dias', 'Dora'])
+  expect(all[0]).toMatchObject({ email: 'ana@x.test' })
+  expect(all[3]).toMatchObject({ active: 0, born: '2001-02-03' })
+  await expect(cell(page, 3, 1)).toContainText('Dora')
+  // The sidebar counts the table again after the import.
+  await expect(page.locator('[data-row-key="users"]')).toContainText('4')
+})

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type * as Monaco from 'monaco-editor'
 import { format as formatSql } from 'sql-formatter'
+import { autosuggest } from '#shared/sql-autosuggest'
 import { suggest, type SuggestionKind } from '#shared/sql-completion'
-import { splitStatements, statementAt, type SqlDialect } from '#shared/sql-split'
+import { snippetPreview } from '#shared/sql-snippets'
+import { splitStatements, statementAt, statementPrefix, type SqlDialect } from '#shared/sql-split'
 import type { RelationGraph, SchemaSnapshot } from '#shared/types/db'
 
 const model = defineModel<string>({ required: true })
@@ -14,6 +16,8 @@ const props = defineProps<{
   errorLine?: number | null
   /** Shows the text without letting it be edited (definitions). */
   readOnly?: boolean
+  /** SQL the ghost-text suggestions come from, newest first; empty turns them off. */
+  history?: readonly string[]
 }>()
 const emit = defineEmits<{
   /** ⌘Enter: the selection, or the statement under the cursor. */
@@ -23,11 +27,13 @@ const emit = defineEmits<{
   save: []
 }>()
 
+const { t } = useI18n()
 const host = ref<HTMLElement | null>(null)
 const ready = ref(false)
 let monaco: typeof Monaco | null = null
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null
 let completion: Monaco.IDisposable | null = null
+let inline: Monaco.IDisposable | null = null
 let observer: MutationObserver | null = null
 let applying = false
 
@@ -89,6 +95,7 @@ const KIND_MAP: Record<SuggestionKind, keyof typeof Monaco.languages.CompletionI
   keyword: 'Keyword',
   function: 'Function',
   join: 'Snippet',
+  snippet: 'Snippet',
 }
 
 async function setup(): Promise<void> {
@@ -116,6 +123,7 @@ async function setup(): Promise<void> {
     padding: { top: 8 },
     quickSuggestions: { other: true, comments: false, strings: false },
     suggestOnTriggerCharacters: true,
+    inlineSuggest: { enabled: true },
     readOnly: props.readOnly,
     domReadOnly: props.readOnly,
   })
@@ -129,6 +137,10 @@ async function setup(): Promise<void> {
     window.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey, bubbles: true, cancelable: true }))
   editor.addCommand(KeyMod.CtrlCmd | KeyCode.KeyK, toApp('k'))
   editor.addCommand(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyF, toApp('f', true))
+  // zsh-autosuggestions keys: → takes the whole suggestion, ⌥→ the next word (Tab works too).
+  const inlineAction = (id: string) => () => editor!.trigger('keyboard', `editor.action.inlineSuggest.${id}`, {})
+  editor.addCommand(KeyCode.RightArrow, inlineAction('commit'), 'inlineSuggestionVisible && !editorHasSelection && !suggestWidgetVisible')
+  editor.addCommand(KeyMod.Alt | KeyCode.RightArrow, inlineAction('acceptNextWord'), 'inlineSuggestionVisible && !suggestWidgetVisible')
   editor.onDidChangeModelContent(() => {
     if (applying) return
     model.value = editor!.getValue()
@@ -140,18 +152,42 @@ async function setup(): Promise<void> {
       const before = doc.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
       const word = doc.getWordUntilPosition(position)
       const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn }
-      const items = suggest(before, doc.getValue(), props.snapshot, props.graph)
+      const items = suggest(before, doc.getValue(), props.snapshot, props.graph, props.dialect)
+      const { InsertAsSnippet } = monaco!.languages.CompletionItemInsertTextRule
       return {
-        suggestions: items.map((s) => ({
-          label: s.label,
-          kind: monaco!.languages.CompletionItemKind[KIND_MAP[s.kind]],
-          insertText: s.insert ?? s.label,
-          detail: s.detail,
-          sortText: `${String(s.rank + 1).padStart(2, '0')}${s.label}`,
-          range,
-        })),
+        suggestions: items.map((s) => {
+          const snippet = s.kind === 'snippet'
+          // Snippets started by several words (`create ta`) replace all of them, not just the last one.
+          const startColumn = snippet && s.replace ? Math.min(word.startColumn, position.column - s.replace) : word.startColumn
+          return {
+            label: s.label,
+            kind: monaco!.languages.CompletionItemKind[KIND_MAP[s.kind]],
+            insertText: s.insert ?? s.label,
+            insertTextRules: snippet ? InsertAsSnippet : undefined,
+            detail: snippet ? t(`query.snippets.${s.snippetId}`) : s.detail,
+            documentation: snippet ? { value: `\`\`\`sql\n${snippetPreview(s.insert ?? '')}\n\`\`\`` } : undefined,
+            filterText: snippet ? s.label : undefined,
+            sortText: `${String(s.rank + 1).padStart(2, '0')}${s.label}`,
+            range: { ...range, startColumn },
+          }
+        }),
       }
     },
+  })
+
+  inline = monaco.languages.registerInlineCompletionsProvider(language, {
+    provideInlineCompletions(doc, position) {
+      const history = props.history
+      if (!history?.length || props.readOnly || doc !== editor?.getModel()) return { items: [] }
+      // Only at the end of a line, like a shell prompt.
+      if (position.column !== doc.getLineMaxColumn(position.lineNumber)) return { items: [] }
+      const before = doc.getValueInRange({ startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column })
+      const rest = autosuggest(statementPrefix(before, props.dialect), history)
+      if (!rest) return { items: [] }
+      const at = { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column }
+      return { items: [{ insertText: rest, range: at }] }
+    },
+    disposeInlineCompletions() {},
   })
 
   observer = new MutationObserver(() => monaco?.editor.setTheme(defineTheme()))
@@ -214,6 +250,7 @@ onMounted(() => void setup())
 onBeforeUnmount(() => {
   observer?.disconnect()
   completion?.dispose()
+  inline?.dispose()
   editor?.dispose()
 })
 </script>

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Kysely } from 'kysely'
+import { assessScript } from '#shared/sql-risk'
 import { classifyStatement, splitStatements } from '#shared/sql-split'
 import {
   DEFAULT_QUERY_LIMIT,
@@ -105,6 +106,9 @@ export async function runRawQuery(db: Db, connectionId: string, req: QueryReques
   if (connection.environment === 'prod' && changes.length > 0 && !req.confirmWrites) {
     throw new ConfirmationRequiredError(kinds)
   }
+  // Destructive statements need the confirmation on every connection, not only on prod.
+  const risks = assessScript(req.sql, dialect).filter((r) => r.level === 'danger')
+  if (risks.length > 0 && !req.confirmWrites) throw new ConfirmationRequiredError(kinds, risks)
 
   const queryId = req.queryId ?? randomUUID()
   if (running.has(queryId)) throw new DriverError('constraint', 'A query with this id is already running')

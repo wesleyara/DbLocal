@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyStatement, splitStatements, statementAt } from './sql-split'
+import { classifyStatement, splitStatements, statementAt, statementPrefix } from './sql-split'
 
 const texts = (sql: string, d: Parameters<typeof splitStatements>[1] = 'postgres') =>
   splitStatements(sql, d).map((s) => s.sql)
@@ -43,6 +43,13 @@ describe('splitStatements', () => {
   it('keeps a trigger body in one statement', () => {
     const trg = `create trigger t after insert on a begin update b set x = 1; delete from c; end`
     expect(texts(`${trg}; select 1`, 'sqlite')).toEqual([trg, 'select 1'])
+  })
+
+  it('keeps a trigger body whole after a leading comment', () => {
+    const trg = `-- triggers\ncreate trigger t before update on a when new.x < 0 begin select raise(abort, 'no'); end`
+    expect(texts(`${trg}; select 1`, 'sqlite')).toEqual([trg, 'select 1'])
+    const fn = `/* routines */ CREATE FUNCTION f() RETURNS INT DETERMINISTIC BEGIN DECLARE x INT; SET x = 1; RETURN x; END`
+    expect(texts(`${fn}; select 1`, 'mysql')).toEqual([fn, 'select 1'])
   })
 
   it('reports offsets', () => {
@@ -94,5 +101,14 @@ describe('classifyStatement', () => {
     expect(k('set search_path to x')).toBe('other')
     expect(k('begin')).toBe('other')
     expect(k('')).toBe('other')
+  })
+})
+
+describe('statementPrefix', () => {
+  it('returns the statement being typed up to the cursor', () => {
+    expect(statementPrefix('select 1;\nselect * fr', 'postgres')).toBe('select * fr')
+    expect(statementPrefix('select 1; ', 'postgres')).toBe('')
+    expect(statementPrefix("select ';' from t ", 'postgres')).toBe("select ';' from t ")
+    expect(statementPrefix('', 'postgres')).toBe('')
   })
 })

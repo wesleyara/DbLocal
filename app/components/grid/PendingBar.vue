@@ -4,11 +4,13 @@ import { tokenizeSql } from '#shared/sql-tokens'
 import { useConnectionErrors } from '~/composables/useConnectionErrors'
 import { useToast } from '~/composables/useToast'
 import { usePendingStore } from '~/stores/pending-changes'
+import { useUiStore } from '~/stores/ui'
 
 /**
  * "N pending changes · Discard · Preview SQL · Save". Saving sends the whole batch of the tab in
- * one transaction; in `prod` the connection's name has to be typed first. A failed save keeps
- * every pending change and marks the row that caused it.
+ * one transaction. When it deletes rows (any connection, unless the "double check" setting is off)
+ * or writes to `prod`, a dialog says so and the connection's name has to be typed first. A failed save keeps every pending change and marks
+ * the row that caused it.
  */
 const props = defineProps<{
   connectionId: string
@@ -35,6 +37,8 @@ const confirmDiscard = ref(false)
 const confirmProd = ref(false)
 const typedName = ref('')
 const nameMatches = computed(() => typedName.value.trim() === props.connectionName)
+/** Rows the save deletes: shown in the confirmation, which they make mandatory. */
+const deletes = ref(0)
 
 function bodyOf(dryRun: boolean) {
   const { ops, targets } = pending.batch(props.tabId)
@@ -67,7 +71,8 @@ async function openPreview(): Promise<void> {
 
 function requestSave(): void {
   if (count.value === 0 || saving.value) return
-  if (props.environment === 'prod') {
+  deletes.value = pending.batch(props.tabId).ops.filter((op) => op.type === 'delete').length
+  if (props.environment === 'prod' || (deletes.value > 0 && useUiStore().doubleCheck)) {
     typedName.value = ''
     confirmProd.value = true
   } else void save()
@@ -175,8 +180,15 @@ function copyPreview(): void {
     </template>
   </UiDialog>
 
-  <UiDialog v-model:open="confirmProd" :title="t('edit.prodTitle')" :description="t('edit.prodBody', { count, name: connectionName })">
-    <UiInput v-model="typedName" mono :placeholder="connectionName" :aria-label="t('edit.prodType', { name: connectionName })" data-prod-confirm />
+  <UiDialog
+    v-model:open="confirmProd"
+    :title="environment === 'prod' ? t('edit.prodTitle') : t('edit.deleteTitle')"
+    :description="environment === 'prod' ? t('edit.prodBody', { count, name: connectionName }) : t('edit.deleteBody', { name: connectionName })"
+  >
+    <p v-if="deletes > 0" class="mb-3 flex items-center gap-2 rounded-md border border-danger/50 bg-danger-soft p-2 text-xs text-danger" role="alert" data-save-deletes>
+      <Icon name="lucide:triangle-alert" class="size-4 shrink-0" />{{ t('edit.deleteWarning', { count: deletes }, deletes) }}
+    </p>
+    <UiInput v-model="typedName" mono :placeholder="connectionName" :aria-label="t('edit.prodType', { name: connectionName })" data-autofocus data-prod-confirm @keydown.enter="nameMatches && save()" />
     <template #footer>
       <UiButton size="sm" variant="secondary" @click="confirmProd = false">{{ t('common.cancel') }}</UiButton>
       <UiButton size="sm" variant="danger" :disabled="!nameMatches" data-prod-save @click="save">{{ t('edit.save', { count }) }}</UiButton>

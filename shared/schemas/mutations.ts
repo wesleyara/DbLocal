@@ -11,6 +11,7 @@ const op: z.ZodType<MutationOp> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('insert'), table: name, values }),
   z.object({ type: z.literal('update'), table: name, pk: key, values }),
   z.object({ type: z.literal('delete'), table: name, pk: key }),
+  z.object({ type: z.literal('upsert'), table: name, values }),
 ]) as z.ZodType<MutationOp>
 
 /** Body of `POST /api/c/:id/mutations`. */

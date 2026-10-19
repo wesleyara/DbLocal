@@ -400,8 +400,7 @@
     "reloadTitle": "Read the rows from the database again (⌘R)",
     "notesToggle": "Notes",
     "hasNotes": "This table has notes",
-    "moreTools": "More tools",
-    "lessTools": "Fewer tools"
+    "more": "More"
   },
   "relations": {
     "orphan": "No matching record in {target}",
@@ -477,8 +476,8 @@
     "prodTitle": "Save to a production connection",
     "prodBody": "{count} change will be written to {name}. | {count} changes will be written to {name}.",
     "prodType": "Type {name} to confirm",
-    "deleteTitle": "Delete {count} row? | Delete {count} rows?",
-    "deleteBody": "The rows of {table} are marked for deletion and removed when you save.",
+    "deleteTitle": "Delete rows",
+    "deleteBody": "The save deletes rows from {name}.",
     "impactNone": "No other records reference these rows.",
     "impactCount": "{count} record | {count} records",
     "impactFailed": "Could not check what references these rows.",
@@ -508,7 +507,113 @@
       "required": "This column cannot be NULL."
     },
     "generate": "Generate {fn}",
-    "undoCell": "Undo this cell"
+    "undoCell": "Undo this cell",
+    "deleteWarning": "{count} row will be deleted permanently. | {count} rows will be deleted permanently."
+  },
+  "import": {
+    "button": "Import",
+    "title": "Import into {table}",
+    "description": "Rows from a CSV or JSON file are added to the table. Nothing is written until every row passes the checks.",
+    "choose": "Choose file",
+    "drop": "or drop a CSV or JSON file here",
+    "records": "{count} record | {count} records",
+    "format": "Format",
+    "delimiter": "Delimiter",
+    "delimiters": {
+      "comma": "Comma (,)",
+      "semicolon": "Semicolon (;)",
+      "tab": "Tab",
+      "pipe": "Pipe"
+    },
+    "parseErrors": {
+      "empty": "The file has no records.",
+      "json": "The file is not valid JSON.",
+      "jsonShape": "The JSON must be an array of objects, or one object per line.",
+      "csvQuote": "A quoted CSV value is never closed.",
+      "tooBig": "The file is larger than 50 MB.",
+      "read": "The file could not be read."
+    },
+    "mapping": "Columns",
+    "fileColumn": "File column",
+    "sample": "Sample",
+    "tableColumn": "Table column",
+    "skipColumn": "Do not import",
+    "mode": "Mode",
+    "modes": {
+      "insert": "Insert new rows",
+      "upsert": "Insert or update by {key}"
+    },
+    "emptyAsNull": "Empty cells are NULL",
+    "skipInvalid": "Skip invalid records",
+    "noMapping": "Map at least one column.",
+    "missing": "These columns need a value and are not mapped: {columns}",
+    "invalid": "{count} record has invalid values | {count} records have invalid values",
+    "willSkip": "{count} invalid record will be skipped | {count} invalid records will be skipped",
+    "cellError": "Record {row}, {column}: {message}",
+    "moreErrors": "and {count} more",
+    "cellErrors": {
+      "boolean": "Use true or false.",
+      "text": "Expects a single value, not an object."
+    },
+    "checking": "Checking {done} of {total}…",
+    "writing": "Importing {done} of {total}…",
+    "rowFailed": "Record {row}: {message}",
+    "partial": "{count} records were imported before the failure.",
+    "run": "Import {count} record | Import {count} records",
+    "done": "{count} record imported | {count} records imported",
+    "skipped": "{count} invalid record skipped | {count} invalid records skipped",
+    "prodBody": "{count} record will be written to {name}. | {count} records will be written to {name}.",
+    "upsertTitle": "Overwrite existing rows",
+    "upsertWarning": "Upsert overwrites the rows whose {key} is already in the table with the file's values."
+  },
+  "structure": {
+    "edit": "Edit structure",
+    "editTitle": "Edit {table}",
+    "tableName": "Table name",
+    "key": "Key",
+    "primaryKey": "Primary key",
+    "autoIncrement": "Auto-increment",
+    "identity": "identity",
+    "was": "was {name}",
+    "defaultPlaceholder": "SQL: 'text', 0, now()",
+    "addColumn": "Add column",
+    "removeColumn": "Remove column {name}",
+    "remove": "Remove",
+    "indexes": "Indexes",
+    "noIndexes": "No indexes.",
+    "addIndex": "Add index",
+    "foreignKeys": "Foreign keys",
+    "noForeignKeys": "No foreign keys.",
+    "fkColumn": "Column",
+    "fkTable": "References table",
+    "fkRefColumn": "Column",
+    "onDelete": "on delete {action}",
+    "onDeleteLabel": "On delete",
+    "onUpdateLabel": "On update",
+    "addForeignKey": "Add foreign key",
+    "review": "Review and run",
+    "rebuild": "SQLite cannot make this change with ALTER TABLE: the table is rebuilt (a new table, the rows copied, the old one dropped and the new one renamed), with its indexes and triggers, in one transaction.",
+    "dropTable": "Drop table",
+    "saved": "Structure changed",
+    "dropped": "Table {table} dropped",
+    "newTitle": "New table",
+    "newDescription": "Creates a table in {schema}. Review the SQL before it runs.",
+    "create": "Review and create",
+    "created": "Table {table} created",
+    "errors": {
+      "tableName": "Give the table a name.",
+      "noColumns": "A table needs at least one column.",
+      "columnName": "Every column needs a name.",
+      "duplicateColumn": "Column {column} appears twice.",
+      "type": "The type of {column} is empty or holds a ; or a comment.",
+      "default": "The default of {column} holds a ; or a comment.",
+      "indexColumns": "Index {name} needs a name and columns.",
+      "duplicateName": "{name} is used by two indexes or keys.",
+      "fkColumns": "Foreign key {name} needs columns and a target table.",
+      "unknownColumn": "{name} uses a column that is not in the table: {column}.",
+      "sqliteComputed": "This change needs a rebuild, and SQLite does not report the expression of the table's generated columns. Make it in the SQL editor.",
+      "tableExists": "A table named {name} already exists."
+    }
   },
   "query": {
     "new": "New query",
@@ -599,7 +704,67 @@
       "rows": "rows",
       "time": "time"
     },
-    "running": "Running…"
+    "running": "Running…",
+    "snippets": {
+      "createTable": "Table with id and timestamps",
+      "createTableFk": "Table with a foreign key to another table",
+      "createJunction": "Junction table for a many-to-many relation",
+      "createIndex": "Index on a column",
+      "createUniqueIndex": "Unique index on a column",
+      "createView": "View from a query",
+      "createEnum": "Enum type",
+      "addColumn": "Add a column",
+      "addForeignKey": "Add a foreign key (relation)",
+      "addUnique": "Add a unique constraint",
+      "renameColumn": "Rename a column",
+      "dropColumn": "Drop a column",
+      "dropTable": "Drop a table if it exists",
+      "insert": "Insert a row",
+      "update": "Update rows by key",
+      "delete": "Delete rows by key",
+      "upsert": "Insert or update on conflict",
+      "selectJoin": "Select with a join",
+      "cte": "Common table expression",
+      "transaction": "Transaction block",
+      "idColumn": "Auto-increment primary key column",
+      "timestamps": "created_at and updated_at columns",
+      "references": "Foreign key column",
+      "foreignKeyConstraint": "Foreign key constraint",
+      "primaryKeyConstraint": "Composite primary key",
+      "fkTo": "Foreign key column typed like the target key"
+    },
+    "historySuggestions": "History suggestions",
+    "risk": {
+      "title": "Destructive statements",
+      "heading": "This can destroy data or structure:",
+      "headingWarning": "This replaces existing objects:",
+      "noUndo": "It cannot be undone from DbLocal. Make a backup first if you may need the data.",
+      "typeName": "Type {name} to confirm",
+      "drop": "DROP {object} {target}: removes it and everything in it.",
+      "truncate": "TRUNCATE {target}: deletes every row.",
+      "deleteAll": "DELETE without WHERE on {target}: deletes every row.",
+      "updateAll": "UPDATE without WHERE on {target}: changes every row.",
+      "alterDrop": "ALTER TABLE {target} drops a column, key or constraint (and its data).",
+      "recreate": "{object} {target} is dropped and created again.",
+      "rebuild": "{target} is rebuilt: copied to a new table, then swapped in.",
+      "objects": {
+        "table": "TABLE",
+        "view": "VIEW",
+        "materialized_view": "MATERIALIZED VIEW",
+        "schema": "SCHEMA",
+        "database": "DATABASE",
+        "index": "INDEX",
+        "function": "FUNCTION",
+        "procedure": "PROCEDURE",
+        "trigger": "TRIGGER",
+        "type": "TYPE",
+        "sequence": "SEQUENCE",
+        "event": "EVENT",
+        "domain": "DOMAIN",
+        "extension": "EXTENSION"
+      }
+    },
+    "viewFull": "View in full"
   },
   "erd": {
     "unique": "Unique",
@@ -671,7 +836,10 @@
       "shortcuts": "Keyboard shortcuts",
       "signOut": "Sign out",
       "openNotes": "Open connection notes",
-      "openRoutines": "Open functions & triggers"
+      "openRoutines": "Open functions & triggers",
+      "newTable": "New table",
+      "dump": "Back up the connection (SQL dump)",
+      "restore": "Restore a SQL file"
     }
   },
   "shortcuts": {
@@ -711,7 +879,9 @@
       "runStatement": "Run the statement under the cursor",
       "runAll": "Run everything",
       "format": "Format SQL",
-      "help": "Open the help"
+      "help": "Open the help",
+      "acceptSuggestion": "Accept the history suggestion",
+      "acceptSuggestionWord": "Accept the next word of the suggestion"
     }
   },
   "search": {
@@ -744,7 +914,10 @@
     "queries": "SQL editor",
     "rowLimit": "Row limit per statement",
     "timeout": "Timeout per statement (seconds)",
-    "reset": "Restore defaults"
+    "reset": "Restore defaults",
+    "safety": "Safety",
+    "doubleCheck": "Double check heavy actions",
+    "doubleCheckHint": "Deleting rows in the grid, destructive SQL (DROP, TRUNCATE, DELETE or UPDATE without WHERE), restoring a file and an import that overwrites rows ask you to type the connection name after the warning. Off: the warning alone. Writes on prod connections always ask for it."
   },
   "home": {
     "tagline": "Browse your databases through their relations.",
@@ -826,6 +999,10 @@
         "prod": {
           "title": "Writing to prod",
           "text": "On a prod connection, saving asks you to type the connection name first."
+        },
+        "import": {
+          "title": "Importing a file",
+          "text": "Columns are matched by name. Each record is checked like a typed value; with “Insert or update” a record whose key already exists updates that row."
         }
       },
       "sql": {
@@ -840,6 +1017,10 @@
         "alertBeforeRun": {
           "title": "Alert before run",
           "text": "When ticked, every run first lists the statements and what each one does, and runs only after you confirm."
+        },
+        "historySuggestions": {
+          "title": "History suggestions",
+          "text": "While you type, the rest of a query you ran before shows in grey. → or Tab accepts it, ⌥→ takes one word."
         }
       },
       "erd": {
@@ -858,6 +1039,24 @@
         "overview": {
           "title": "Functions & triggers",
           "text": "Read, create, edit and delete the logic stored in the database. Every change shows the exact SQL and asks before running."
+        }
+      },
+      "structure": {
+        "edit": {
+          "title": "Editing the structure",
+          "text": "Changes become DDL that you review before it runs. Postgres and SQLite apply it in one transaction; MySQL commits each statement. A type change on a full table can take a while and lock it."
+        }
+      },
+      "safety": {
+        "doubleCheck": {
+          "title": "Double check",
+          "text": "Destructive actions list what they destroy and ask for the connection name. Off keeps only the warning."
+        }
+      },
+      "backup": {
+        "workspace": {
+          "title": "Workspace backup",
+          "text": "Exports DbLocal's own data. With a password, connection secrets travel encrypted with it; without one they stay behind."
         }
       }
     }
@@ -914,6 +1113,22 @@
       "edit": {
         "title": "Edit and save",
         "body": "Double-click a cell, type a value and press Enter. The change stays pending until you save with the bar at the bottom (Ctrl/⌘ + S), after previewing the SQL. This demo is safe to change."
+      },
+      "safety": {
+        "title": "Destructive actions ask twice",
+        "body": "Dropping a table, deleting rows or running DELETE without WHERE lists what will be lost and asks you to type the connection name. You can turn this off in Settings → Safety; the warning stays."
+      },
+      "structure": {
+        "title": "Edit the structure",
+        "body": "Structure shows columns, keys and relations. On editable tables, Edit structure changes columns, indexes and foreign keys: you review the generated SQL before it runs."
+      },
+      "routines": {
+        "title": "Functions and triggers",
+        "body": "In More, Functions & triggers lists the routines and triggers of the schema. This demo has two triggers that write to audit_logs; you can read, edit or delete them."
+      },
+      "backup": {
+        "title": "Backup",
+        "body": "Also in More: back up the schema to a .sql file (structure, data or both), copy a SQLite file, or restore a backup. Restore always asks for the connection name."
       },
       "sql": {
         "title": "The SQL editor",
@@ -1027,6 +1242,63 @@
     "copied": "Copied",
     "saved": "Done",
     "discardConfirm": "Discard the unsaved changes?",
-    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped."
+    "mysqlNotAtomic": "MySQL cannot undo DDL: editing drops the object and creates it again, so if the new definition fails it stays dropped.",
+    "discardTitle": "Discard changes?",
+    "keepEditing": "Keep editing",
+    "discard": "Discard"
+  },
+  "backup": {
+    "menu": "Backup",
+    "schema": "Schema",
+    "database": "Database",
+    "dump": {
+      "menu": "Dump to SQL…",
+      "title": "Back up {name}",
+      "description": "Download the schema as a .sql file that Restore (or the database client) can run again.",
+      "structure": "Structure (tables, indexes, views, routines, triggers)",
+      "data": "Data",
+      "pickTables": "Only some tables",
+      "pickHint": "Views and routines are left out when you pick tables.",
+      "run": "Download .sql",
+      "file": "Download .sqlite file",
+      "done": "Dump downloaded"
+    },
+    "restore": {
+      "menu": "Restore from SQL…",
+      "title": "Restore into {name}",
+      "description": "Run a .sql file, statement by statement. A DbLocal dump creates the tables, so restore it into an empty schema or database.",
+      "file": "SQL file",
+      "hint": "It stops at the first error; the statements that already ran stay.",
+      "readonly": "This connection is read-only: nothing can be restored.",
+      "run": "Restore",
+      "progress": "{done} of {total} statements",
+      "failedAt": "Statement {index} failed:",
+      "done": "Restore finished: {count} statements ran",
+      "review": "Review",
+      "reviewHeading": "{count} statement will run in {name} ({schema}). | {count} statements will run in {name} ({schema}).",
+      "prodWarning": "This is a production connection.",
+      "destructive": "{count} statement drops or deletes data: | {count} statements drop or delete data:",
+      "statementN": "#{n}",
+      "noUndo": "It cannot be undone from DbLocal. Back up the target first if it holds data."
+    },
+    "workspace": {
+      "title": "Workspace backup",
+      "description": "Connections, saved queries, notes, ERD layouts and grid settings, to move DbLocal to another machine.",
+      "password": "Password for the secrets",
+      "passwordHint": "Encrypts the connection passwords and keys. Leave it empty to export without them.",
+      "passwordShort": "Use at least 8 characters.",
+      "history": "Include the query history",
+      "export": "Export",
+      "passwordOfFile": "Password of this backup",
+      "noSecrets": "This backup has no secrets: server connections will ask for their passwords again.",
+      "mergeHint": "Items with the same id are replaced; everything else here is kept.",
+      "import": "Import",
+      "contents": "{connections} connections, {queries} saved queries",
+      "imported": "Workspace imported",
+      "result": "Imported {connections} connections and {queries} saved queries.",
+      "resultNoSecrets": " {count} need their password again.",
+      "wrongPassword": "Wrong password for this backup.",
+      "notBackup": "This file is not a DbLocal workspace backup."
+    }
   }
 }

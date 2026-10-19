@@ -48,6 +48,15 @@ const search = ref('')
 const formOpen = ref(false)
 const editing = ref<ConnectionView | null>(null)
 const pendingDelete = ref<ConnectionView | null>(null)
+const backup = ref<{ connection: ConnectionView; mode: 'dump' | 'restore' } | null>(null)
+const dumpOpen = computed({
+  get: () => backup.value?.mode === 'dump',
+  set: (v) => !v && (backup.value = null),
+})
+const restoreOpen = computed({
+  get: () => backup.value?.mode === 'restore',
+  set: (v) => !v && (backup.value = null),
+})
 const deleteOpen = computed({
   get: () => pendingDelete.value !== null,
   set: (v) => {
@@ -165,8 +174,14 @@ async function onSaved() {
         @duplicate="duplicate(c)"
         @delete="pendingDelete = c"
         @reset-demo="resetDemoOpen = true"
+        @dump="backup = { connection: c, mode: 'dump' }"
+        @restore="backup = { connection: c, mode: 'restore' }"
       />
     </div>
+    <template v-if="backup">
+      <BackupDumpDialog v-model:open="dumpOpen" :connection="backup.connection" />
+      <BackupRestoreDialog v-model:open="restoreOpen" :connection="backup.connection" />
+    </template>
 
     <UiDialog v-model:open="resetDemoOpen" :title="t('demo.resetTitle')" :description="t('demo.resetBody')">
       <template #footer>

@@ -42,3 +42,20 @@ Cada tabela tem uma coluna que representa um dos seus registros, como `name` ou 
 ## Atualizar o schema
 
 O DbLocal guarda o schema em memória para a navegação ser rápida. Depois de mudar o banco fora do DbLocal, clique em **Atualizar schema** na barra lateral.
+
+## Editando a estrutura {#editing-the-structure}
+
+**Structure** (na barra do grid) mostra as colunas, relações e triggers de uma tabela. Numa tabela de uma conexão que não é somente leitura, **Editar estrutura** vira um formulário:
+
+- **Colunas**: renomear, trocar o tipo (sugestões por banco, qualquer tipo pode ser digitado), NULL e o default, adicionar ou remover. O default é uma expressão SQL: `'texto'` com aspas, `0`, `now()`. A chave primária e as colunas identity ficam como estão.
+- **Índices** e **chaves estrangeiras**: remover um existente ou adicionar um novo (colunas, único; tabela e coluna de destino, `ON DELETE` / `ON UPDATE`).
+- **Nome da tabela**, e **Excluir tabela**.
+
+**Revisar e rodar** monta o DDL e mostra na confirmação antes de enviar qualquer coisa; ele passa pelo endpoint do editor SQL, então somente leitura, `prod` e histórico valem. Postgres e SQLite rodam o script em uma transação. O MySQL confirma cada comando sozinho, então uma falha no meio deixa os anteriores aplicados, e alterar uma coluna a reescreve inteira (`MODIFY`, mantendo auto-increment, `ON UPDATE` e o comentário).
+
+O `ALTER TABLE` do SQLite só renomeia e adiciona ou remove colunas simples. Para o resto (tipo, NULL ou default, chave estrangeira, uma restrição única escrita no `CREATE TABLE`) a tabela é recriada: uma tabela nova, as linhas copiadas, a antiga removida e a nova renomeada, com seus índices e triggers criados de novo, em uma transação. Tabelas com colunas geradas não podem ser recriadas assim.
+
+**Nova tabela** (o botão `+` na barra lateral, ou ⌘K) abre o mesmo formulário para uma tabela nova, começando com uma chave primária `id` auto-incremento.
+
+> [!WARNING]
+> Trocar o tipo de uma coluna numa tabela grande a reescreve e pode travá-la por um tempo. Valores que não convertem fazem o comando falhar.

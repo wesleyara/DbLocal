@@ -162,6 +162,7 @@ export async function introspectPostgres(query: QueryFn, schema: string): Promis
       nullable: c.nullable,
       default: c.default_expr,
       isGenerated: c.identity !== '' || c.generated !== '',
+      identity: c.identity === 'd' && c.generated === '',
       isPrimaryKey: pk.includes(c.name),
       comment: c.comment,
       enumValues: c.enum_values ?? null,

@@ -4,6 +4,36 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-19
+
+### Added
+- **grid:** move the More menu after Columns
+- **grid:** replace the import/export toggle with a More menu
+- **tour:** add steps for safety, structure editing, functions and backup
+- **grid:** ask for the connection name when a save deletes rows, following the double check setting
+- **settings:** toggle the double check of heavy actions
+- **safety:** double-check destructive actions with warnings and the connection name
+- **backup:** dump to SQL, restore SQL files, copy SQLite files and back up the workspace
+- **schema:** edit table structure and create tables from the UI
+- **grid:** collapse import and export behind a right-hand toolbar toggle
+- **grid:** import CSV and JSON files into a table
+- **mutations:** add upsert op and accept explicit identity values
+- **sql-editor:** add snippets and history autosuggestions
+- **routines:** sidebar groups, table triggers block and header more menu
+- **routines:** browse, create, edit and delete functions, procedures and triggers
+
+### Fixed
+- **ui:** polish routines, saved queries, tour and column type picker
+- **tour:** point the safety step at the settings button so its card stays on screen
+- **grid:** save row deletes without the extra name check
+- **backup:** fill the schema of the dump and restore dialogs when they open
+- **sql-split:** keep a BEGIN ... END body whole after a leading comment
+- **introspect:** report MySQL defaults as SQL and stop flagging expression defaults as generated
+- **grid:** soften skipped import errors and recount sidebar rows after writes
+
+### Changed
+- **routines:** drop functions and triggers groups from the sidebar
+
 ## [1.0.2] - 2026-10-17
 
 ### Added

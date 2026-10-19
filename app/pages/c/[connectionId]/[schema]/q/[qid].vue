@@ -4,6 +4,7 @@ import type { ExplainResponse } from '#shared/types/explain'
 import type { QueryResponse, StatementResult } from '#shared/types/query'
 import type { SavedQuery } from '#shared/types/saved-queries'
 import { resultColumn } from '#shared/result-columns'
+import { hasDanger } from '#shared/sql-risk'
 import { formatResult, type ExportFormat } from '#shared/export-format'
 import { useSchemaStore } from '~/stores/schema'
 import { useQueriesStore } from '~/stores/queries'
@@ -24,6 +25,7 @@ const store = useSchemaStore()
 const queries = useQueriesStore()
 queries.hydrate()
 const draft = queries.ensure(qid)
+const sqlHistory = useSqlHistory(id)
 
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, { key: `connection-${id}` })
 await store.ensure(id, schemaName).catch(() => {})
@@ -99,6 +101,7 @@ async function execute(sql: string, confirmWrites = false): Promise<void> {
     running.value = false
     queryId.value = null
     void sidePanel.value?.refresh()
+    void sqlHistory.refresh()
   }
 }
 
@@ -107,10 +110,13 @@ async function cancel(): Promise<void> {
   await $fetch(`/api/c/${id}/query/${queryId.value}/cancel`, { method: 'POST' }).catch(() => {})
 }
 
-/** Runs at once, or first shows what is about to run when "Alert before run" is on. */
+/**
+ * Runs at once, or first shows what is about to run: always for destructive statements (DROP,
+ * TRUNCATE, DELETE / UPDATE without WHERE, ...), and for everything when "Alert before run" is on.
+ */
 function request(sql: string): void {
   if (!sql.trim() || running.value) return
-  if (queries.alertBeforeRun) alertSql.value = sql
+  if (queries.alertBeforeRun || hasDanger(sql, dialect.value)) alertSql.value = sql
   else void execute(sql)
 }
 const runCurrent = (sql?: string) => request(sql ?? editor.value?.currentSql() ?? draft.sql)
@@ -282,6 +288,10 @@ const timeoutText = computed({
               <div class="flex items-center justify-between text-xs font-medium text-fg"><span>{{ t('query.settings') }}</span><HelpHint id="sql.limits" /></div>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.rowLimit') }}<UiInput v-model="limitText" type="number" mono /></label>
               <label class="grid gap-1 text-xs text-fg-muted">{{ t('query.timeoutSeconds') }}<UiInput v-model="timeoutText" type="number" mono /></label>
+              <div class="flex items-center justify-between">
+                <UiCheckbox v-model="queries.historySuggestions" class="text-xs! text-fg-muted" :label="t('query.historySuggestions')" data-history-suggestions />
+                <HelpHint id="sql.historySuggestions" />
+              </div>
             </div>
           </UiPopover>
           <UiIconButton icon="lucide:panel-right" :label="t('query.togglePanel')" size="sm" @click="showPanel = !showPanel" />
@@ -297,6 +307,7 @@ const timeoutText = computed({
             :snapshot="store.snapshot"
             :graph="store.graph"
             :error-line="errorLine"
+            :history="queries.historySuggestions ? sqlHistory.entries.value : []"
             @run="runCurrent"
             @run-all="runAll"
             @save="save"
@@ -424,6 +435,7 @@ const timeoutText = computed({
       :sql="alertSql"
       :dialect="dialect"
       :prod="view?.environment === 'prod'"
+      :connection-name="view?.name"
       @cancel="alertSql = null"
       @confirm="(sql) => { alertSql = null; void execute(sql, true) }"
     />

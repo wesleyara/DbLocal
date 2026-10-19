@@ -89,6 +89,14 @@ class SqliteDriver implements Driver {
     return routinesSqlite(<R>(sql: string) => Promise.resolve(this.run<R[]>(sql, (stmt) => stmt.all())), schema)
   }
 
+  async backupTo(path: string): Promise<void> {
+    try {
+      await this.db.backup(path)
+    } catch (err) {
+      throw mapSqliteError(err)
+    }
+  }
+
   async readRows(plan: RowsPlan): Promise<Record<string, unknown>[]> {
     const q = compileRows(plan)
     return this.run<Record<string, unknown>[]>(q.sql, (stmt) => stmt.all(...bind(q.parameters)))

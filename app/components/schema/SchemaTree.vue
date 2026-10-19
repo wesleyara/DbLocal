@@ -5,7 +5,8 @@ import { usePendingStore } from '~/stores/pending-changes'
 import { useWorkspaceStore } from '~/stores/workspace'
 import type { MenuItem } from '../ui/DropdownMenu.vue'
 
-const props = defineProps<{ connectionId: string; schema?: string }>()
+const props = defineProps<{ connectionId: string; schema?: string; canCreate?: boolean }>()
+const emit = defineEmits<{ newTable: [] }>()
 const { t } = useI18n()
 const { number: formatNumber } = useFormat()
 const { message } = useConnectionErrors()
@@ -248,6 +249,7 @@ function cardinalityLabel(c: keyof typeof CARDINALITY_KEY): string {
       <UiInput v-model="query" type="search" :placeholder="t('schemaTree.filter')" :aria-label="t('schemaTree.filter')" class="h-6" />
       <UiIconButton icon="lucide:refresh-cw" :label="t('schemaTree.refresh')" size="sm" :disabled="store.loading" @click="refresh" />
       <UiIconButton icon="lucide:link-2" :label="t('schemaTree.addVirtual')" size="sm" @click="addOpen = true" />
+      <UiIconButton v-if="canCreate" icon="lucide:square-plus" :label="t('structure.newTitle')" size="sm" data-new-table @click="emit('newTable')" />
     </div>
 
     <p v-if="store.error && !connectError" class="px-2 pt-2 text-xs text-danger" role="alert">{{ message(store.error) }}</p>

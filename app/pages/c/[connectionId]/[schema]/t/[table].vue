@@ -3,7 +3,7 @@ import type { ConnectionView } from '#shared/types/connection'
 import type { DbTrigger } from '#shared/types/routines'
 import { useRoutinesStore } from '~/stores/routines'
 import { useSchemaStore } from '~/stores/schema'
-import TableStructure from '~/components/schema/TableStructure.vue'
+import StructureDialog from '~/components/schema/StructureDialog.vue'
 import TableGrid from '~/components/grid/TableGrid.vue'
 import RecordPanel from '~/components/record/RecordPanel.vue'
 import { decodeRecord } from '#shared/nav-url'
@@ -100,9 +100,19 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
         <TableGrid :key="table.name" :connection-id="id" :schema="schemaName" :table="table" :connection="view" :has-notes="note.hasContent.value" @structure="structureOpen = true" @history="historyOpen = true" @notes="notesOpen = true" />
       </div>
 
-      <UiDialog v-model:open="structureOpen" wide :title="t('tableView.structureTitle', { table: table.name })">
-        <TableStructure :table="table" :outgoing="node?.outgoing ?? []" :incoming="node?.incoming ?? []" :triggers="tableTriggers" @open-trigger="openTrigger" />
-      </UiDialog>
+      <StructureDialog
+        :key="table.name"
+        v-model:open="structureOpen"
+        :connection-id="id"
+        :schema="schemaName"
+        :table="table"
+        :outgoing="node?.outgoing ?? []"
+        :incoming="node?.incoming ?? []"
+        :triggers="tableTriggers"
+        :editable="table.kind === 'table' && !!view && !view.readonly && !view.readonlyGlobal"
+        :prod="view?.environment === 'prod'"
+        @open-trigger="openTrigger"
+      />
       <QueryHistoryDialog v-model:open="historyOpen" :connection-id="id" :schema="schemaName" :table="table.name" />
       <NotesTableNotesDialog
         v-model:open="notesOpen"

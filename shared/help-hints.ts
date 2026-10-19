@@ -26,6 +26,7 @@ export const HELP_HINTS = {
   'erd.layout': { slug: 'erd', anchor: 'layout' },
   'notes.overview': { slug: 'notes', anchor: 'writing' },
   'routines.overview': { slug: 'routines', anchor: 'safety' },
+  'structure.edit': { slug: 'schema-browser', anchor: 'editing-the-structure' },
 } as const satisfies Record<string, HelpHintDef>
 
 export type HelpHintId = keyof typeof HELP_HINTS

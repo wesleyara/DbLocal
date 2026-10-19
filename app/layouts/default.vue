@@ -148,6 +148,7 @@ watch(
 // ---- productivity: palette, global search, cheat sheet and the shortcut registry -----------------
 const paletteOpen = ref(false)
 const searchOpen = ref(false)
+const newTableOpen = ref(false)
 const cheatSheetOpen = ref(false)
 const { openCentre } = useHelp()
 const tour = useTourStore()
@@ -193,6 +194,7 @@ const paletteActions = computed<PaletteAction[]>(() => {
       { id: 'routines', label: t('palette.actions.openRoutines'), icon: 'lucide:square-function', keywords: 'functions procedures triggers', run: openRoutines },
       { id: 'erd', label: t('palette.actions.openErd'), icon: 'lucide:network', keywords: 'diagram', run: openErd },
       { id: 'notes', label: t('palette.actions.openNotes'), icon: 'lucide:notebook-pen', keywords: 'notes notas markdown', run: openNotes },
+      { id: 'new-table', label: t('palette.actions.newTable'), icon: 'lucide:table-2', keywords: 'create table criar tabela', run: () => (newTableOpen.value = true) },
       { id: 'search', label: t('palette.actions.search'), icon: 'lucide:text-search', shortcut: 'global.search', run: () => (searchOpen.value = true) },
       { id: 'refresh', label: t('palette.actions.refreshSchema'), icon: 'lucide:refresh-cw', run: () => void refreshSchema() },
       { id: 'reload', label: t('palette.actions.reloadData'), icon: 'lucide:rotate-cw', shortcut: 'nav.reload', run: () => void pendingStore.version++ },
@@ -342,6 +344,8 @@ function onResize(e: PointerEvent) {
           :key="connectionId"
           :connection-id="connectionId"
           :schema="schema"
+          :can-create="!!schema && !activeConnection?.readonly"
+          @new-table="newTableOpen = true"
         />
         <div
           class="absolute inset-y-0 -right-0.5 w-1 cursor-col-resize hover:bg-accent/50"
@@ -382,6 +386,7 @@ function onResize(e: PointerEvent) {
       :schema="schema"
       :actions="paletteActions"
     />
+    <SchemaNewTableDialog v-if="connectionId && schema" v-model:open="newTableOpen" :connection-id="connectionId" :schema="schema" />
     <ShellGlobalSearch v-if="connectionId && schema" v-model:open="searchOpen" :connection-id="connectionId" :schema="schema" />
     <ShellShortcutsDialog v-model:open="cheatSheetOpen" />
     <ShellSettingsDialog v-model:open="settingsOpen" />

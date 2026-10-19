@@ -564,6 +564,55 @@
     "skipped": "{count} registro inválido pulado | {count} registros inválidos pulados",
     "prodBody": "{count} registro será gravado em {name}. | {count} registros serão gravados em {name}."
   },
+  "structure": {
+    "edit": "Editar estrutura",
+    "editTitle": "Editar {table}",
+    "tableName": "Nome da tabela",
+    "key": "Chave",
+    "primaryKey": "Chave primária",
+    "autoIncrement": "Auto-incremento",
+    "identity": "identity",
+    "was": "era {name}",
+    "defaultPlaceholder": "SQL: 'texto', 0, now()",
+    "addColumn": "Adicionar coluna",
+    "removeColumn": "Remover coluna {name}",
+    "remove": "Remover",
+    "indexes": "Índices",
+    "noIndexes": "Nenhum índice.",
+    "addIndex": "Adicionar índice",
+    "foreignKeys": "Chaves estrangeiras",
+    "noForeignKeys": "Nenhuma chave estrangeira.",
+    "fkColumn": "Coluna",
+    "fkTable": "Referencia a tabela",
+    "fkRefColumn": "Coluna",
+    "onDelete": "on delete {action}",
+    "onDeleteLabel": "Ao excluir",
+    "onUpdateLabel": "Ao atualizar",
+    "addForeignKey": "Adicionar chave estrangeira",
+    "review": "Revisar e rodar",
+    "rebuild": "O SQLite não faz essa mudança com ALTER TABLE: a tabela é recriada (uma tabela nova, as linhas copiadas, a antiga removida e a nova renomeada), com seus índices e triggers, em uma transação.",
+    "dropTable": "Excluir tabela",
+    "saved": "Estrutura alterada",
+    "dropped": "Tabela {table} excluída",
+    "newTitle": "Nova tabela",
+    "newDescription": "Cria uma tabela em {schema}. Revise o SQL antes de rodar.",
+    "create": "Revisar e criar",
+    "created": "Tabela {table} criada",
+    "errors": {
+      "tableName": "Dê um nome à tabela.",
+      "noColumns": "Uma tabela precisa de ao menos uma coluna.",
+      "columnName": "Toda coluna precisa de um nome.",
+      "duplicateColumn": "A coluna {column} aparece duas vezes.",
+      "type": "O tipo de {column} está vazio ou tem um ; ou um comentário.",
+      "default": "O default de {column} tem um ; ou um comentário.",
+      "indexColumns": "O índice {name} precisa de nome e colunas.",
+      "duplicateName": "{name} é usado por dois índices ou chaves.",
+      "fkColumns": "A chave estrangeira {name} precisa de colunas e de uma tabela de destino.",
+      "unknownColumn": "{name} usa uma coluna que não está na tabela: {column}.",
+      "sqliteComputed": "Essa mudança precisa recriar a tabela, e o SQLite não informa a expressão das colunas geradas dela. Faça pelo editor SQL.",
+      "tableExists": "Já existe uma tabela chamada {name}."
+    }
+  },
   "query": {
     "new": "Nova query",
     "untitled": "Query sem nome",
@@ -754,7 +803,8 @@
       "shortcuts": "Atalhos de teclado",
       "signOut": "Sair",
       "openNotes": "Abrir notas da conexão",
-      "openRoutines": "Abrir funções e triggers"
+      "openRoutines": "Abrir funções e triggers",
+      "newTable": "Nova tabela"
     }
   },
   "shortcuts": {
@@ -951,6 +1001,12 @@
         "overview": {
           "title": "Funções e triggers",
           "text": "Veja, crie, edite e apague a lógica guardada no banco. Toda alteração mostra o SQL exato e pergunta antes de rodar."
+        }
+      },
+      "structure": {
+        "edit": {
+          "title": "Editar a estrutura",
+          "text": "As mudanças viram DDL que você revisa antes de rodar. Postgres e SQLite aplicam tudo em uma transação; o MySQL confirma cada comando. Trocar o tipo numa tabela cheia pode demorar e travá-la."
         }
       }
     }

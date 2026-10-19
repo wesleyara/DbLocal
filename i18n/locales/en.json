@@ -564,6 +564,55 @@
     "skipped": "{count} invalid record skipped | {count} invalid records skipped",
     "prodBody": "{count} record will be written to {name}. | {count} records will be written to {name}."
   },
+  "structure": {
+    "edit": "Edit structure",
+    "editTitle": "Edit {table}",
+    "tableName": "Table name",
+    "key": "Key",
+    "primaryKey": "Primary key",
+    "autoIncrement": "Auto-increment",
+    "identity": "identity",
+    "was": "was {name}",
+    "defaultPlaceholder": "SQL: 'text', 0, now()",
+    "addColumn": "Add column",
+    "removeColumn": "Remove column {name}",
+    "remove": "Remove",
+    "indexes": "Indexes",
+    "noIndexes": "No indexes.",
+    "addIndex": "Add index",
+    "foreignKeys": "Foreign keys",
+    "noForeignKeys": "No foreign keys.",
+    "fkColumn": "Column",
+    "fkTable": "References table",
+    "fkRefColumn": "Column",
+    "onDelete": "on delete {action}",
+    "onDeleteLabel": "On delete",
+    "onUpdateLabel": "On update",
+    "addForeignKey": "Add foreign key",
+    "review": "Review and run",
+    "rebuild": "SQLite cannot make this change with ALTER TABLE: the table is rebuilt (a new table, the rows copied, the old one dropped and the new one renamed), with its indexes and triggers, in one transaction.",
+    "dropTable": "Drop table",
+    "saved": "Structure changed",
+    "dropped": "Table {table} dropped",
+    "newTitle": "New table",
+    "newDescription": "Creates a table in {schema}. Review the SQL before it runs.",
+    "create": "Review and create",
+    "created": "Table {table} created",
+    "errors": {
+      "tableName": "Give the table a name.",
+      "noColumns": "A table needs at least one column.",
+      "columnName": "Every column needs a name.",
+      "duplicateColumn": "Column {column} appears twice.",
+      "type": "The type of {column} is empty or holds a ; or a comment.",
+      "default": "The default of {column} holds a ; or a comment.",
+      "indexColumns": "Index {name} needs a name and columns.",
+      "duplicateName": "{name} is used by two indexes or keys.",
+      "fkColumns": "Foreign key {name} needs columns and a target table.",
+      "unknownColumn": "{name} uses a column that is not in the table: {column}.",
+      "sqliteComputed": "This change needs a rebuild, and SQLite does not report the expression of the table's generated columns. Make it in the SQL editor.",
+      "tableExists": "A table named {name} already exists."
+    }
+  },
   "query": {
     "new": "New query",
     "untitled": "Untitled query",
@@ -754,7 +803,8 @@
       "shortcuts": "Keyboard shortcuts",
       "signOut": "Sign out",
       "openNotes": "Open connection notes",
-      "openRoutines": "Open functions & triggers"
+      "openRoutines": "Open functions & triggers",
+      "newTable": "New table"
     }
   },
   "shortcuts": {
@@ -951,6 +1001,12 @@
         "overview": {
           "title": "Functions & triggers",
           "text": "Read, create, edit and delete the logic stored in the database. Every change shows the exact SQL and asks before running."
+        }
+      },
+      "structure": {
+        "edit": {
+          "title": "Editing the structure",
+          "text": "Changes become DDL that you review before it runs. Postgres and SQLite apply it in one transaction; MySQL commits each statement. A type change on a full table can take a while and lock it."
         }
       }
     }

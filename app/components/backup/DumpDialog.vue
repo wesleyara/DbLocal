@@ -12,7 +12,7 @@ const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const toast = useToast()
 
-const defaultSchema = computed(() => props.connection.defaultSchema ?? (props.connection.dialect === 'postgres' ? 'public' : props.connection.dialect === 'sqlite' ? 'main' : (props.connection.database ?? '')))
+const defaultSchema = computed(() => props.connection.defaultSchema || (props.connection.dialect === 'postgres' ? 'public' : props.connection.dialect === 'sqlite' ? 'main' : (props.connection.database || '')))
 const schemaName = ref('')
 const structure = ref(true)
 const data = ref(true)
@@ -24,13 +24,18 @@ const busy = ref<'dump' | 'file' | null>(null)
 const failure = ref<string | null>(null)
 const isSqliteFile = computed(() => props.connection.dialect === 'sqlite' && !!props.connection.filePath)
 
-watch(open, (value) => {
-  if (!value) return
-  schemaName.value = props.schema || defaultSchema.value
-  pick.value = false
-  tables.value = null
-  failure.value = null
-})
+// Immediate: the dialog is often mounted already open.
+watch(
+  open,
+  (value) => {
+    if (!value) return
+    schemaName.value = props.schema || defaultSchema.value
+    pick.value = false
+    tables.value = null
+    failure.value = null
+  },
+  { immediate: true },
+)
 
 async function loadTables(): Promise<void> {
   loadingTables.value = true

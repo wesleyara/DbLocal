@@ -18,7 +18,7 @@ const { t } = useI18n()
 const { number } = useFormat()
 const toast = useToast()
 
-const defaultSchema = computed(() => props.connection.defaultSchema ?? (props.connection.dialect === 'postgres' ? 'public' : props.connection.dialect === 'sqlite' ? 'main' : (props.connection.database ?? '')))
+const defaultSchema = computed(() => props.connection.defaultSchema || (props.connection.dialect === 'postgres' ? 'public' : props.connection.dialect === 'sqlite' ? 'main' : (props.connection.database || '')))
 const readonly = computed(() => props.connection.readonly || props.connection.readonlyGlobal)
 const prod = computed(() => props.connection.environment === 'prod')
 const schemaName = ref('')
@@ -34,15 +34,20 @@ const result = ref<Extract<RestoreEvent, { type: 'done' }> | null>(null)
 const failure = ref<string | null>(null)
 let controller: AbortController | null = null
 
-watch(open, (value) => {
-  if (value) {
-    schemaName.value = props.schema || defaultSchema.value
-    file.value = null
-    typedName.value = ''
-    review.value = null
-    reset()
-  } else controller?.abort()
-})
+// Immediate: the dialog is often mounted already open.
+watch(
+  open,
+  (value) => {
+    if (value) {
+      schemaName.value = props.schema || defaultSchema.value
+      file.value = null
+      typedName.value = ''
+      review.value = null
+      reset()
+    } else controller?.abort()
+  },
+  { immediate: true },
+)
 function reset(): void {
   progress.value = null
   error.value = null

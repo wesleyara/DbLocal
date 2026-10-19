@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { buildRelationGraph } from '../../schema/relation-graph'
 import { parseEnumValues, referentialAction, type QueryFn } from './common'
-import { mysqlKind } from './mysql'
+import { mysqlDefault, mysqlKind } from './mysql'
 import { pgKind } from './postgres'
 import { pgTriggerKind, routinesSqlite } from './routines'
 import { introspectSqlite, sqliteKind } from './sqlite'
@@ -68,6 +68,16 @@ describe('kind mapping', () => {
     expect(sqliteKind('DATETIME')).toBe('datetime')
     expect(sqliteKind('DATE')).toBe('date')
     expect(sqliteKind('')).toBe('other')
+  })
+
+  it('writes MySQL defaults as SQL expressions', () => {
+    expect(mysqlDefault('user', '', 'string')).toBe("'user'")
+    expect(mysqlDefault("it's", '', 'string')).toBe("'it''s'")
+    expect(mysqlDefault('0', '', 'boolean')).toBe('0')
+    expect(mysqlDefault('5', '', 'string')).toBe("'5'")
+    expect(mysqlDefault('CURRENT_TIMESTAMP(3)', 'DEFAULT_GENERATED', 'datetime')).toBe('CURRENT_TIMESTAMP(3)')
+    expect(mysqlDefault('uuid()', 'DEFAULT_GENERATED', 'string')).toBe('(uuid())')
+    expect(mysqlDefault(null, '', 'string')).toBeNull()
   })
 
   it('maps MySQL types, treating tinyint(1) as boolean', () => {

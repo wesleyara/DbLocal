@@ -343,7 +343,7 @@ function onResize(e: PointerEvent) {
         <UiIconButton :icon="themeIcon" :label="t('shell.toggleTheme')" data-theme-toggle @click="toggleTheme" />
         <UiIconButton icon="lucide:circle-help" :label="t('help.open')" data-open-help @click="openCentre()" />
         <UiIconButton icon="lucide:keyboard" :label="t('shortcuts.title')" @click="cheatSheetOpen = true" />
-        <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings @click="settingsOpen = true" />
+        <UiIconButton icon="lucide:settings" :label="t('settings.title')" data-open-settings data-tour="settings" @click="settingsOpen = true" />
       </div>
     </header>
 

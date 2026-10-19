@@ -1,8 +1,6 @@
 -- DbLocal dev dataset (MySQL 8). Same model as postgres.sql / sqlite.sql.
 SET FOREIGN_KEY_CHECKS = 0;
 DROP VIEW IF EXISTS order_summaries;
-DROP FUNCTION IF EXISTS order_total;
-DROP PROCEDURE IF EXISTS archive_audit_logs;
 DROP TABLE IF EXISTS audit_logs, order_items, shipments, orders, product_tags, tags, products, categories, profiles, users, _seq;
 SET FOREIGN_KEY_CHECKS = 1;
 SET SESSION cte_max_recursion_depth = 100000;
@@ -154,27 +152,3 @@ FROM orders o JOIN users u ON u.id = o.user_id LEFT JOIN order_items i ON i.orde
 GROUP BY o.id, u.email, o.status, o.total;
 
 DROP TABLE _seq;
-
--- Stored logic, for the functions & triggers view.
-DELIMITER //
-CREATE FUNCTION order_total(p_order_id INT) RETURNS DECIMAL(12,2)
-READS SQL DATA
-COMMENT 'Sum of the items of an order'
-BEGIN
-  RETURN (SELECT COALESCE(SUM(quantity * unit_price), 0) FROM order_items WHERE order_id = p_order_id);
-END//
-
-CREATE PROCEDURE archive_audit_logs(IN p_before DATETIME)
-BEGIN
-  DELETE FROM audit_logs WHERE created_at < p_before;
-END//
-
-CREATE TRIGGER products_price_check
-BEFORE UPDATE ON products
-FOR EACH ROW
-BEGIN
-  IF NEW.price < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'price cannot be negative';
-  END IF;
-END//
-DELIMITER ;

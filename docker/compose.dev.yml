@@ -17,8 +17,6 @@ services:
 
   mysql:
     image: mysql:8.4
-    # Lets the non-root dev user create the seed's functions and triggers with binary logging on.
-    command: ['--log-bin-trust-function-creators=1']
     environment:
       MYSQL_ROOT_PASSWORD: dblocal
       MYSQL_DATABASE: dblocal_dev

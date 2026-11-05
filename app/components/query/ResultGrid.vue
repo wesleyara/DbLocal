@@ -2,6 +2,9 @@
 import type { RelationRef, SchemaColumn } from '#shared/types/db'
 import { encodeRecord, encodeScope, tablePath } from '#shared/nav-url'
 import { sourceTableOf } from '#shared/sql-source'
+import { editableKey } from '#shared/editable'
+import { fkHasNull } from '#shared/fk'
+import { usePendingStore } from '~/stores/pending-changes'
 import { rowKey, useRelationData } from '~/composables/useRelationData'
 import { useSchemaStore } from '~/stores/schema'
 import { useWorkspaceStore } from '~/stores/workspace'
@@ -9,6 +12,9 @@ import DataGrid from '~/components/grid/DataGrid.vue'
 import CellValue from '~/components/grid/cells/CellValue.vue'
 import ForeignKeyCell from '~/components/grid/cells/ForeignKeyCell.vue'
 import RelationCountCell from '~/components/grid/cells/RelationCountCell.vue'
+import DeleteImpactDialog from '~/components/grid/DeleteImpactDialog.vue'
+import FkPicker from '~/components/grid/editors/FkPicker.vue'
+import { isDefaultValue } from '~/components/grid/row-meta'
 
 const props = defineProps<{
   connectionId: string
@@ -18,11 +24,14 @@ const props = defineProps<{
   /** Columns as the driver reported them (types guessed from the driver type). */
   columns: SchemaColumn[]
   rows: Record<string, unknown>[]
+  /** The connection is read-only: nothing is offered for editing. */
+  readonly?: boolean
 }>()
 
 const { t } = useI18n()
 const store = useSchemaStore()
 const workspace = useWorkspaceStore()
+const pendingStore = usePendingStore()
 
 const REL = '@rel:'
 const CARDINALITY_KEY = {
@@ -79,8 +88,9 @@ const gridColumns = computed<SchemaColumn[]>(() => {
   const base = props.columns.map((c) => {
     const own = real.get(c.name)
     // Only a column that comes straight from the table keeps its definition (aliases and
-    // expressions have names that are not in the table, or are the driver's guess).
-    return own ?? c
+    // expressions have names that are not in the table, or are the driver's guess). Those are
+    // never edited: they are marked generated.
+    return own ?? (editable.value ? { ...c, isGenerated: true } : c)
   })
   const counts = childRefs.value.map<SchemaColumn>((ref) => ({
     name: REL + ref.name,
@@ -95,6 +105,24 @@ const gridColumns = computed<SchemaColumn[]>(() => {
   }))
   return [...base, ...counts]
 })
+
+// ---- editing: a plain single-table result whose key is in the result ---------------------------
+/** Columns that address a row (primary key or unique NOT NULL index), when they are all in the result. */
+const keyColumns = computed(() => {
+  const tb = table.value
+  const key = tb ? editableKey(tb) : null
+  return key && key.every((c) => resultNames.value.has(c)) ? key : null
+})
+const editable = computed(() => !props.readonly && keyColumns.value !== null)
+const tabId = computed(() => workspace.active?.id ?? '_')
+const editing = useGridEditing({
+  table: () => (editable.value ? table.value : null),
+  keyColumns: () => (editable.value ? keyColumns.value : null),
+  loadedRows: () => props.rows,
+  parentRefs: () => (editable.value ? parentRefs.value : []),
+  tabId: () => tabId.value,
+})
+const { deleteKeys, deleteOpen, pickerOpen, pickerRef, pickerTarget, pickableColumns, pickerNullable } = editing
 
 // ---- relation data of the rows in view ---------------------------------------------------------
 const relations = useRelationData(
@@ -118,14 +146,25 @@ watch([wanted, () => props.rows], () => {
 
 const gridRows = computed<Record<string, unknown>[]>(() => {
   void relations.resolved.value
-  if (childRefs.value.length === 0) return props.rows
+  if (childRefs.value.length === 0 && !editable.value) return props.rows
   return props.rows.map((row) => {
-    const data = relations.get(row)
     const next: Record<string, unknown> = { ...row }
-    for (const ref of childRefs.value) next[REL + ref.name] = data?.counts[ref.name]
-    return next
+    if (childRefs.value.length > 0) {
+      const data = relations.get(row)
+      for (const ref of childRefs.value) next[REL + ref.name] = data?.counts[ref.name]
+    }
+    return editable.value ? editing.overlay(row, next) : next
   })
 })
+
+// A save somewhere: the parent re-runs the query; the chips read their parents again.
+watch(() => pendingStore.version, () => {
+  relations.reset()
+  ensureVisible()
+})
+
+/** Widths dragged in this result (not saved: a result has no table preferences). */
+const widths = ref<Record<string, number>>({})
 
 // ---- navigation --------------------------------------------------------------------------------
 function go(path: string, title: string, newTab: boolean): void {
@@ -155,6 +194,11 @@ function fallbackKeyOf(ref: RelationRef, value: unknown): Record<string, string 
   return column ? { [column]: value } : null
 }
 const asRow = (row: unknown) => row as Record<string, unknown>
+/** FK chip in this cell: not for a composite key with a NULL part (MATCH SIMPLE: no parent, not an orphan). */
+const hasChip = (column: string, row: unknown): boolean => {
+  const ref = parentByColumn.value.get(column)
+  return !!ref && !(ref.columns.length > 1 && fkHasNull(ref.columns, asRow(row)))
+}
 const asCount = (value: unknown) => (typeof value === 'number' ? value : undefined)
 const kindOf = (column: string) => gridColumns.value.find((c) => c.name === column)?.kind ?? 'other'
 </script>
@@ -167,18 +211,33 @@ const kindOf = (column: string) => gridColumns.value.find((c) => c.name === colu
     :primary-key="primaryKey"
     :foreign-keys="[...parentByColumn.keys()]"
     :relation-labels="relationLabels"
-    :editable="false"
+    :editable="editable"
+    :pickable="pickableColumns"
+    :widths="widths"
+    :selection-key="rows"
     :dialect="dialect"
+    @update:widths="(w) => (widths = w)"
     @visible="onVisible"
+    @edit="editing.applyEdit"
+    @edit-foreign-key="editing.editForeignKey"
+    @delete-rows="editing.requestDelete"
+    @restore-rows="editing.restoreRows"
+    @undo-row="editing.undoRow"
   >
     <template #cell="{ column, row, value }">
+      <span
+        v-if="isDefaultValue(value)"
+        class="rounded-sm border border-border px-1 text-[10px] uppercase tracking-wide text-fg-subtle italic"
+        data-default-badge
+      >{{ t('edit.default') }}</span>
       <ForeignKeyCell
-        v-if="parentByColumn.has(column)"
+        v-else-if="hasChip(column, row)"
         :connection-id="connectionId"
         :schema="schema"
         :target="parentByColumn.get(column)!.target"
         :value="value"
         :virtual="parentByColumn.get(column)!.virtual"
+        :relation="parentByColumn.get(column)!"
         :parent="relations.get(asRow(row))?.parents[parentByColumn.get(column)!.name]"
         :fallback-key="fallbackKeyOf(parentByColumn.get(column)!, value)"
         @open="(key, newTab) => openParent(parentByColumn.get(column)!, key, newTab)"
@@ -194,4 +253,25 @@ const kindOf = (column: string) => gridColumns.value.find((c) => c.name === colu
       <CellValue v-else :value="value" :kind="kindOf(column)" />
     </template>
   </DataGrid>
+
+  <DeleteImpactDialog
+    v-if="editable && table"
+    v-model:open="deleteOpen"
+    :connection-id="connectionId"
+    :schema="schema"
+    :table="table.name"
+    :keys="deleteKeys"
+    @confirm="editing.confirmDelete"
+  />
+  <FkPicker
+    v-if="editable && pickerTarget"
+    v-model:open="pickerOpen"
+    :connection-id="connectionId"
+    :schema="schema"
+    :target="pickerTarget"
+    :display-column="store.graph?.tables[pickerTarget.name]?.displayColumn ?? null"
+    :nullable="pickerNullable"
+    :title="pickerRef?.name ?? pickerTarget.name"
+    @pick="editing.onPick"
+  />
 </template>

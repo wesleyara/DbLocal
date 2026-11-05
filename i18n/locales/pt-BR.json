@@ -400,7 +400,9 @@
     "reloadTitle": "Ler as linhas do banco de novo (⌘R)",
     "notesToggle": "Notas",
     "hasNotes": "Esta tabela tem notas",
-    "more": "Mais"
+    "more": "Mais",
+    "moreTools": "Mais ferramentas",
+    "lessTools": "Menos ferramentas"
   },
   "relations": {
     "orphan": "Nenhum registro correspondente em {target}",
@@ -408,7 +410,9 @@
     "previewFailed": "Não foi possível carregar a prévia",
     "chipHint": "Clique para abrir. Ctrl/⌘+clique abre em nova aba.",
     "scopeChip": "{target} de {table} {key}",
-    "removeScope": "Remover filtro de relação"
+    "removeScope": "Remover filtro de relação",
+    "cardRelations": "Relacionamentos",
+    "cardRecords": "nenhum registro | 1 registro | {count} registros"
   },
   "record": {
     "open": "Abrir registro",

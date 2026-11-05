@@ -16,6 +16,7 @@ describe('parseConnectionString', () => {
   it('maps sslmode onto SSL modes', () => {
     expect(parseConnectionString('postgres', 'postgres://h/db?sslmode=verify-full').sslMode).toBe('verify-full')
     expect(parseConnectionString('postgres', 'postgres://h/db?sslmode=prefer').sslMode).toBe('require')
+    expect(parseConnectionString('postgres', 'postgres://h/db?sslmode=no-verify').sslMode).toBe('require')
     expect(parseConnectionString('mysql', 'mysql://h/db?sslmode=disable').sslMode).toBe('disable')
   })
 

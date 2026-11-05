@@ -42,9 +42,9 @@ export interface SortItem {
   direction: 'asc' | 'desc'
 }
 
-export const PAGE_SIZES = [50, 100, 250, 500] as const
+export const PAGE_SIZES = [50, 100, 250, 500, 1000, 5000] as const
 export const DEFAULT_PAGE_SIZE = 100
-export const MAX_PAGE_SIZE = 500
+export const MAX_PAGE_SIZE = 5000
 
 /** Estimated counts up to this many rows are replaced by an exact count (it is cheap enough). */
 export const EXACT_COUNT_THRESHOLD = 100_000

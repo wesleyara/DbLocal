@@ -52,6 +52,12 @@ Marque **Alertar antes de executar** (na barra do editor ou na barra **Ver SQL**
 
 O SQL de uma visão de tabela (**Ver SQL**) é escrito com as palavras-chave em maiúsculas, como o autocomplete do editor.
 
+## Editando resultados {#editing-results}
+
+Um resultado pode ser editado ali mesmo, como na visão da tabela, quando lê uma única tabela: um `SELECT ... FROM tabela` simples (sem joins, agrupamentos, subqueries ou CTEs) cujo resultado inclui a chave da tabela (a chave primária ou um índice único NOT NULL). Dê duplo clique numa célula para alterá-la, escolha as chaves estrangeiras na tabela relacionada e exclua linhas com <kbd>Delete</kbd>. As alterações ficam pendentes até você **Salvar** na barra inferior, com as mesmas verificações da visão da tabela. Depois de salvas, a query é executada de novo para o resultado mostrar os valores gravados. Colunas que são aliases ou expressões continuam somente leitura. Registros novos são criados na visão da tabela, não a partir de um resultado.
+
+As colunas de qualquer resultado podem ser redimensionadas arrastando a borda do cabeçalho. A largura vale até a query ser executada com outro SQL.
+
 ## Queries salvas e histórico
 
 ⌘/Ctrl+S salva a query (pede um nome na primeira vez). O painel lateral tem **Salvas** (abrir, ver completo, renomear, excluir, copiar, executar) e **Histórico**: cada execução com duração, linhas e status, com busca e filtro. Limpe quando quiser ou escolha quantas entradas manter. O mesmo histórico está em qualquer tabela: o botão **Histórico** ao lado de **Estrutura** o lista, filtrado pela tabela por padrão, e permite executar uma entrada de novo no editor.

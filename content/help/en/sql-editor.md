@@ -52,6 +52,12 @@ Tick **Alert before run** (in the editor toolbar or in the table's **Show SQL** 
 
 The SQL of a table view (**Show SQL**) is written with keywords in upper case, like the editor's autocomplete.
 
+## Editing results {#editing-results}
+
+A result can be edited in place, like the table view, when it reads a single table: a plain `SELECT ... FROM table` (no joins, grouping, subqueries or CTEs) whose result includes the table's key (the primary key, or a unique NOT NULL index). Double-click a cell to change it, pick foreign keys from the related table, and delete rows with <kbd>Delete</kbd>. Changes stay pending until you **Save** them in the bar at the bottom, with the same checks as the table view. Once they are saved, the query runs again so the result shows the stored values. Columns that are aliases or expressions stay read-only. New rows are added from the table view, not from a result.
+
+Columns of any result can be resized by dragging the edge of their header. The width lasts until the query is run with different SQL.
+
 ## Saved queries and history
 
 ⌘/Ctrl+S saves the query (it asks for a name the first time). The side panel has **Saved** (open, view in full, rename, delete, copy, run) and **History**: every execution with duration, rows and status, searchable and filterable. Clear it any time or choose how many entries to keep. The same history is available from any table: the **History** button next to **Structure** lists it, filtered to that table by default, and can run an entry again in the editor.

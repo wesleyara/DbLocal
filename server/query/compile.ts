@@ -108,9 +108,12 @@ function conditionSql(c: FilterCondition, dialect: Dialects): RawBuilder<SqlBool
   }
 }
 
-/** Case-insensitive LIKE: ILIKE on Postgres, LOWER on both sides elsewhere. */
+/**
+ * Case-insensitive LIKE: ILIKE on Postgres, LOWER on both sides elsewhere. Postgres compares the
+ * column as text, so uuid (and other non-text types) can be searched by a part of their value.
+ */
 function like(col: RawBuilder<unknown>, pattern: string, dialect: Dialects): RawBuilder<SqlBool> {
-  if (dialect === 'postgres') return sql<SqlBool>`${col} ilike ${pattern} escape '!'`
+  if (dialect === 'postgres') return sql<SqlBool>`${col}::text ilike ${pattern} escape '!'`
   return sql<SqlBool>`lower(${col}) like lower(${pattern}) escape '!'`
 }
 

@@ -2,6 +2,7 @@ import type { Kysely } from 'kysely'
 import type { RelationGraph, RelationRef, SchemaSnapshot, SchemaTable } from '#shared/types/db'
 import type { CountRequest, CountResponse, FilterNode, GroupCountPlan, RelationScope, RowsPlan } from '#shared/types/rows'
 import type { RecordKey, RecordResponse, RecordSummary, ResolvedRow, ResolveRequest, ResolveResponse } from '#shared/types/relations'
+import { hasNullPart } from '#shared/fk'
 import type { Driver } from '../drivers'
 import { connectionDriver, readSchema } from '../schema/service'
 import type { StoreSchema } from '../store/db'
@@ -50,7 +51,7 @@ export function tupleFilter(columns: string[], tuples: unknown[][]): FilterNode 
 function distinct(tuples: unknown[][]): unknown[][] {
   const seen = new Map<string, unknown[]>()
   for (const t of tuples) {
-    if (t.some((v) => v === null || v === undefined)) continue
+    if (hasNullPart(t)) continue
     seen.set(tupleId(t), t)
   }
   return [...seen.values()]
@@ -138,7 +139,8 @@ export async function resolveRelations(
       const found = await readSummaries(driver, snapshot, graph, ref.target, ref.targetColumns, wanted)
       req.rows.forEach((_, i) => {
         const v = values[i]
-        result[i]!.parents[ref.name] = v && !v.some((x) => x === null || x === undefined) ? (found.get(tupleId(v)) ?? null) : null
+        // MATCH SIMPLE: a key with a NULL part is not checked, so it has no parent (not an orphan).
+        result[i]!.parents[ref.name] = v && !hasNullPart(v) ? (found.get(tupleId(v)) ?? null) : null
       })
       continue
     }
@@ -235,7 +237,7 @@ export async function resolveScope(
   const [row] = await driver.readRows(readPlan(snapshot, scope.table, keyFilter, [...new Set(ref.columns)], 2))
   if (!row) throw fail(404, 'Record not found')
   const values = ref.columns.map((c) => row[c])
-  if (values.some((v) => v === null || v === undefined)) return { empty: true }
+  if (hasNullPart(values)) return { empty: true }
 
   if (ref.via) {
     const via = junctionColumns(graph, ref)

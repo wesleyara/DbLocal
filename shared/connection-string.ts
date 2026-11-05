@@ -28,6 +28,7 @@ const SSLMODE: Record<string, SslMode> = {
   disable: 'disable',
   allow: 'disable',
   prefer: 'require',
+  'no-verify': 'require',
   require: 'require',
   'verify-ca': 'verify-ca',
   'verify-full': 'verify-full',

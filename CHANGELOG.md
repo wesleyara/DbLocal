@@ -4,6 +4,17 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-11-05
+
+### Added
+- **query:** edit and resize single-table query results
+- **grid:** offer 1000 and 5000 rows per page
+- **connections:** accept sslmode=no-verify in connection strings
+
+### Fixed
+- **relations:** treat a composite FK with a NULL part as no parent
+- **query:** compare columns as text in Postgres ILIKE
+
 ## [1.0.3] - 2026-10-19
 
 ### Added

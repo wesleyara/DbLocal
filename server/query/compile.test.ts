@@ -34,7 +34,7 @@ describe('compileRows', () => {
 
   it('uses ILIKE with an escape for contains on Postgres', () => {
     const q = compileRows(plan({ filter: { type: 'condition', column: 'note', op: 'contains', value: '50%_off' } }))
-    expect(q.sql).toContain('"note" ilike $1 escape \'!\'')
+    expect(q.sql).toContain('"note"::text ilike $1 escape \'!\'')
     expect(q.parameters[0]).toBe('%50!%!_off%')
   })
 

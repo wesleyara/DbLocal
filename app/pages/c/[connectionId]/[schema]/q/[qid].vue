@@ -5,6 +5,10 @@ import type { QueryResponse, StatementResult } from '#shared/types/query'
 import type { SavedQuery } from '#shared/types/saved-queries'
 import { resultColumn } from '#shared/result-columns'
 import { hasDanger } from '#shared/sql-risk'
+import { classifyStatement, splitStatements } from '#shared/sql-split'
+import { usePendingStore } from '~/stores/pending-changes'
+import { useWorkspaceStore } from '~/stores/workspace'
+import PendingBar from '~/components/grid/PendingBar.vue'
 import { formatResult, type ExportFormat } from '#shared/export-format'
 import { useSchemaStore } from '~/stores/schema'
 import { useQueriesStore } from '~/stores/queries'
@@ -64,7 +68,7 @@ function lineOfError(message: string, sql: string): number | null {
   return Number(m[1]) + offset
 }
 
-async function execute(sql: string, confirmWrites = false): Promise<void> {
+async function execute(sql: string, confirmWrites = false, keepTab = false): Promise<void> {
   if (!sql.trim() || running.value) return
   running.value = true
   failure.value = null
@@ -85,7 +89,10 @@ async function execute(sql: string, confirmWrites = false): Promise<void> {
     })
     result.value = res
     lastRun.value = { sql, limit }
-    activeTab.value = Math.max(0, res.statements.findIndex((s) => s.status !== 'ok' && s.status !== 'skipped'))
+    const tab = activeTab.value
+    if (!keepTab || typeof tab !== 'number' || !res.statements[tab]) {
+      activeTab.value = Math.max(0, res.statements.findIndex((s) => s.status !== 'ok' && s.status !== 'skipped'))
+    }
     const bad = res.statements.find((s) => s.error)
     if (bad?.error) errorLine.value = lineOfError(bad.error.message, bad.sql)
     if (res.schemaInvalidated) await store.load(id, schemaName).catch(() => {})
@@ -121,6 +128,30 @@ function request(sql: string): void {
 }
 const runCurrent = (sql?: string) => request(sql ?? editor.value?.currentSql() ?? draft.sql)
 const runAll = () => request(draft.sql)
+
+// ---- editing results: pending changes of this tab, saved by the PendingBar ----------------------
+const pendingStore = usePendingStore()
+const workspace = useWorkspaceStore()
+const tabId = computed(() => workspace.active?.id ?? '_')
+watch(
+  () => pendingStore.count(tabId.value),
+  (n) => {
+    if (workspace.active) workspace.setDirty(workspace.active.id, n > 0)
+  },
+  { immediate: true },
+)
+// After a save the result shows the stored values: the last run is repeated when it only reads.
+watch(
+  () => pendingStore.version,
+  () => {
+    const last = lastRun.value
+    if (!last || running.value) return
+    const statements = splitStatements(last.sql, dialect.value)
+    if (statements.length > 0 && statements.every((st) => classifyStatement(st.sql, dialect.value) === 'read')) {
+      void execute(last.sql, false, true)
+    }
+  },
+)
 
 // ---- explain -----------------------------------------------------------------------------------
 const plan = ref<ExplainResponse | null>(null)
@@ -322,6 +353,14 @@ const timeoutText = computed({
       />
 
       <section class="relative flex min-h-0 flex-1 flex-col" data-results :aria-busy="running">
+        <PendingBar
+          v-if="view"
+          :connection-id="id"
+          :schema="schemaName"
+          :tab-id="tabId"
+          :connection-name="view.name"
+          :environment="view.environment"
+        />
         <!-- While a statement runs: a spinner in place of the empty state, or a chip over the previous result. -->
         <div v-if="running && (result || plan)" class="pointer-events-none absolute right-2 top-9 z-30 flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-0.5 text-xs text-fg-muted" data-running>
           <UiSpinner class="size-3" />{{ t('query.running') }}
@@ -378,13 +417,14 @@ const timeoutText = computed({
         <template v-else-if="current">
           <div v-if="current.status === 'ok' && current.columns.length > 0" class="min-h-0 flex-1">
             <ResultGrid
-              :key="`${result?.queryId}-${current.index}`"
+              :key="`${current.sql}-${current.index}`"
               :connection-id="id"
               :schema="schemaName"
               :dialect="dialect"
               :sql="current.sql"
               :columns="currentColumns"
               :rows="current.rows"
+              :readonly="readonly || !view"
             />
           </div>
           <div v-else-if="current.status === 'ok'" class="p-4 text-sm text-fg-muted" data-write-result>

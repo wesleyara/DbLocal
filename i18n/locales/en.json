@@ -400,7 +400,9 @@
     "reloadTitle": "Read the rows from the database again (⌘R)",
     "notesToggle": "Notes",
     "hasNotes": "This table has notes",
-    "more": "More"
+    "more": "More",
+    "moreTools": "More tools",
+    "lessTools": "Fewer tools"
   },
   "relations": {
     "orphan": "No matching record in {target}",
@@ -408,7 +410,9 @@
     "previewFailed": "Could not load the preview",
     "chipHint": "Click to open. Ctrl/⌘+click opens in a new tab.",
     "scopeChip": "{target} of {table} {key}",
-    "removeScope": "Remove relation filter"
+    "removeScope": "Remove relation filter",
+    "cardRelations": "Relations",
+    "cardRecords": "no records | 1 record | {count} records"
   },
   "record": {
     "open": "Open record",

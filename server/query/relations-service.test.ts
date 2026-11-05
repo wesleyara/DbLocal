@@ -55,7 +55,7 @@ beforeAll(async () => {
     insert into tags values (1, 'home'), (2, 'office'), (3, 'gift');
     insert into product_tags values (1, 1), (1, 3), (2, 2), (2, 3);
     insert into regions values ('BR', 'SP', 'São Paulo'), ('BR', 'RJ', 'Rio');
-    insert into offices values (1, 'BR', 'SP'), (2, 'BR', 'SP'), (3, 'BR', 'RJ');
+    insert into offices values (1, 'BR', 'SP'), (2, 'BR', 'SP'), (3, 'BR', 'RJ'), (4, 'BR', null), (5, 'XX', 'ZZ');
   `)
   db.close()
   driver = await createSqliteDriver({ id: 't', dialect: 'sqlite', filePath: file })
@@ -101,6 +101,17 @@ describe('resolveRelations', () => {
     })
     const rel = Object.keys(children.rows[0]!.counts)[0]!
     expect(children.rows.map((r) => r.counts[rel])).toEqual([2, 1])
+  })
+
+  it('gives a composite FK with a NULL part no parent and counts it nowhere (MATCH SIMPLE)', async () => {
+    const { rows } = await resolveRelations(driver, snapshot, graph, 'offices', { rows: [{ id: 4 }, { id: 5 }, { id: 1 }] })
+    const name = Object.keys(rows[0]!.parents)[0]!
+    expect(rows[0]!.parents[name]).toBeNull() // ('BR', NULL): not checked, no parent
+    expect(rows[1]!.parents[name]).toBeNull() // ('XX', 'ZZ'): a real orphan, the server answers the same
+    expect(rows[2]!.parents[name]!.key).toEqual({ country: 'BR', code: 'SP' })
+    const children = await resolveRelations(driver, snapshot, graph, 'regions', { rows: [{ country: 'BR', code: 'SP' }] })
+    const rel = Object.keys(children.rows[0]!.counts)[0]!
+    expect(children.rows[0]!.counts[rel]).toBe(2)
   })
 
   it('uses a bounded number of queries regardless of row count', async () => {

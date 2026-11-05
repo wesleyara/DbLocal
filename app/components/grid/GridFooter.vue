@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PAGE_SIZES } from '#shared/types/rows'
 const props = defineProps<{
   total: number | null
   exact: boolean
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const { number } = useFormat()
 
-const pageSizes = [50, 100, 250, 500]
+const pageSizes = PAGE_SIZES
 /** Page size as a string for the select; picking a value reports it as a number. */
 const sizeModel = computed({
   get: () => String(props.pageSize),

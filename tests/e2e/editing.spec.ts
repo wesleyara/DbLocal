@@ -89,6 +89,42 @@ test('editing cells keeps changes pending, highlighted, until Save writes them i
   expect(saved.map((r) => r.name)).toEqual(['Ana S.', 'Bruno L.', 'Carla Dias'])
 })
 
+test('a plain SELECT result in the SQL editor is edited and saved like the table, then read again', async ({ page, request }) => {
+  await page.goto(`/c/${ids.rw!}/main/q/e2e-result-edit`)
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+  await page.locator('[data-sql-editor] .view-lines').click()
+  await page.keyboard.type('select id, name from users where id < 3')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Control+Enter')
+  const results = page.locator('[data-results]')
+  const resultCell = (row: number, col: number) => results.locator(`[data-r="${row}"][data-c="${col}"]`)
+  await expect(resultCell(0, 1)).toContainText('Ana Souza')
+
+  await resultCell(0, 1).dblclick()
+  const input = page.locator('[data-cell-editor] input')
+  await input.fill('Ana Q.')
+  await input.press('Enter')
+  await expect(page.locator('[data-pending-count]')).toContainText('1')
+  await page.locator('[data-pending-bar] [data-save]').click()
+  await expect(page.locator('[data-pending-bar]')).toHaveCount(0)
+  expect((await rows(request, ids.rw!, 'users'))[0]!.name).toBe('Ana Q.')
+  // The read is run again, so the result shows what was saved.
+  await expect(resultCell(0, 1)).toContainText('Ana Q.')
+})
+
+test('a query result that is not a plain table read stays read-only', async ({ page }) => {
+  await page.goto(`/c/${ids.rw!}/main/q/e2e-result-ro`)
+  await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
+  await page.locator('[data-sql-editor] .view-lines').click()
+  await page.keyboard.type('select count(*) as n from users')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Control+Enter')
+  const first = page.locator('[data-results] [data-r="0"][data-c="0"]')
+  await expect(first).toContainText('3')
+  await first.dblclick()
+  await expect(page.locator('[data-cell-editor]')).toHaveCount(0)
+})
+
 test('Preview SQL shows the statements without running them', async ({ page, request }) => {
   await open(page, ids.rw!, 'users')
   await editCell(page, 0, 1, "O'Neil")

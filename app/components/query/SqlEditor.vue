@@ -36,6 +36,7 @@ let completion: Monaco.IDisposable | null = null
 let inline: Monaco.IDisposable | null = null
 let observer: MutationObserver | null = null
 let applying = false
+let autoSelection = false
 
 /** Any CSS colour as `#rrggbb`: Monaco themes only take hex, the tokens may be oklch. */
 function hex(token: string, fallback: string): string {
@@ -141,6 +142,11 @@ async function setup(): Promise<void> {
   const inlineAction = (id: string) => () => editor!.trigger('keyboard', `editor.action.inlineSuggest.${id}`, {})
   editor.addCommand(KeyCode.RightArrow, inlineAction('commit'), 'inlineSuggestionVisible && !editorHasSelection && !suggestWidgetVisible')
   editor.addCommand(KeyMod.Alt | KeyCode.RightArrow, inlineAction('acceptNextWord'), 'inlineSuggestionVisible && !suggestWidgetVisible')
+  // Undo / redo leave the restored text selected; that is not a selection the user made to run.
+  editor.onDidChangeCursorSelection((e) => {
+    const { Undo, Redo, ContentFlush } = monaco!.editor.CursorChangeReason
+    autoSelection = e.reason === Undo || e.reason === Redo || e.reason === ContentFlush
+  })
   editor.onDidChangeModelContent(() => {
     if (applying) return
     model.value = editor!.getValue()
@@ -201,7 +207,7 @@ function currentSql(): string {
   if (!editor) return model.value
   const selection = editor.getSelection()
   const doc = editor.getModel()!
-  if (selection && !selection.isEmpty()) return doc.getValueInRange(selection)
+  if (selection && !selection.isEmpty() && !autoSelection) return doc.getValueInRange(selection)
   const offset = doc.getOffsetAt(editor.getPosition()!)
   const found = statementAt(splitStatements(doc.getValue(), props.dialect), offset)
   return found?.sql ?? doc.getValue()

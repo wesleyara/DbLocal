@@ -208,6 +208,17 @@ code { font-family: var(--mono); font-size: 0.86em; }
   border: 0.5pt solid var(--rule);
   border-radius: 1mm;
 }
+kbd {
+  display: inline-block;
+  padding: 0 1.2mm;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  line-height: 1.5;
+  background: #fff;
+  border: 0.5pt solid var(--ink-subtle);
+  border-bottom-width: 1.2pt;
+  border-radius: 1mm;
+}
 .code { position: relative; margin: 4mm 0; break-inside: avoid; }
 .code pre, .diagram-source {
   margin: 0;

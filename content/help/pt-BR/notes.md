@@ -31,3 +31,9 @@ O editor é Markdown puro com uma barra para a formatação comum: negrito, itá
 
 > [!TIP]
 > Blocos de código marcados com `sql`, `postgres`, `mysql`, `json`, `bash`, `ts` ou `python` ganham destaque de sintaxe. Nada é carregado da internet: o editor funciona offline.
+
+## Exportando como PDF {#export-pdf}
+
+**Exportar PDF**, à direita da linha acima do editor, transforma a nota em um documento para impressão: o nome da conexão ou da tabela como título, a conexão e o schema, quando foi editada e quando foi exportada, e depois a própria nota com código destacado, tabelas, listas de tarefas e diagramas mermaid. As páginas são A4 e numeradas.
+
+O diálogo de impressão do navegador abre com ele: escolha **Salvar como PDF** como destino. O texto do PDF continua selecionável e pesquisável. A exportação usa sempre um layout claro, qualquer que seja o tema do app.

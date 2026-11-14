@@ -31,3 +31,9 @@ The editor is plain Markdown with a toolbar for the usual formatting: bold, ital
 
 > [!TIP]
 > Code blocks tagged `sql`, `postgres`, `mysql`, `json`, `bash`, `ts` or `python` are highlighted. Nothing is loaded from the internet: the editor works offline.
+
+## Exporting as PDF {#export-pdf}
+
+**Export PDF**, at the right of the line above the editor, turns the note into a printable document: the connection or table name as the title, the connection and schema, when it was last edited and when it was exported, then the note itself with highlighted code, tables, task lists and mermaid diagrams. Pages are A4 and numbered.
+
+The browser's print dialog opens on it: pick **Save as PDF** as the destination. The text in the PDF stays selectable and searchable. The export always uses a light layout, whatever the app's theme.

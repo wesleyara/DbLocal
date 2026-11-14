@@ -1,14 +1,39 @@
 <script setup lang="ts">
 import type { NoteStatus } from '~/composables/useNote'
+import { useToast } from '~/composables/useToast'
+import type { NoteExport } from './export-pdf'
 
-/** Save status line + Markdown editor of a note. The note itself (load, autosave) is `useNote`'s. */
+/**
+ * Save status line + Markdown editor of a note. The note itself (load, autosave) is `useNote`'s.
+ * With `exportAs`, an "Export PDF" button prints the note (`export-pdf.ts`).
+ */
 const props = withDefaults(
-  defineProps<{ status: NoteStatus; updatedAt: string | null; height?: string; placeholder?: string }>(),
-  { height: '360px', placeholder: '' },
+  defineProps<{ status: NoteStatus; updatedAt: string | null; height?: string; placeholder?: string; exportAs?: NoteExport }>(),
+  { height: '360px', placeholder: '', exportAs: undefined },
 )
 const content = defineModel<string>({ required: true })
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { date } = useFormat()
+const toast = useToast()
+
+const exporting = ref(false)
+async function exportPdf(): Promise<void> {
+  if (!props.exportAs || exporting.value) return
+  exporting.value = true
+  try {
+    const { exportNotePdf } = await import('./export-pdf')
+    const meta = [
+      ...(props.exportAs.meta ?? []),
+      props.updatedAt ? t('notes.pdf.editedAt', { time: date(props.updatedAt) }) : '',
+      t('notes.pdf.exportedAt', { time: date(new Date()) }),
+    ]
+    await exportNotePdf(content.value, { ...props.exportAs, meta, lang: locale.value })
+  } catch {
+    toast.push({ kind: 'error', title: t('notes.pdf.failed') })
+  } finally {
+    exporting.value = false
+  }
+}
 
 const statusText = computed(() => {
   switch (props.status) {
@@ -32,6 +57,20 @@ const statusText = computed(() => {
       <Icon v-else name="lucide:cloud-check" class="size-3" />
       {{ statusText }}
       <HelpHint id="notes.overview" />
+      <UiButton
+        v-if="exportAs"
+        class="ml-auto"
+        size="sm"
+        variant="ghost"
+        :loading="exporting"
+        :disabled="status === 'loading' || !content.trim()"
+        :title="t('notes.pdf.hint')"
+        data-note-export-pdf
+        @click="exportPdf"
+      >
+        <Icon v-if="!exporting" name="lucide:file-down" class="size-3.5" />
+        {{ t('notes.pdf.export') }}
+      </UiButton>
     </div>
     <div v-if="status === 'loading'" class="rounded-md border border-border" :style="{ height }">
       <UiSkeleton class="m-3 h-4 w-1/2" />

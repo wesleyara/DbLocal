@@ -7,6 +7,7 @@ const id = route.params.connectionId as string
 const { t } = useI18n()
 const { data: view } = await useFetch<ConnectionView>(`/api/connections/${id}`, { key: `connection-${id}` })
 const note = useNote(() => ({ url: `/api/c/${id}/notes` }))
+const exportAs = computed(() => (view.value ? { title: view.value.name, eyebrow: `DbLocal · ${t('notes.connectionTitle')}` } : undefined))
 </script>
 
 <template>
@@ -21,6 +22,7 @@ const note = useNote(() => ({ url: `/api/c/${id}/notes` }))
           v-model="note.content.value"
           :status="note.status.value"
           :updated-at="note.updatedAt.value"
+          :export-as="exportAs"
           height="calc(100dvh - 13rem)"
           :placeholder="t('notes.connectionPlaceholder')"
         />

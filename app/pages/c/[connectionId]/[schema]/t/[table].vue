@@ -119,6 +119,8 @@ const recordTableKnown = computed(() => !!openRecord.value && store.tables.some(
         v-model:open="notesOpen"
         v-model:content="note.content.value"
         :table="table.name"
+        :schema="schemaName"
+        :connection-name="view?.name"
         :status="note.status.value"
         :updated-at="note.updatedAt.value"
         @close="note.flush()"

@@ -1,6 +1,6 @@
 {
   "name": "dblocal",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "license": "MIT",
   "description": "Local database browser with navigable relations, a SQL editor and an ERD, for Postgres, MySQL and SQLite.",
   "bin": {

@@ -1203,6 +1203,16 @@
       "link": "link text",
       "image": "alt text",
       "column": "Column"
+    },
+    "pdf": {
+      "export": "Export PDF",
+      "hint": "Print the note or save it as a PDF",
+      "tableNotes": "Table notes",
+      "connection": "Connection {name}",
+      "schema": "Schema {schema}",
+      "editedAt": "Edited {time}",
+      "exportedAt": "Exported {time}",
+      "failed": "Could not export the note."
     }
   },
   "routines": {

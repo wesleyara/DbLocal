@@ -1203,6 +1203,16 @@
       "link": "texto do link",
       "image": "texto alternativo",
       "column": "Coluna"
+    },
+    "pdf": {
+      "export": "Exportar PDF",
+      "hint": "Imprimir a nota ou salvar como PDF",
+      "tableNotes": "Notas da tabela",
+      "connection": "Conexão {name}",
+      "schema": "Schema {schema}",
+      "editedAt": "Editada em {time}",
+      "exportedAt": "Exportada em {time}",
+      "failed": "Não foi possível exportar a nota."
     }
   },
   "routines": {

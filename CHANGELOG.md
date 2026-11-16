@@ -4,6 +4,14 @@ All notable changes to DbLocal. The project follows [semantic versioning](https:
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-11-16
+
+### Added
+- **notes:** export notes as PDF
+
+### Fixed
+- **sql-editor:** ignore selection left by undo/redo when running the statement
+
 ## [1.0.4] - 2026-11-05
 
 ### Added
